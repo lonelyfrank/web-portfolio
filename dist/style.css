@@ -675,11 +675,12 @@ dialog p { color: var(--body); }
   margin-left: -12.5%;
   background-image: url('assets/character-motion.webp');
   background-size: 800% 200%;
-  animation: sprite-frames var(--cycle-ms) steps(8) infinite;
+  animation: sprite-frames var(--cycle-ms) step-end infinite;
 }
-/* 8 immagini per ciclo: camminata a 12 fps, corsa a 18 fps. */
-.avatar.walking { --cycle-ms: 666.667ms; }
-.avatar.running { --cycle-ms: 444.444ms; }
+/* 8 immagini per ciclo; app.js sincronizza la cadenza con lo scorrimento. */
+.avatar.walking { --cycle-ms: 571ms; }
+.avatar.running { --cycle-ms: 429ms; }
+.avatar.walking .avatar-sprite { background-position-y: 0%; }
 .avatar.running .avatar-sprite { background-position-y: 100%; }
 
 /* Arredo urbano sullo stesso piano della passerella, dietro ai protagonisti. */
@@ -774,7 +775,7 @@ dialog p { color: var(--body); }
 .journey .ship-scout { display: none; }
 .journey .read-progress, .journey .site-footer { display: none; }
 
-.journey main { height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h)); }
+.journey main { height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h)); overflow: clip; }
 /* Titolo in alto, contenuti scenici in basso, vicini alla postazione che li alimenta.
    Le pagine si sovrappongono per la dissolvenza; se il contenuto non entra, la pagina scorre. */
 .journey .page {
@@ -786,13 +787,14 @@ dialog p { color: var(--body); }
   padding: 20px 4px 12px;
   border: 0;
   scrollbar-width: thin;
+  /* La traslazione segue la camera reale; la comparsa resta indipendente. */
+  translate: var(--content-x, 0px) 0;
 }
 .journey .page > * { flex-shrink: 0; }
 .journey .page.active { animation: appear .3s var(--ease); }
 .journey .page.leaving { opacity: 0; transition: opacity .18s; pointer-events: none; }
 .journey .scenic { margin-top: auto; transition: opacity .28s var(--ease), transform .28s var(--ease); }
 .journey .page[data-stage='off'] .scenic { opacity: 0; transform: translateY(10px); transition-duration: .12s; }
-.journey #projects[data-stage='on'] .scenic { transition-delay: .16s; }
 
 .journey #home { flex-direction: row; flex-wrap: nowrap; align-items: center; min-height: 0; }
 /* Il nome resta protagonista anche sui desktop bassi: la misura segue anche l'altezza. */
@@ -953,7 +955,16 @@ dialog p { color: var(--body); }
   to { opacity: 1; }
 }
 @keyframes sprite-frames {
-  to { background-position-x: calc(-512 * var(--u) * 1px); }
+  /* Una cella intera per posa, indipendentemente dalla scala dello sprite.
+     Con background-size: 800%, 100% allinea l'ottavo e ultimo frame. */
+  0% { background-position-x: 0%; }
+  12.5% { background-position-x: calc(100% / 7); }
+  25% { background-position-x: calc(200% / 7); }
+  37.5% { background-position-x: calc(300% / 7); }
+  50% { background-position-x: calc(400% / 7); }
+  62.5% { background-position-x: calc(500% / 7); }
+  75% { background-position-x: calc(600% / 7); }
+  87.5%, 100% { background-position-x: 100%; }
 }
 @keyframes idle-frames {
   to { background-position-x: calc(-512 * var(--u) * 1px); }
@@ -1357,7 +1368,7 @@ dialog p { color: var(--body); }
   transform: translateX(calc(var(--actor-x, 0) * var(--scene-unit)));
 }
 .journey-strip .avatar.station-owned { visibility: hidden; }
-/* During a transfer app.js sets --cycle-ms from STAGE.runStride / STAGE.runSpeed. */
+/* During a transfer app.js sets --cycle-ms from the selected stride / speed. */
 
 /* Collegamenti fra postazioni e schermi */
 .scene-links { display: none; }

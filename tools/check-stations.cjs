@@ -17,13 +17,132 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     return page;
   };
   try {
+    // Render the authored poses side by side at the same scene scale for review.
+    const preview = await open({ width: 1440, height: 650 });
+    const pose = (state, frame, label) => `<figure><figcaption>${label}</figcaption><div class="avatar ${state}" data-frame="${frame}"><span class="avatar-sprite"></span></div></figure>`;
+    await preview.setContent(`<link rel="stylesheet" href="${url}/style.css">
+      <style>body{padding:24px;background:#101827;color:#fff;font:14px sans-serif}
+      .poses{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:16px 0}
+      figure{margin:0;height:150px;background:#182439;border-bottom:1px solid #59809b}
+      figcaption{padding:8px}.avatar{position:relative;left:auto;bottom:auto;margin:0 auto;--u:2}
+      .avatar-sprite{filter:none}</style>
+      <div class="poses">${pose('', 0, 'Riposo')}${pose('petting', 0, 'Inizio carezza')}</div>
+      <div class="poses">${Array.from({ length: 8 }, (_, i) => pose('walking', i, `Camminata ${i + 1}`)).join('')}</div>
+      <div class="poses">${Array.from({ length: 8 }, (_, i) => pose('running', i, `Corsa ${i + 1}`)).join('')}</div>`);
+    await preview.evaluate(async () => {
+      for (const sprite of document.querySelectorAll('.avatar-sprite')) {
+        const image = new Image();
+        image.src = getComputedStyle(sprite).backgroundImage.slice(5, -2);
+        await image.decode();
+        const animation = sprite.getAnimations()[0];
+        animation.pause();
+        animation.currentTime = (Number(sprite.parentElement.dataset.frame) + .5) * animation.effect.getTiming().duration / 8;
+      }
+    });
+    await preview.screenshot({ path: `${shots}/stations-motion-frames-verified.png` });
+    await preview.close();
     const page = await open({ width: 1440, height: 900 });
     assert.equal((await page.goto(url)).status(), 200);
     await page.evaluate(() => localStorage.setItem('fs-mode', 'journey'));
     await page.reload();
-    const nav = id => page.locator(`.site-nav a[href="#${id}"]`).click();
+    const nav = async id => {
+      await page.locator(`.site-nav a[href="#${id}"]`).click();
+      await page.waitForFunction(id => document.querySelector('.page.active')?.id === id, id);
+    };
     const phase = (name, timeout = 6000) => page.waitForFunction(
       name => document.querySelector('.journey-strip').dataset.phase === name, name, { timeout });
+    const contentFollows = async (id, backwards = false) => {
+      const snapshot = () => page.evaluate(id => ({
+        panel: document.querySelector(`#${id} .scenic`).getBoundingClientRect().left,
+        station: document.querySelector(`[data-station="${id}"]`).getBoundingClientRect().left,
+      }), id);
+      const before = await snapshot();
+      await page.waitForTimeout(200);
+      const after = await snapshot();
+      const panelDelta = after.panel - before.panel;
+      const stationDelta = after.station - before.station;
+      assert.ok(backwards ? panelDelta > 15 : panelDelta < -15, JSON.stringify({ before, after }));
+      assert.ok(Math.abs(panelDelta - stationDelta) < 8, 'Text and station must travel together');
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    };
+    const overlappingLifts = async (from, to) => {
+      const lifts = await page.evaluate(({ from, to }) => {
+        const read = id => {
+          const lift = document.querySelector(`[data-station="${id}"]`).closest('.bay')?.querySelector('.bay-lift');
+          const frames = lift?.getAnimations()[0]?.effect.getKeyframes();
+          return frames && frames.map(frame => new DOMMatrixReadOnly(frame.transform).m42);
+        };
+        return { from: read(from), to: read(to), phase: document.querySelector('.journey-strip').dataset.phase };
+      }, { from, to });
+      assert.equal(lifts.phase, 'approaching');
+      assert.ok(lifts.from && lifts.from[0] < lifts.from.at(-1), `Outgoing lift must descend immediately: ${JSON.stringify(lifts)}`);
+      assert.ok(lifts.to && lifts.to[0] > lifts.to.at(-1), `Destination must rise during departure: ${JSON.stringify(lifts)}`);
+      assert.equal(await page.locator(`#${to}`).getAttribute('data-stage'), 'on', 'Text begins appearing with its lift');
+      assert.equal(await page.locator(`#${to} .scenic`).first().evaluate(n => n.inert), false);
+      const names = { about: ['about'], projects: ['index', 'feature'], contact: ['contact'] }[to] || [];
+      assert.deepEqual(await page.locator('.scene-link.on').evaluateAll(nodes => nodes.map(n => n.dataset.link).sort()), names.sort(),
+        'Only the destination connections turn on as its lift rises');
+      assert.equal(await page.locator(`[data-station="${to}"]`).evaluate(n => n.classList.contains('interaction-active')), false,
+        'Frank must reach the station before interacting');
+    };
+    const projectionFollows = async () => {
+      const beams = await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => {
+        resolve(['index', 'feature'].map(name => {
+          const beam = document.querySelector(`[data-link="${name}"]`);
+          const emitter = document.querySelector(`[data-emitter="${name}"]`).getBoundingClientRect();
+          const panel = document.querySelector(name === 'index' ? '.holo-index' : '.projects-grid').getBoundingClientRect();
+          return {
+            top: parseFloat(beam.style.top), bottom: parseFloat(beam.style.top) + parseFloat(beam.style.height),
+            left: parseFloat(beam.style.left), panelBottom: panel.bottom,
+            lensY: emitter.top + emitter.height * .22,
+            expectedLeft: Math.min(emitter.left + emitter.width * .3, panel.left + 8),
+          };
+        }));
+      })));
+      beams.forEach(beam => {
+        assert.ok(Math.abs(beam.top - beam.panelBottom) < 2, JSON.stringify(beam));
+        assert.ok(Math.abs(beam.bottom - beam.lensY) < 2, JSON.stringify(beam));
+        assert.ok(Math.abs(beam.left - beam.expectedLeft) < 2, JSON.stringify(beam));
+      });
+    };
+    const gait = async (expected, backwards = false) => {
+      await phase('approaching');
+      const movement = await page.locator('#avatar').evaluate(n => {
+        const sprite = getComputedStyle(n.querySelector('.avatar-sprite'));
+        return {
+          walking: n.classList.contains('walking'), running: n.classList.contains('running'),
+          backwards: n.classList.contains('back'), row: sprite.backgroundPositionY,
+          cycle: parseFloat(sprite.animationDuration),
+        };
+      });
+      assert.deepEqual(movement, {
+        walking: expected === 'walking', running: expected === 'running', backwards,
+        row: expected === 'walking' ? '0%' : '100%',
+        cycle: expected === 'walking' ? .571 : .429,
+      });
+      // Every held pose must show exactly one full atlas cell, including wraparound.
+      // Sampling inside each step catches a strip advancing by the old cell width.
+      const misaligned = await page.locator('#avatar .avatar-sprite').evaluate(sprite => {
+        const animation = sprite.getAnimations()[0];
+        const time = animation.currentTime;
+        const duration = animation.effect.getTiming().duration;
+        const width = sprite.getBoundingClientRect().width;
+        const failures = [];
+        animation.pause();
+        for (let step = 0; step < 16; step++) {
+          for (const fraction of [.01, .5, .99]) {
+            animation.currentTime = (step + fraction) * duration / 8;
+            const position = getComputedStyle(sprite).backgroundPositionX;
+            const x = position.endsWith('%') ? parseFloat(position) / 100 * -7 * width : parseFloat(position);
+            if (Math.abs(x + step % 8 * width) > .1) failures.push({ step, fraction, position, width });
+          }
+        }
+        animation.currentTime = time;
+        animation.play();
+        return failures;
+      });
+      assert.deepEqual(misaligned, [], 'Sprite must hold complete frames without horizontal drift');
+    };
     // Settled = requested area active, content switched on, no lift moving.
     const settled = id => page.waitForFunction(id => ['waiting', 'interacting'].includes(document.querySelector('.journey-strip').dataset.phase)
       && document.querySelector('.page.active')?.id === id
@@ -56,6 +175,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
           visibleSets,
           overflow: document.documentElement.scrollWidth > innerWidth,
           scenicInert: [...document.querySelectorAll(`#${id} .scenic`)].some(n => n.inert),
+          contentOffset: parseFloat(getComputedStyle(document.querySelector(`#${id}`)).translate) || 0,
         };
       }, id);
       assert.equal(result.raised, 1, JSON.stringify(result));
@@ -65,6 +185,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       assert.deepEqual(result.shown, [id]);
       assert.equal(result.overflow, false);
       assert.equal(result.scenicInert, false);
+      assert.ok(Math.abs(result.contentOffset) < 1, 'Text must finish in its reading position');
     };
     // Panels must stay inside the content area (no clipping by the scene).
     const fits = () => page.evaluate(() => {
@@ -81,10 +202,12 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await page.waitForFunction(() => document.querySelector('#avatar').classList.contains('petting'), null, { timeout: 8000 });
 
     // About → Projects: the reference sequence.
-    await nav('about');
-    await phase('approaching');
-    assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('running')), true);
-    assert.equal(await page.locator('#about .scenic').evaluate(n => n.inert), true);
+    await page.locator('#next').click();
+    await gait('walking');
+    await overlappingLifts('home', 'about');
+    await page.waitForTimeout(200);
+    assert.ok(await page.locator('#about .scenic').evaluate(n => parseFloat(getComputedStyle(n).opacity) > 0));
+    assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('walking')), true);
     await phase('interacting');
     await stage('about');
     assert.equal(await page.locator('.station-about .station-actors').evaluate(n => getComputedStyle(n).display), 'block');
@@ -99,8 +222,20 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
 
     const camBefore = await page.evaluate(() => getComputedStyle(document.querySelector('.bridge-track')).transform);
     await nav('projects');
-    await phase('approaching');
-    await page.waitForTimeout(300);
+    await gait('walking');
+    await overlappingLifts('about', 'projects');
+    assert.equal(await page.locator('.station-projects').getAttribute('data-power'), 'on');
+    await projectionFollows();
+    await contentFollows('projects');
+    await projectionFollows();
+    await page.waitForTimeout(350);
+    await projectionFollows();
+    assert.equal(await page.locator('.journey-strip').getAttribute('data-phase'), 'approaching');
+    assert.equal(await page.locator('[data-link="feature"]').evaluate(n => {
+      const style = getComputedStyle(n);
+      return Number(style.opacity) > .8 && (style.transform === 'none' || new DOMMatrixReadOnly(style.transform).m22 > .99);
+    }), true, 'Projection finishes appearing before Frank arrives');
+    await page.screenshot({ path: `${shots}/stations-projects-travel-verified.png` });
     // The world moves, the character stays put (only the small stop offset).
     const midway = await page.evaluate(() => ({
       cam: getComputedStyle(document.querySelector('.bridge-track')).transform,
@@ -126,10 +261,56 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
 
     // Backwards: world and character turn around.
     await nav('about');
-    await phase('approaching');
-    assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('back')), true);
+    await gait('walking', true);
+    await contentFollows('about', true);
     await settled('about');
     await stage('about');
+
+    // Navbar jumps use the running frames in both directions.
+    const runOrigin = await page.locator('.bridge-track').evaluate(n => -new DOMMatrixReadOnly(getComputedStyle(n).transform).m41);
+    await nav('contact');
+    await gait('running');
+    await overlappingLifts('about', 'contact');
+    const twoSectionRun = await page.locator('.bridge-track').evaluate((n, origin) => {
+      const unit = document.querySelector('#avatar').offsetWidth / 128;
+      return { distance: Math.abs(Number(n.style.getPropertyValue('--cam')) - origin / unit),
+        seconds: parseFloat(getComputedStyle(n).transitionDuration) };
+    }, runOrigin);
+    assert.ok(twoSectionRun.distance > 600 && twoSectionRun.distance < 720, JSON.stringify(twoSectionRun));
+    // The character also covers the offset between each station's standing point.
+    assert.ok(twoSectionRun.seconds > 1.7 && twoSectionRun.seconds < 3, JSON.stringify(twoSectionRun));
+    await page.waitForTimeout(1200);
+    assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('running')), true);
+    assert.equal(await page.locator('[data-station="contact"]').evaluate(n => {
+      const bay = n.closest('.bay');
+      return bay?.classList.contains('raised') && bay.querySelector('.bay-lift').getAnimations().length === 0;
+    }), true, 'Destination is ready before the run ends');
+    assert.equal(await page.locator('.station-contact').evaluate(n => n.classList.contains('interaction-active')), false);
+    await settled('contact');
+    const reverseOrigin = await page.locator('.bridge-track').evaluate(n => -new DOMMatrixReadOnly(getComputedStyle(n).transform).m41);
+    await nav('home');
+    await gait('running', true);
+    const threeSectionRun = await page.locator('.bridge-track').evaluate((n, origin) => {
+      const unit = document.querySelector('#avatar').offsetWidth / 128;
+      return { distance: Math.abs(Number(n.style.getPropertyValue('--cam')) - origin / unit),
+        seconds: parseFloat(getComputedStyle(n).transitionDuration) };
+    }, reverseOrigin);
+    assert.ok(threeSectionRun.distance > 900 && threeSectionRun.distance < 1080, JSON.stringify(threeSectionRun));
+    assert.ok(threeSectionRun.seconds > twoSectionRun.seconds + 1, JSON.stringify(threeSectionRun));
+    await settled('home');
+
+    // Retarget during a run, then during a walk: never retain the old gait/row.
+    await nav('contact');
+    await gait('running');
+    await page.waitForTimeout(250);
+    await nav('projects');
+    await gait('walking', true);
+    await nav('home');
+    await gait('running', true);
+    await settled('home');
+    await page.locator('#next').click();
+    await gait('walking');
+    await settled('about');
 
     // Rapid tab changes: the last request wins, nothing queues or stays halfway.
     for (const id of ['projects', 'contact', 'home', 'projects', 'contact']) {
@@ -155,10 +336,12 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     // Keyboard and wheel use the same path.
     await page.locator('body').click({ position: { x: 5, y: 300 } });
     await page.keyboard.press('ArrowLeft');
+    await gait('walking', true);
     await settled('projects');
     await stage('projects');
     await page.mouse.move(720, 150);
     await page.mouse.wheel(0, 300);
+    await gait('walking');
     await settled('contact');
     await stage('contact');
 

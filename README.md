@@ -51,12 +51,16 @@ Per il kit dell'elevatore: `python3 tools/export-elevator.py`.
 Gli script richiedono Pillow. Gli originali PNG restano in `assets/`.
 
 I nuovi fogli includono ragazzo e gatta nella stessa animazione. Camminata e corsa
-usano 8 × 2 celle da 160 × 112 px, esportate dalle quattro righe del foglio
-`Frank e il gatto calico in movimento.png`; riposo e carezza sono due strisce
-da 8 celle di 128 × 112 px. Il centro del personaggio e la scala restano comuni.
-L'esportatore segue la trasparenza tra le coppie adiacenti per limitare i tagli
-alle pose che si toccano nel foglio originale. L'ancoraggio segue il ragazzo,
-così il passaggio della gatta non sposta tutto il gruppo.
+usano 8 × 2 celle da 160 × 112 px. La camminata usa le prime due righe di
+`Frank e il gatto calico in movimento(1).png` (1254 × 1254); la corsa usa le
+otto pose di `Corsa pixel-art di ragazzo e gatto.png` (1774 × 887), in ordine
+da sinistra a destra, prima la riga superiore e poi quella inferiore.
+Riposo e carezza sono due strisce da 8 celle di 128 × 112 px.
+Ogni sequenza usa una sola scala, un asse corporeo fisso e un pavimento
+misurato per ciascuna riga, mantenendo la stessa scala in scena. Non
+si ridimensionano o ricentrano le singole pose sul loro ingombro; oscillazioni
+e salti restano quelli del disegno. I ritagli seguono lo spazio trasparente
+fra le colonne per conservare anche scarpe e code vicine al bordo.
 
 Il riposo dura 3,2 secondi: dopo due cicli parte una carezza di 3,2 secondi,
 poi riprende il riposo. La navigazione interrompe subito la carezza. Il ciclo
@@ -79,15 +83,29 @@ passerella → fascia della piazzola e bordo frontale → personaggio → HTML.
 Ogni area ha un solo allestimento (`STATIONS` in `dist/app.js`): `bay` è la
 posizione del vano nel canvas 144 × 136 dell'area, `focus` il centro del gruppo
 personaggio + postazione che viene messo al centro della finestra. Durante il
-trasferimento il ponte scorre alla velocità della corsa (`STAGE.runSpeed`,
-cadenza da `STAGE.runStride`), la parallasse dipende dall'indice dell'area
+trasferimento Frank e la gatta camminano fra sezioni adiacenti (anche dalla
+navbar) e corrono quando si saltano più sezioni. La prima riga dell'atlante
+contiene la camminata, la seconda la corsa. Velocità del ponte e cadenza sono
+sincronizzate da `STAGE.walkSpeed` / `walkStride` e `runSpeed` / `runStride`.
+Ogni sezione saltata corrisponde a un modulo del ponte: due sezioni richiedono
+circa 2–2,5 secondi di corsa, tre circa 3,5 secondi, oltre all'uscita e all'arrivo
+(il punto di partenza e di appoggio nella postazione influisce sulla durata).
+Il ciclo di corsa dura 429 ms (otto pose a circa 19 fps), con scala dello sprite fissa.
+La parallasse dipende dall'indice dell'area
 (spostamenti limitati, mai cumulativi) e, a scena ferma, il ponte viene
 rinormalizzato di un multiplo del modulo senza salti visibili.
 
-Sequenza (`TIMING`, circa 1,5–1,8 s): uscita dall'interazione e spegnimento dei
-contenuti → discesa della postazione nel vano (si scurisce e scompare) →
-trasferimento → arresto → salita → accensione di schermi, fasci e collegamenti →
-interazione. Ogni richiesta sostituisce la precedente: timer annullati,
+Sequenza (`TIMING`, durata variabile secondo l'andatura): al clic si esce
+dall'interazione e si spengono i contenuti; discesa della postazione attuale,
+salita della destinazione e trasferimento partono insieme. I pannelli testuali
+iniziano a comparire appena parte la salita della loro postazione, insieme a
+emettitori, fasci e collegamenti: la composizione si completa durante il tragitto.
+All'arrivo parte l'interazione di Frank. Fasci e cavi restano agganciati ai pannelli
+e agli oggetti anche durante la salita. Titoli e pannelli seguono lo
+scorrimento del ponte alla stessa velocità delle postazioni, entrando dal lato
+della destinazione e fermandosi nella posizione di lettura. Il movimento segue
+la camera effettiva anche nelle inversioni e nei cambi rapidi. Solo un vano ancora occupato attende
+la discesa prima di cambiare allestimento. Ogni richiesta sostituisce la precedente: timer annullati,
 animazioni riprese dal valore corrente, nessuna coda. Un ritorno rapido rialza
 la stessa postazione dallo stesso vano. Resize, documento nascosto e movimento
 ridotto portano subito alla composizione stabile.

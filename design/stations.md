@@ -74,11 +74,25 @@ piedi di Frank.
 
 1. Uscita dall'interazione: l'avatar riparte dall'appoggio della posa corrente.
 2. Spegnimento di proiettori e collegamenti, dissolvenza dei contenuti.
-3. Discesa della postazione (360 ms) mentre parte la corsa.
-4. Trasferimento di un modulo: il ponte scorre sotto il personaggio a 300 su/s,
-   cadenza della corsa 400 ms per 8 fotogrammi (falcata 120 su).
-5–6. Salita nel vano centrale (420 ms), iniziata 220 ms prima dell'arresto.
-7. Accensione di emettitori, fasci, cavi e contenuti.
+3. Al clic partono insieme discesa della postazione attuale (360 ms), salita
+   della destinazione (420 ms) e movimento. Un vano occupato completa prima
+   la discesa; durante i cambi rapidi le animazioni ripartono dalla quota corrente.
+   Pannelli, emettitori, fasci e cavi iniziano la comparsa con la salita della
+   destinazione: la tappa si compone mentre Frank si avvicina. I collegamenti
+   seguono sia i pannelli in movimento sia gli oggetti sull'elevatore.
+4. Trasferimento di un modulo per sezione: fra sezioni adiacenti si cammina a 168 su/s,
+   con 8 fotogrammi in 571 ms (falcata 96 su); i salti di più sezioni usano
+   la corsa a 280 su/s, con 8 fotogrammi in 429 ms (falcata 120 su).
+   Due sezioni percorrono circa 660 su in 2,4 s, tre circa 990 su in 3,5 s;
+   i piccoli spostamenti verso la postazione modificano leggermente la durata.
+   La stessa regola vale per navbar, frecce, rotella, swipe e hash.
+   Titoli e pannelli seguono la camera del ponte con la stessa traslazione
+   orizzontale delle postazioni; i cambi rapidi ripartono dalla posizione visibile.
+   All'arrivo tornano esattamente alla posizione di lettura, senza spostamenti
+   dovuti al riciclo dei moduli. In Lettura e con movimento ridotto restano fermi.
+5–6. Arrivo alla postazione già alzata; per i ritorni molto brevi si attende
+   soltanto il completamento dei movimenti dell'elevatore ancora in corso.
+7. Composizione già attiva all'arrivo, senza ripetere l'accensione degli effetti.
 8. Interazione: ciclo About; una sola sequenza Contact, poi posa finale.
 
 Il radar ha un timer indipendente: pausa casuale fra 30.000 e 45.000 ms,
@@ -99,8 +113,8 @@ sui comandi. Un'eventuale gatta seduta completamente indipendente richiede un
 livello dedicato. Non è disponibile un'animazione di Frank col proiettore.
 
 Projects non ha un'animazione di Frank: all'arrivo resta nella posa di riposo
-fra i due emettitori. I salti di più aree percorrono un solo modulo del ponte;
-la distanza fra le aree è resa dalla parallasse. Con un resize durante un
+fra i due emettitori. I salti di più aree percorrono un modulo del ponte per
+sezione saltata. Con un resize durante un
 trasferimento la scena passa subito alla composizione finale.
 
 ## Verifica

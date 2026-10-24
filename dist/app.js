@@ -25,18 +25,18 @@ const STAGE = {
   bay: 330,        // passo fra due vani elevatori
   drop: 106,       // corsa del piano: copre l'allestimento più alto (parabola, 102 su)
   bays: 8,         // vani generati su ciascun lato del centro
-  runSpeed: 300,   // su/s del ponte durante il trasferimento
+  runSpeed: 280,   // su/s: 2–3 moduli danno tempo di leggere la distanza percorsa
   runStride: 120,  // avanzamento della corsa per ciclo di 8 fotogrammi (due passi)
-  walkSpeed: 72,   // su/s per i piccoli aggiustamenti all'arrivo
+  walkSpeed: 168,  // su/s fra sezioni adiacenti
+  walkStride: 96, // avanzamento della camminata per ciclo di 8 fotogrammi
+  alignSpeed: 72, // su/s per i piccoli aggiustamenti all'arrivo
 };
 // Sequenza della transizione (ms). Le fasi compatibili si sovrappongono:
-// la discesa parte con lo spegnimento, la salita prima dell'arresto.
+// discesa, salita della destinazione e spostamento partono dalla richiesta.
 const TIMING = {
   contentOut: 180, // dissolvenza dei contenuti scenici
-  depart: 160,     // la corsa parte mentre la postazione sta ancora scendendo
   lower: 360,      // discesa completa del piano
   rise: 420,       // salita completa del piano
-  riseLead: 220,   // la salita inizia prima dell'arresto del ponte
   activate: 240,   // accensione di schermi e proiezioni
 };
 
@@ -284,6 +284,30 @@ function setCam(cam, duration = 0) {
 }
 function currentCam() { return -translateOf(track, 'x') / unit(); }
 
+// Each page belongs to its station's world position. Sample the rendered camera
+// so interrupted transitions keep text and equipment moving together.
+const contentPositions = new Map();
+let contentFrame = 0;
+function positionContent() {
+  const cam = currentCam();
+  const su = unit();
+  pages.forEach((page, index) => {
+    if (page.hidden) return;
+    const anchor = contentPositions.get(index) ?? cam;
+    page.style.setProperty('--content-x', `${(anchor - cam) * su}px`);
+  });
+}
+function followContent() {
+  cancelAnimationFrame(contentFrame);
+  const update = () => {
+    positionContent();
+    if (poweredStation !== null) placeLinks(poweredStation);
+    contentFrame = isJourney() && !reduced && !document.hidden && ['leaving', 'approaching', 'arriving'].includes(phase)
+      ? requestAnimationFrame(update) : 0;
+  };
+  update();
+}
+
 function setActor(offset, duration = 0) {
   avatar.style.transition = duration ? `transform ${duration}ms linear` : 'none';
   avatar.style.setProperty('--actor-x', offset);
@@ -313,7 +337,9 @@ function normalize() {
   });
   textureOffset = (textureOffset + shift * STAGE.bay) % 1000000;
   track.style.setProperty('--texture-x', textureOffset);
+  contentPositions.forEach((anchor, index) => contentPositions.set(index, anchor - shift * STAGE.bay));
   setCam(currentCam() - shift * STAGE.bay);
+  positionContent();
 }
 
 /* ---------- Regia delle transizioni ---------- */
@@ -327,6 +353,8 @@ const director = {
   requested: current,
   cancel() {
     this.run++;
+    cancelAnimationFrame(contentFrame);
+    contentFrame = 0;
     this.timers.forEach(clearTimeout);
     this.timers.clear();
   },
@@ -338,18 +366,21 @@ const director = {
   },
 };
 
-function chooseBay(target, from) {
+function chooseBay(target, from, interrupted) {
   const cam = currentCam();
   const here = cam / STAGE.bay;
   const dir = Math.sign(target - from) || 1;
   const own = bayOfSet(target);
   // A quick return finds its equipment still in the nearby shaft.
-  if (own && Math.abs(own.k - here) <= 1.6 && ((own.k - here) * dir > -.75 || own.k === Math.round(here))) return own.k;
-  const k = dir > 0 ? Math.floor(here + .5) + 1 : Math.ceil(here - .5) - 1;
+  if (interrupted && own && Math.abs(own.k - here) <= 1.6 && ((own.k - here) * dir > -.75 || own.k === Math.round(here))) return own.k;
+  // Every skipped section occupies a full bridge module, even on a return visit.
+  const distance = Math.max(1, Math.abs(target - from));
+  const k = dir > 0 ? Math.floor(here + .5) + distance : Math.ceil(here - .5) - distance;
   return Math.max(-STAGE.bays + 1, Math.min(STAGE.bays - 1, k));
 }
 
 async function stageTo(target, { instant = false } = {}) {
+  const interrupted = ['leaving', 'approaching', 'arriving'].includes(phase);
   director.cancel();
   const run = director.run;
   const alive = () => run === director.run && isJourney();
@@ -366,82 +397,87 @@ async function stageTo(target, { instant = false } = {}) {
   // 1–3. Exit the interaction, fade out, lower every other set.
   setPhase('leaving');
   scheduleRadio();
-  const k = chooseBay(target, from);
+  const k = chooseBay(target, from, interrupted);
   const destination = bayAt(k);
+  contentPositions.set(target, restCam(k, target));
+  positionContent();
+  const own = bayOfSet(target);
+  const lowering = new Map();
   bays.forEach(bay => {
-    if (bay.set !== null && bay.set !== target && bay.level < STAGE.drop) {
-      // Parked sets stay in their dark shaft: a quick return raises them again there.
-      moveLift(bay, STAGE.drop, TIMING.lower, 'cubic-bezier(.5,0,.75,.6)').then(() => {
-        if (['waiting', 'interacting'].includes(phase)) normalize();
-      });
+    if (bay.set !== null && (bay.set !== target || bay !== destination)) {
+      // Resume from the visible height, including a descent interrupted by a click.
+      lowering.set(bay, moveLift(bay, STAGE.drop, TIMING.lower, 'cubic-bezier(.5,0,.75,.6)'));
     }
   });
-  // The destination's own set may be parked in another shaft: send it down first.
-  const own = bayOfSet(target);
-  if (own && own !== destination) moveLift(own, STAGE.drop, TIMING.lower, 'ease-in');
+  // Prepare the destination concurrently with travel. Only an occupied shaft or
+  // a visible copy of the requested set must finish descending before remounting.
+  const rising = (async () => {
+    await Promise.all([lowering.get(own), lowering.get(destination)]);
+    if (!alive()) return;
+    mountSet(destination, target);
+    const lift = moveLift(destination, 0, TIMING.rise, 'cubic-bezier(.2,.7,.25,1)');
+    // Complete the station's reveal during travel, including lamps and beams.
+    setStageContent(target, true);
+    powerUp(target);
+    await lift;
+  })();
 
-  // 4. Transfer: the bridge runs under the character at stride speed.
+  // 4. Adjacent sections use the walking row; jumps use the running row.
+  // Use the previous request so rapid changes immediately select the new gait.
+  const gait = Math.abs(target - from) > 1 ? 'running' : 'walking';
+  const speed = gait === 'running' ? STAGE.runSpeed : STAGE.walkSpeed;
   const camFrom = currentCam();
   const camTo = restCam(k, target);
   // Ground speed under the feet = bridge motion relative to the character,
-  // so the stop offset he covers on screen is part of the synchronised run.
+  // so the stop offset he covers on screen is part of the synchronised gait.
   const ground = (camTo + restActor(target)) - (camFrom + currentActor());
-  const travel = Math.abs(camTo - camFrom) > .5 ? Math.round(Math.abs(ground) / STAGE.runSpeed * 1000) : 0;
-  const busy = bays.some(bay => bay.set !== null && bay.set !== target && liftLevel(bay) < STAGE.drop - 40);
+  const travel = Math.abs(camTo - camFrom) > .5 ? Math.round(Math.abs(ground) / speed * 1000) : 0;
   let walk = 0;
   if (travel) {
-    await director.wait(busy ? TIMING.depart : 40);
-    if (!alive()) return;
     setPhase('approaching');
-    avatar.classList.add('running');
-    avatar.classList.toggle('back', ground < 0);
-    avatar.style.setProperty('--cycle-ms', `${Math.round(STAGE.runStride / STAGE.runSpeed * 1000)}ms`);
+    moveAvatar(gait, ground, speed);
     setCam(camTo, travel);
     setActor(restActor(target), travel);
     setParallax(target, travel);
-    await director.wait(travel - TIMING.riseLead);
-    if (!alive()) return;
   } else {
     // Same shaft (a quick return): only a short local walk to the stop.
     const offset = restActor(target) - currentActor();
     if (Math.abs(offset) > 2) {
-      avatar.classList.add('walking');
-      avatar.classList.toggle('back', offset < 0);
+      moveAvatar('walking', offset, STAGE.alignSpeed);
     }
-    walk = Math.abs(offset) / STAGE.walkSpeed * 1000;
+    walk = Math.abs(offset) / STAGE.alignSpeed * 1000;
     setActor(restActor(target), walk);
     setParallax(target, 400);
   }
 
-  // 5–6. The destination shaft is centred: mount and raise.
-  if (own && own !== destination && own.level < STAGE.drop) await moveLift(own, STAGE.drop, TIMING.lower, 'ease-in');
-  if (!alive()) return;
-  if (destination.set !== target && destination.set !== null && liftLevel(destination) < STAGE.drop - .5) {
-    await moveLift(destination, STAGE.drop, TIMING.lower, 'ease-in');
-    if (!alive()) return;
-  }
-  mountSet(destination, target);
-  const rising = moveLift(destination, 0, TIMING.rise, 'cubic-bezier(.2,.7,.25,1)');
+  followContent();
+  // Wait for the journey while both sets are already moving on their lifts.
   if (travel || walk) {
-    await director.wait(travel ? TIMING.riseLead : walk);
+    await director.wait(travel || walk);
     if (!alive()) return;
   }
+  // Commit the destination before recycling bridge modules (CSS may be one
+  // display frame behind the timer); text must settle at an exact zero offset.
+  setCam(camTo);
+  setActor(restActor(target));
   avatar.classList.remove('running', 'walking');
   avatar.style.removeProperty('--cycle-ms');
   setPhase('arriving');
-  await rising;
+  await Promise.all([rising, ...lowering.values()]);
   if (!alive()) return;
 
-  // 7. Screens and projections switch on, then 8. the interaction resumes.
+  // The station is already lit; preserve its effects and start the interaction.
   normalize();
+  positionContent();
   setStageContent(target, true);
-  powerUp(target);
+  placeLinks(target);
   arrive();
 }
 
 // Stable, complete composition without travel (load, resize, reduced motion).
 function settle(target) {
   director.requested = target;
+  showPage(target, true);
   bays.forEach(bay => {
     bay.lift.getAnimations().forEach(animation => animation.cancel());
     unmountSet(bay);
@@ -461,6 +497,9 @@ function settle(target) {
   mountSet(centre, target);
   moveLift(centre, 0, 0);
   setCam(restCam(0, target));
+  contentPositions.clear();
+  contentPositions.set(target, restCam(0, target));
+  pages.forEach(page => page.style.removeProperty('--content-x'));
   setActor(restActor(target));
   setParallax(target, 0);
   avatar.classList.remove('running', 'walking');
@@ -497,14 +536,20 @@ function showPage(index, instant) {
 }
 
 const links = Object.fromEntries($$('.scene-link').map(node => [node.dataset.link, node]));
+let poweredStation = null;
 
 function powerDown() {
+  poweredStation = null;
   stationNodes[2].dataset.power = 'off';
-  Object.values(links).forEach(node => node.classList.remove('on'));
+  Object.values(links).forEach(node => {
+    node.style.transitionDelay = '0ms';
+    node.classList.remove('on');
+  });
 }
 
 function powerUp(index, { instant = false } = {}) {
   if (!isJourney()) return;
+  poweredStation = index;
   if (SECTIONS[index] === 'projects') stationNodes[2].dataset.power = 'on';
   placeLinks(index);
   const names = { about: ['about'], projects: ['index', 'feature'], contact: ['contact'] }[SECTIONS[index]] || [];
@@ -515,7 +560,7 @@ function powerUp(index, { instant = false } = {}) {
 }
 
 // Connectors are measured from the real panels and equipment, so they follow
-// the layout at any viewport (and are re-measured on resize and tab changes).
+// both the travelling camera and the rising lift, as well as layout changes.
 function placeLinks(index) {
   const id = SECTIONS[index];
   const node = stationNodes[index];
@@ -526,7 +571,7 @@ function placeLinks(index) {
   const point = ([x, y]) => [canvas.left + x * su, canvas.top + y * su];
   const cable = (link, [x, y], panel) => {
     const top = panel.bottom;
-    link.style.cssText = `left:${x}px; top:${top}px; height:${Math.max(0, y - top)}px;`;
+    Object.assign(link.style, { left: `${x}px`, top: `${top}px`, height: `${Math.max(0, y - top)}px` });
   };
   if (id === 'about') cable(links.about, point(station.link), box($('.about-console')));
   if (id === 'contact') cable(links.contact, point(station.link), box($('.contact-panel')));
@@ -542,8 +587,10 @@ function placeLinks(index) {
       const width = right - left;
       const height = Math.max(1, lensY - target.bottom);
       const pct = x => `${((x - left) / width * 100).toFixed(2)}%`;
-      links[name].style.cssText = `left:${left}px; top:${target.bottom}px; width:${width}px; height:${height}px;` +
-        `clip-path: polygon(${pct(target.left + 8)} 0, ${pct(target.right - 8)} 0, ${pct(lensR)} 100%, ${pct(lensL)} 100%);`;
+      Object.assign(links[name].style, {
+        left: `${left}px`, top: `${target.bottom}px`, width: `${width}px`, height: `${height}px`,
+        clipPath: `polygon(${pct(target.left + 8)} 0, ${pct(target.right - 8)} 0, ${pct(lensR)} 100%, ${pct(lensL)} 100%)`,
+      });
     });
   }
 }
@@ -576,6 +623,14 @@ function cancelStation() {
   stationNodes.forEach(node => node.classList.remove('interaction-active'));
   avatar.classList.remove('station-owned');
   activeStation = null;
+}
+
+function moveAvatar(gait, direction, speed) {
+  avatar.classList.remove('walking', 'running');
+  avatar.classList.add(gait);
+  avatar.classList.toggle('back', direction < 0);
+  const stride = gait === 'running' ? STAGE.runStride : STAGE.walkStride;
+  avatar.style.setProperty('--cycle-ms', `${Math.round(stride / speed * 1000)}ms`);
 }
 
 function stopAvatar() {
