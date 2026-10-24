@@ -6,6 +6,7 @@ const SECTIONS = ['home', 'about', 'projects', 'contact'];
 const STOPS = [20, 39, 60, 79]; // posizione dell'omino sulla strada per ogni tappa, in %
 const MODE_KEY = 'fs-mode';
 const WALK_MS = 1050;
+const RUN_SPEED = 1.8; // velocità relativa alla camminata per salti di più tappe
 const WHEEL_COOLDOWN_MS = 800;
 
 const SKILLS = {
@@ -69,6 +70,7 @@ function setMode(mode, { save = false } = {}) {
     // il salto all'ancora del caricamento può aver spostato il documento
     window.scrollTo(0, 0);
   } else {
+    stopAvatar();
     pages.forEach(page => { page.hidden = false; page.classList.remove('active'); });
     root.style.setProperty('--step', 0);
     document.title = 'Francesco Spina — Space Journey';
@@ -89,14 +91,24 @@ journeyQuery.addEventListener('change', e => {
 /* ---------- Viaggio: tappe e omino ---------- */
 
 function moveAvatar(index, previous, instant) {
-  avatar.style.transition = instant ? 'none' : '';
+  const distance = Math.abs(index - previous);
+  const running = distance > 1;
+  const duration = running ? Math.round(WALK_MS * distance / RUN_SPEED) : WALK_MS;
+  avatar.style.setProperty('--travel-ms', `${duration}ms`);
+  avatar.style.transition = instant || reduced ? 'none' : '';
   avatar.style.left = `${STOPS[index]}%`;
   if (index !== previous) avatar.classList.toggle('back', index < previous);
 
+  stopAvatar();
+  if (!instant && !reduced && distance > 0) {
+    avatar.classList.add(running ? 'running' : 'walking');
+    walkTimer = setTimeout(stopAvatar, duration);
+  }
+}
+
+function stopAvatar() {
   clearTimeout(walkTimer);
-  const walking = !instant && !reduced && index !== previous;
-  avatar.classList.toggle('walking', walking);
-  if (walking) walkTimer = setTimeout(() => avatar.classList.remove('walking'), WALK_MS);
+  avatar.classList.remove('walking', 'running');
 }
 
 function show(index, { instant = false } = {}) {
@@ -209,7 +221,7 @@ function setReduced(value) {
   const button = $('#motion');
   button.setAttribute('aria-pressed', String(value));
   button.title = value ? 'Riattiva movimento' : 'Riduci movimento';
-  if (value) avatar.classList.remove('walking');
+  if (value) stopAvatar();
 }
 $('#motion').addEventListener('click', () => setReduced(!reduced));
 reduceQuery.addEventListener('change', e => setReduced(e.matches));

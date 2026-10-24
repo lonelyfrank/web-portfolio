@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+  <link rel="preload" href="assets/character-motion.webp" as="image">
   <link rel="stylesheet" href="style.css">
   <script>
     // Sceglie la modalità prima del primo paint, così non c'è sfarfallio di layout.
@@ -280,7 +281,7 @@
     <div class="bridge" aria-hidden="true">
       <div class="railing"></div>
       <div class="avatar">
-        <svg viewBox="0 0 24 34" shape-rendering="crispEdges"><path fill="#080f24" d="M7 2h12v3h3v7h-3v4H8v-4H5V5h2z"/><path fill="#462e3b" d="M8 1h10v3h4v4H7V5H5V3h3z"/><path fill="#f5b17a" d="M11 8h9v6h-3v3h-6z"/><path fill="#071324" d="M18 9h2v2h-2z"/><path fill="#097b9c" d="M8 16h9v10H7z"/><path fill="#30d0e4" d="M9 17h3v8H9z"/><path fill="#ff985e" d="M15 17h3v7h3v3h-5z"/><path fill="#172841" d="M3 16h5v12H2V18h1z"/><path fill="#fa813d" d="M3 17h3v5H3z"/><g class="leg left"><path fill="#192640" d="M8 25h5v7H7v-3h1z"/><path fill="#bac8de" d="M6 31h7v3H5v-2h1z"/></g><g class="leg right"><path fill="#243756" d="M13 25h4v6h3v3h-7z"/><path fill="#d8e5f2" d="M15 31h6v3h-6z"/></g></svg>
+        <span class="avatar-sprite"></span>
       </div>
       <div class="walkway"></div>
     </div>
@@ -294,7 +295,7 @@
   <div class="journey-strip" aria-hidden="true">
     <div class="railing"></div>
     <div class="avatar" id="avatar">
-      <svg viewBox="0 0 24 34" shape-rendering="crispEdges"><path fill="#080f24" d="M7 2h12v3h3v7h-3v4H8v-4H5V5h2z"/><path fill="#462e3b" d="M8 1h10v3h4v4H7V5H5V3h3z"/><path fill="#f5b17a" d="M11 8h9v6h-3v3h-6z"/><path fill="#071324" d="M18 9h2v2h-2z"/><path fill="#097b9c" d="M8 16h9v10H7z"/><path fill="#30d0e4" d="M9 17h3v8H9z"/><path fill="#ff985e" d="M15 17h3v7h3v3h-5z"/><path fill="#172841" d="M3 16h5v12H2V18h1z"/><path fill="#fa813d" d="M3 17h3v5H3z"/><g class="leg left"><path fill="#192640" d="M8 25h5v7H7v-3h1z"/><path fill="#bac8de" d="M6 31h7v3H5v-2h1z"/></g><g class="leg right"><path fill="#243756" d="M13 25h4v6h3v3h-7z"/><path fill="#d8e5f2" d="M15 31h6v3h-6z"/></g></svg>
+      <span class="avatar-sprite"></span>
     </div>
     <div class="walkway"></div>
   </div>

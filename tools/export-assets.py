@@ -7,6 +7,7 @@ a cui è mostrata nel sito. Per le cornici stampa i valori di border-image-slice
 nel CSS; per strada e ringhiera ritaglia un modulo ripetibile in orizzontale.
 """
 from pathlib import Path
+import runpy
 
 from PIL import Image
 
@@ -105,3 +106,6 @@ if __name__ == '__main__':
     sprite('Cargo cruiser corazzato al neon-3.png', 'ship-cargo.webp', width=640)
     sprite('Navetta pixel art con bagliori magenta-2.png', 'ship-shuttle.webp', width=440)
     sprite('Scout spaziale compatto in pixel art-1.png', 'ship-scout.webp', width=300)
+
+    # Sfondo panoramico e personaggio con posa ferma, camminata e corsa.
+    runpy.run_path(str(ROOT / 'tools' / 'export-scene.py'), run_name='__main__')

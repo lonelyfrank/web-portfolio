@@ -108,7 +108,7 @@ p { line-height: 1.65; }
   position: absolute;
   inset: 0;
   width: 160%;
-  background: url('assets/universe.webp') center / cover;
+  background: url('assets/universe.webp') center bottom / cover no-repeat;
   opacity: .8;
   transform: translateX(calc(var(--step) * -12%));
 }
@@ -571,15 +571,31 @@ dialog p { color: #adbed7; }
   bottom: calc(var(--road-h) - 4px);
   left: 0;
   z-index: 2;
-  width: calc(24 * var(--u) * 1px);
-  height: calc(34 * var(--u) * 1px);
+  width: calc(48 * var(--u) * 1px);
+  height: calc(56 * var(--u) * 1px);
+  margin-left: calc(-24 * var(--u) * 1px);
   filter: drop-shadow(0 0 5px #3cd4ff33);
-  transition: left 1.05s var(--ease);
+  transition: left var(--travel-ms, 1050ms) linear;
 }
-.avatar svg { width: 100%; height: 100%; overflow: visible; }
-.avatar.back svg { transform: scaleX(-1); }
-.walking .left { animation: walk .2s infinite alternate; transform-origin: 12px 26px; }
-.walking .right { animation: walk .2s infinite alternate-reverse; transform-origin: 12px 26px; }
+.avatar-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: url('assets/character-idle.webp') 0 0 / 800% 100% no-repeat;
+  image-rendering: pixelated;
+  /* Otto fotogrammi: un respiro lento ogni 2,4 secondi. */
+  animation: idle-frames 2.4s steps(8) infinite;
+}
+.avatar.back .avatar-sprite { transform: scaleX(-1); }
+.avatar:is(.walking, .running) .avatar-sprite {
+  background-image: url('assets/character-motion.webp');
+  background-size: 800% 200%;
+  animation: sprite-frames var(--cycle-ms) steps(8) infinite;
+}
+/* 8 immagini per ciclo: camminata a 12 fps, corsa a 18 fps. */
+.avatar.walking { --cycle-ms: 666.667ms; }
+.avatar.running { --cycle-ms: 444.444ms; }
+.avatar.running .avatar-sprite { background-position-y: 100%; }
 
 /* Passerella e ringhiera: moduli ripetuti in orizzontale */
 .walkway {
@@ -689,7 +705,12 @@ dialog p { color: #adbed7; }
   from { opacity: 0; transform: translateY(16px) scale(.98); }
   to { opacity: 1; transform: none; }
 }
-@keyframes walk { to { transform: rotate(24deg); } }
+@keyframes sprite-frames {
+  to { background-position-x: calc(-384 * var(--u) * 1px); }
+}
+@keyframes idle-frames {
+  to { background-position-x: calc(-384 * var(--u) * 1px); }
+}
 
 .reduced *, .reduced *::before, .reduced *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
