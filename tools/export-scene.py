@@ -10,8 +10,9 @@ from PIL import Image, ImageChops, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / 'assets'
+SPRITES = SRC / 'sprite'
 OUT = ROOT / 'dist' / 'assets'
-CELL = (96, 112)
+CELL = (128, 112)
 CHARACTER_HEIGHT = 96
 
 
@@ -53,44 +54,90 @@ def components(image):
     return figures
 
 
-def export_character():
-    sheet = Image.open(SRC / 'Foglio sprite pixel art_ camminata e corsa.png').convert('RGBA')
-    figures = components(sheet)
-    rows = [sorted((item for item in figures if (item[0][1] < sheet.height / 2) == (row == 0)),
-                   key=lambda item: item[0][0]) for row in range(2)]
-    if [len(row) for row in rows] != [8, 8]:
-        raise ValueError('Attesi 8 fotogrammi di camminata e 8 di corsa; controllare il foglio.')
+def seam(alpha, expected, radius=36):
+    """Trova lo spazio trasparente tra due coppie ragazzo/gatta.
 
-    scale = CHARACTER_HEIGHT / max(box[3] - box[1] for box, _ in rows[0])
-    atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1] * 2))
-    for row_index, row in enumerate(rows):
-        ground = max(box[3] for box, _ in row)
-        for column, (box, figure) in enumerate(row):
-            figure = figure.resize((round(figure.width * scale), round(figure.height * scale)), Image.Resampling.NEAREST)
-            x = column * CELL[0] + (CELL[0] - figure.width) // 2
-            # Mantiene la fase aerea della corsa rispetto a un terreno comune.
-            y = (row_index + 1) * CELL[1] - 4 - round((ground - box[3]) * scale) - figure.height
-            atlas.paste(figure, (x, y))
-    atlas.save(OUT / 'character-motion.webp', lossless=True, method=6)
+    Le pose di corsa adiacenti si toccano: una divisione in celle rettangolari
+    taglierebbe code e scarpe. Il percorso segue i pixel meno opachi.
+    """
+    left, right = max(1, expected - radius), min(alpha.width - 1, expected + radius)
+    pixels = alpha.load()
+    previous = [0] * (right - left)
+    paths = []
+    for y in range(alpha.height):
+        current, parents = [], []
+        for i, x in enumerate(range(left, right)):
+            parent = min(range(max(0, i - 1), min(len(previous), i + 2)), key=lambda j: previous[j])
+            current.append(previous[parent] + pixels[x, y] ** 2 + abs(x - expected) * .05)
+            parents.append(parent)
+        paths.append(parents)
+        previous = current
+    cursor = min(range(len(previous)), key=previous.__getitem__)
+    result = []
+    for parents in reversed(paths):
+        result.append(left + cursor)
+        cursor = parents[cursor]
+    return result[::-1]
 
 
+def motion_rows(sheet):
+    rows = []
+    for row in range(2):
+        image = sheet.crop((0, row * sheet.height // 2, sheet.width, (row + 1) * sheet.height // 2))
+        alpha = image.getchannel('A')
+        boundaries = [[0] * image.height]
+        boundaries += [seam(alpha, round(column * image.width / 8) + 12) for column in range(1, 8)]
+        boundaries += [[image.width] * image.height]
+        frames = []
+        for column in range(8):
+            mask = bytearray(image.width * image.height)
+            for y in range(image.height):
+                start, end = boundaries[column][y], boundaries[column + 1][y]
+                mask[y * image.width + start:y * image.width + end] = b'\xff' * (end - start)
+            figure = image.copy()
+            figure.putalpha(ImageChops.multiply(alpha, Image.frombytes('L', image.size, bytes(mask))))
+            box = figure.getchannel('A').point(lambda a: 255 if a > 16 else 0).getbbox()
+            frames.append((box, figure.crop(box)))
+        rows.append(frames)
+    return rows
 
-def export_idle():
-    sheet = Image.open(SRC / 'Personaggio cyberpunk_ otto fotogrammi di respirazione.png').convert('RGBA')
+
+def rest_frames(name):
+    sheet = Image.open(SPRITES / name).convert('RGBA')
     figures = components(sheet)
     rows = [sorted((item for item in figures if ((item[0][1] + item[0][3]) / 2 < sheet.height / 2) == (row == 0)),
                    key=lambda item: item[0][0]) for row in range(2)]
     if [len(row) for row in rows] != [4, 4]:
-        raise ValueError('Attesi 4 × 2 fotogrammi di respirazione; controllare il foglio.')
-    frames = rows[0] + rows[1]
-    scale = CHARACTER_HEIGHT / max(figure.height for _, figure in frames)
-    atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1]))
-    for column, (_, figure) in enumerate(frames):
-        # Una scala comune conserva il respiro; piedi allineati per evitare saltelli.
-        figure = figure.resize((round(figure.width * scale), round(figure.height * scale)), Image.Resampling.NEAREST)
-        x = column * CELL[0] + (CELL[0] - figure.width) // 2
-        atlas.paste(figure, (x, CELL[1] - 4 - figure.height))
-    atlas.save(OUT / 'character-idle.webp', lossless=True, method=6)
+        raise ValueError(f'Attesi 4 × 2 fotogrammi in {name}.')
+    return rows[0] + rows[1]
+
+
+def export_atlas(rows, name, airborne=False):
+    scale = CHARACTER_HEIGHT / max(figure.height for _, figure in rows[0])
+    atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1] * len(rows)))
+    for row_index, frames in enumerate(rows):
+        ground = max(box[3] for box, _ in frames)
+        for column, (box, figure) in enumerate(frames):
+            # Ancora il ragazzo, non il gruppo: la gatta può passare a destra e
+            # sinistra senza trascinare il corpo. La testa è isolata in alto.
+            head = figure.getchannel('A').crop((0, 0, figure.width, max(1, figure.height // 3)))
+            head_box = head.point(lambda a: 255 if a > 64 else 0).getbbox()
+            anchor = (head_box[0] + head_box[2]) / 2
+            figure = figure.resize((round(figure.width * scale), round(figure.height * scale)), Image.Resampling.NEAREST)
+            x = CELL[0] // 2 - round(anchor * scale)
+            lift = round((ground - box[3]) * scale) if airborne else 0
+            y = CELL[1] - 4 - lift - figure.height
+            if x < 0 or x + figure.width > CELL[0] or y < 0:
+                raise ValueError(f'Fotogramma fuori cella: {name}, {row_index}, {column}')
+            atlas.paste(figure, (column * CELL[0] + x, row_index * CELL[1] + y))
+    atlas.save(OUT / name, lossless=True, method=6)
+
+
+def export_character():
+    sheet = Image.open(SPRITES / 'Animazione pixel cyberpunk con gatto calico.png').convert('RGBA')
+    export_atlas(motion_rows(sheet), 'character-motion.webp', airborne=True)
+    export_atlas([rest_frames('Otto fotogrammi_ gatta calico tra le gambe.png')], 'character-idle.webp')
+    export_atlas([rest_frames('Animazione pixel_ ragazzo accarezza la gatta.png')], 'character-pet.webp')
 
 
 if __name__ == '__main__':
@@ -98,6 +145,5 @@ if __name__ == '__main__':
     background = Image.open(SRC / 'Metropoli cyberpunk tra pianeti lontani.png').convert('RGB')
     background.save(OUT / 'universe.webp', quality=88, method=6)
     export_character()
-    export_idle()
-    for name in ['universe.webp', 'character-motion.webp', 'character-idle.webp']:
+    for name in ['universe.webp', 'character-motion.webp', 'character-idle.webp', 'character-pet.webp']:
         print(f'{name}: {(OUT / name).stat().st_size // 1024} KB')

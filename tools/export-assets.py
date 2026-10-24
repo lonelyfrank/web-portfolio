@@ -109,3 +109,5 @@ if __name__ == '__main__':
 
     # Sfondo panoramico e personaggio con posa ferma, camminata e corsa.
     runpy.run_path(str(ROOT / 'tools' / 'export-scene.py'), run_name='__main__')
+    runpy.run_path(str(ROOT / 'tools' / 'export-props.py'), run_name='__main__')
+    runpy.run_path(str(ROOT / 'tools' / 'export-interactions.py'), run_name='__main__')

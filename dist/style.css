@@ -113,6 +113,39 @@ p { line-height: 1.65; }
   transform: translateX(calc(var(--step) * -12%));
 }
 
+/* Tre piani urbani scorrono a velocità diverse, dietro a tutti i contenuti. */
+.skyline {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 150%;
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  pointer-events: none;
+  mask-image: linear-gradient(transparent, #000 18%);
+}
+.skyline-far {
+  height: clamp(100px, 22vh, 220px);
+  background-image: url('assets/ui/skyline-far.webp');
+  opacity: .35;
+  transform: translateX(calc(var(--step) * -2%));
+}
+.skyline-mid {
+  height: clamp(60px, 12vh, 120px);
+  background-image: url('assets/ui/skyline-mid.webp');
+  opacity: .6;
+  transform: translateX(calc(var(--step) * -5%));
+}
+.skyline-near {
+  height: clamp(70px, 15vh, 150px);
+  background-image: url('assets/ui/skyline-near.webp');
+  background-position-x: 35%;
+  opacity: .7;
+  transform: translateX(calc(var(--step) * -8%));
+}
+.journey .skyline { bottom: calc(var(--controls-h) + var(--road-h)); transition: transform 1.2s var(--ease); }
+
 /* Navi che attraversano il cielo. Senza animazione restano ferme nella loro posizione. */
 .ship {
   position: absolute;
@@ -300,7 +333,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   width: 100%;
   aspect-ratio: 720 / 78;
   margin-bottom: var(--pillar);
-  background: url('assets/ui/platform.webp') center / 100% 100% no-repeat;
+  background: url('assets/ui/dock-deck.webp') center / 100% 100% no-repeat;
 }
 .dock::after {
   content: '';
@@ -316,6 +349,16 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 
 .welcome-stand { display: flex; flex-direction: column; align-items: center; flex: none; width: 300px; }
 .welcome-stand .dock { width: 96%; margin-top: -2px; }
+.welcome-stand .dock::before {
+  content: '';
+  position: absolute;
+  top: 90%;
+  left: 5%;
+  width: 90%;
+  height: var(--pillar);
+  background: url('assets/ui/cable-loop.webp') center top / contain no-repeat;
+  opacity: .8;
+}
 
 /* Terminale: il testo sta dentro lo schermo dell'immagine (coordinate in % del PNG) */
 .welcome {
@@ -346,6 +389,10 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 
 /* About */
 .about-grid { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 24px; align-items: stretch; }
+.skills-workshop { display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; }
+.skills-workshop .skills { gap: 14px 8px; }
+.skills-workshop .skills button { width: 64px; height: 64px; font-size: 20px; }
+.about-grid > .bio, .about-grid > .timeline { align-self: center; }
 
 .skills {
   display: grid;
@@ -396,6 +443,20 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 
 /* Projects */
 .projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; padding: 8px 4px; }
+.district-services {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 620px);
+  height: 70px;
+  margin: 20px auto 0;
+  opacity: .8;
+  pointer-events: none;
+}
+.district-services img { object-fit: contain; width: auto; height: 100%; min-width: 0; }
+.district-services .service-cable { width: 32%; height: auto; }
+.district-services .service-elbow { height: 80%; }
 
 .project {
   --accent: var(--cyan);
@@ -500,13 +561,6 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 
 .closing { padding: 25px; }
 
-/* Antenna e parabola: il "canale di comunicazione" */
-.contact-scene { display: flex; flex-direction: column; align-items: center; flex: none; }
-.contact-props { display: flex; align-items: flex-end; gap: 6px; padding: 0 18px; }
-.contact-props img { display: block; height: auto; }
-.contact-scene .dish { width: 210px; filter: drop-shadow(0 0 18px #ff2e9126); }
-.contact-scene .antenna { width: 78px; }
-.contact-scene .dock { width: 100%; margin-top: -3px; }
 .closing p {
   margin: 18px 0;
   font-family: var(--font-display);
@@ -545,6 +599,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   background: url('assets/ui/bracket.webp') 0 0 / 220px auto space no-repeat;
 }
 .bridge .avatar { left: auto; right: 12%; bottom: 172px; transition: none; }
+.bridge .street-props { bottom: 172px; }
 
 /* ---------- Dialog ---------- */
 
@@ -571,9 +626,9 @@ dialog p { color: #adbed7; }
   bottom: calc(var(--road-h) - 4px);
   left: 0;
   z-index: 2;
-  width: calc(48 * var(--u) * 1px);
+  width: calc(64 * var(--u) * 1px);
   height: calc(56 * var(--u) * 1px);
-  margin-left: calc(-24 * var(--u) * 1px);
+  margin-left: calc(-32 * var(--u) * 1px);
   filter: drop-shadow(0 0 5px #3cd4ff33);
   transition: left var(--travel-ms, 1050ms) linear;
 }
@@ -583,10 +638,14 @@ dialog p { color: #adbed7; }
   height: 100%;
   background: url('assets/character-idle.webp') 0 0 / 800% 100% no-repeat;
   image-rendering: pixelated;
-  /* Otto fotogrammi: un respiro lento ogni 2,4 secondi. */
-  animation: idle-frames 2.4s steps(8) infinite;
+  /* La gatta gira intorno al ragazzo mentre lui riposa. */
+  animation: idle-frames 3.2s steps(8) infinite;
 }
 .avatar.back .avatar-sprite { transform: scaleX(-1); }
+.avatar.petting .avatar-sprite {
+  background-image: url('assets/character-pet.webp');
+  animation: pet-frames 3.2s steps(8) infinite;
+}
 .avatar:is(.walking, .running) .avatar-sprite {
   background-image: url('assets/character-motion.webp');
   background-size: 800% 200%;
@@ -596,6 +655,36 @@ dialog p { color: #adbed7; }
 .avatar.walking { --cycle-ms: 666.667ms; }
 .avatar.running { --cycle-ms: 444.444ms; }
 .avatar.running .avatar-sprite { background-position-y: 100%; }
+
+/* Arredo urbano sullo stesso piano della passerella, dietro ai protagonisti. */
+.street-props { position: absolute; inset: 0 0 calc(var(--road-h) - 4px); pointer-events: none; overflow-x: clip; }
+.street-props img { position: absolute; bottom: 0; width: auto; }
+.street-lamp { height: calc(var(--strip-h) - var(--road-h) + 12px); }
+.lamp-left { left: 2%; }
+.lamp-right { right: 2%; }
+.street-bollard { height: calc(21 * var(--u) * 1px); opacity: .85; }
+.stop-home { left: 13%; }
+.stop-about { left: 33%; }
+.stop-projects { left: 54%; }
+.stop-contact { left: 85%; }
+.street-exhaust {
+  position: absolute;
+  bottom: 0;
+  left: 68%;
+  width: 40px;
+  height: 48px;
+  background: url('assets/ui/exhaust.webp') center bottom / contain no-repeat;
+}
+.steam {
+  position: absolute;
+  left: -12px;
+  bottom: 32px;
+  width: 64px;
+  height: 64px;
+  background: url('assets/ui/steam.webp') 0 0 / 600% 100% no-repeat;
+  opacity: .45;
+  animation: steam-frames 1.8s steps(6) infinite;
+}
 
 /* Passerella e ringhiera: moduli ripetuti in orizzontale */
 .walkway {
@@ -706,11 +795,15 @@ dialog p { color: #adbed7; }
   to { opacity: 1; transform: none; }
 }
 @keyframes sprite-frames {
-  to { background-position-x: calc(-384 * var(--u) * 1px); }
+  to { background-position-x: calc(-512 * var(--u) * 1px); }
 }
 @keyframes idle-frames {
-  to { background-position-x: calc(-384 * var(--u) * 1px); }
+  to { background-position-x: calc(-512 * var(--u) * 1px); }
 }
+@keyframes pet-frames {
+  to { background-position-x: calc(-512 * var(--u) * 1px); }
+}
+@keyframes steam-frames { to { background-position-x: -384px; } }
 
 .reduced *, .reduced *::before, .reduced *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
@@ -738,8 +831,6 @@ dialog p { color: #adbed7; }
   .contact-panel { width: 380px; }
   .closing { padding: 25px 0; }
   .closing p { font-size: clamp(24px, 2.8vw, 44px); }
-  .contact-scene .dish { width: 160px; }
-  .contact-scene .antenna { width: 60px; }
 }
 
 /* Schermi desktop bassi: città più compatta */
@@ -756,6 +847,7 @@ dialog p { color: #adbed7; }
   .journey .panel h3 { margin: 4px 0 12px; }
   .journey .skills { padding: 14px 10px 8px; gap: 12px 6px; }
   .journey .skills button { width: 66px; height: 66px; font-size: 20px; }
+  .journey .district-services { height: 48px; margin-top: 12px; }
   .journey .timeline h4 { margin: 2px 0; }
   .journey .bio p { margin: 8px 0; }
   .journey .timeline div { padding-bottom: 10px; }
@@ -764,16 +856,15 @@ dialog p { color: #adbed7; }
   .journey .summary { -webkit-line-clamp: 2; }
   .journey .contact-panel :is(a, button) { margin-top: 6px; padding: 8px 14px; }
   .journey .closing p { font-size: clamp(26px, 3vw, 40px); margin: 10px 0; }
-  .journey .contact-scene .dock { --pillar: 50px; }
 }
 
 @media (max-width: 900px) {
   .about-grid { display: flex; flex-direction: column; }
+  .skills-workshop, .about-grid > .bio, .about-grid > .timeline { width: 100%; }
   .projects-grid { grid-template-columns: 1fr; }
   .contact-layout { display: block; }
   .contact-panel { width: 100%; }
   .closing { margin: 20px 0; padding: 25px 0; }
-  .contact-scene { margin: 0 auto; width: max-content; }
 }
 
 @media (max-width: 760px) {
@@ -853,4 +944,122 @@ dialog p { color: #adbed7; }
   #motion span { display: none; }
   .progress { gap: 10px; }
   .scenery { width: 260%; background-position: bottom; opacity: .65; }
+  .district-services { height: 48px; gap: 6px; }
+  .district-services .service-elbow { display: none; }
+  .street-bollard { height: 27px; }
+  .street-exhaust { left: 65%; width: 24px; height: 30px; }
+  .steam { width: 40px; height: 40px; left: -8px; bottom: 20px; animation-name: steam-small-frames; }
+  .lamp-left { left: -20px; }
+  .lamp-right { right: -20px; }
 }
+@keyframes steam-small-frames { to { background-position-x: -240px; } }
+
+/* Postazioni: un solo pavimento e una sola scala per tutto il percorso.
+   Coordinate locali in pixel dell'atlante 144 × 136, appoggio y=132. */
+:root { --scene-unit: calc(var(--u) * .5px); }
+.journey { --strip-h: calc(140 * var(--scene-unit) + var(--road-h)); }
+.journey .journey-strip { overflow: hidden; }
+.journey-world {
+  position: absolute;
+  bottom: 0;
+  width: max(100%, calc(1000 * var(--scene-unit)));
+  height: 100%;
+  transform: translateX(var(--camera-x, 0px));
+  transition: transform var(--travel-ms, 1050ms) linear;
+}
+.journey-world .walkway { z-index: 0; height: calc(var(--road-h) + 4 * var(--scene-unit)); }
+.journey-world .street-props { z-index: 1; bottom: var(--road-h); }
+.journey-world .avatar {
+  bottom: calc(var(--road-h) - 4 * var(--scene-unit));
+  z-index: 4;
+}
+.journey-world .avatar.composited { visibility: hidden; }
+.station {
+  position: absolute;
+  width: calc(144 * var(--scene-unit));
+  height: calc(136 * var(--scene-unit));
+  margin-left: calc(-72 * var(--scene-unit));
+  bottom: calc(var(--road-h) - 4 * var(--scene-unit));
+  z-index: 2;
+  --frame: 0;
+  --floor-y: 132;
+}
+.station-home { left: 20%; }
+.station-about { left: 39%; }
+.station-projects { left: 60%; }
+.station-contact { left: 79%; }
+.station-deck {
+  position: absolute;
+  left: calc(-18 * var(--scene-unit));
+  /* The four-pixel top surface is behind the feet; the fascia starts below. */
+  top: calc((var(--floor-y) - 4) * var(--scene-unit));
+  width: calc(180 * var(--scene-unit));
+  aspect-ratio: 720 / 78;
+  background: url('assets/ui/dock-deck.webp') center top / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.station-contact .station-deck {
+  aspect-ratio: 720 / 172;
+  background-image: url('assets/ui/dock-supported.webp');
+}
+.station-equipment, .station-composite { position: absolute; image-rendering: pixelated; }
+.station-about .station-equipment {
+  width: calc(120 * var(--scene-unit));
+  left: calc((var(--equipment-x) - 60) * var(--scene-unit));
+  bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
+}
+.station-contact .station-equipment {
+  width: calc(91 * var(--scene-unit));
+  height: calc(91 * var(--scene-unit));
+  left: calc((var(--equipment-x) - 45.5) * var(--scene-unit));
+  bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
+  /* Static, angled radio pose. Its setup sequence belongs to the composite. */
+  background: url('assets/ui/radio.webp') calc(-91 * var(--scene-unit)) 0 / 800% 100% no-repeat;
+}
+.station-composite {
+  display: none;
+  inset: 0;
+  background-size: 800% 100%;
+  background-position: calc(var(--frame) * -144 * var(--scene-unit)) 0;
+  background-repeat: no-repeat;
+}
+.station-about .station-composite { background-image: url('assets/interaction-about.webp'); }
+.station-contact .station-composite { background-image: url('assets/interaction-contact.webp'); }
+.station.composite-active .station-equipment { visibility: hidden; }
+.station.composite-active .station-composite { display: block; }
+/* Rail segments end outside the whole pad, including the companion's area.
+   Terminals are the original left/right modules; nothing crosses the opening. */
+.route-rails { position: absolute; inset: 0; z-index: 1; }
+.route-rail {
+  position: absolute;
+  bottom: var(--road-h);
+  height: calc(36 * var(--scene-unit));
+  background: url('assets/ui/railing.webp') center bottom / auto 100% repeat-x;
+}
+.route-rail::before, .route-rail::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: calc(18 * var(--scene-unit));
+  height: calc(35 * var(--scene-unit));
+  background: url('assets/ui/rail-end-left.webp') left bottom / auto 100% no-repeat;
+}
+.route-rail::before { left: 0; }
+.route-rail::after { right: 0; background-image: url('assets/ui/rail-end-right.webp'); background-position: right bottom; }
+.route-rail { min-width: 0; }
+.route-rail::before, .route-rail::after { max-width: 50%; }
+.workshop-caption { margin: 0 0 12px; text-align: center; color: var(--cyan); }
+/* Home's welcome terminal remains a content link, outside the resting pad. */
+.journey .welcome-stand { display: none; }
+/* In Reading, the same station nodes sit beside their section, as static poses. */
+.page .station {
+  --scene-unit: 1.5px;
+  position: relative;
+  left: auto;
+  bottom: auto;
+  margin: 12px auto 48px;
+  flex: none;
+}
+.page .station-contact { margin-bottom: 72px; }
+.page .station-projects { display: none; }
+.reduced { scroll-behavior: auto; }

@@ -16,6 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
   <link rel="preload" href="assets/character-motion.webp" as="image">
+  <link rel="preload" href="assets/character-pet.webp" as="image">
   <link rel="stylesheet" href="style.css">
   <script>
     // Sceglie la modalità prima del primo paint, così non c'è sfarfallio di layout.
@@ -34,6 +35,9 @@
   <div class="world" aria-hidden="true">
     <div class="stars"></div>
     <div class="scenery"></div>
+    <div class="skyline skyline-far"></div>
+    <div class="skyline skyline-mid"></div>
+    <div class="skyline skyline-near"></div>
     <img class="ship ship-cargo" src="assets/ui/ship-cargo.webp" alt="" width="640" height="136">
     <img class="ship ship-shuttle" src="assets/ui/ship-shuttle.webp" alt="" width="440" height="121">
     <img class="ship ship-scout" src="assets/ui/ship-scout.webp" alt="" width="300" height="89">
@@ -89,6 +93,8 @@
         <p>Un mix di codice, creatività e curiosità.</p>
       </div>
       <div class="about-grid">
+        <div class="skills-workshop">
+          <p class="workshop-caption micro">DEV / WORKSPACE · <span id="workbench-skill">HELLO, WORLD_</span></p>
         <div class="skills panel" aria-label="Competenze">
           <button type="button" data-skill="HTML / CSS">&lt;/&gt;<small>HTML / CSS</small></button>
           <button type="button" data-skill="JavaScript">JS<small>JavaScript</small></button>
@@ -97,6 +103,7 @@
           <button type="button" data-skill="AEM">A<small>AEM</small></button>
           <button type="button" data-skill="WordPress">W<small>WordPress</small></button>
           <p id="skill-info" aria-live="polite">Seleziona una tecnologia per esplorare.</p>
+        </div>
         </div>
         <article class="panel bio">
           <span class="micro">Profilo / Francesco Spina</span>
@@ -244,6 +251,12 @@
         <span>Scorri i terminali</span>
         <button type="button" id="project-next" aria-label="Progetto successivo">→</button>
       </div>
+      <div class="district-services" aria-hidden="true">
+        <img class="service-junction" src="assets/ui/junction.webp" alt="" width="240" height="173">
+        <img class="service-cable" src="assets/ui/cable-straight.webp" alt="" width="320" height="75">
+        <img class="service-vent" src="assets/ui/vent.webp" alt="" width="240" height="130">
+        <img class="service-elbow" src="assets/ui/cable-elbow.webp" alt="" width="180" height="204">
+      </div>
     </section>
 
     <section id="contact" class="page" aria-labelledby="contact-title">
@@ -266,19 +279,21 @@
           <span class="micro">Il viaggio continua</span>
           <p>NEW IDEAS.<br>NEW WORLDS.<br><em>LET’S CREATE<br>TOGETHER.</em></p>
         </div>
-        <div class="contact-scene" aria-hidden="true">
-          <div class="contact-props">
-            <img class="dish" src="assets/ui/dish.webp" alt="" width="480" height="434">
-            <img class="antenna" src="assets/ui/antenna.webp" alt="" width="195" height="880">
-          </div>
-          <div class="dock"></div>
-        </div>
+
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="bridge" aria-hidden="true">
+      <div class="street-props">
+        <img class="street-lamp lamp-left" src="assets/ui/lamp-single.webp" alt="">
+        <img class="street-lamp lamp-right" src="assets/ui/lamp-double.webp" alt="">
+        <img class="street-bollard stop-home" src="assets/ui/bollard-home.webp" alt="">
+        <img class="street-bollard stop-about" src="assets/ui/bollard-about.webp" alt="">
+        <img class="street-bollard stop-projects" src="assets/ui/bollard-projects.webp" alt="">
+        <img class="street-bollard stop-contact" src="assets/ui/bollard-contact.webp" alt="">
+      </div>
       <div class="railing"></div>
       <div class="avatar">
         <span class="avatar-sprite"></span>
@@ -293,11 +308,29 @@
 
   <!-- Modalità Viaggio: la strada e l'omino -->
   <div class="journey-strip" aria-hidden="true">
-    <div class="railing"></div>
-    <div class="avatar" id="avatar">
-      <span class="avatar-sprite"></span>
+    <div class="journey-world">
+      <div class="street-props">
+        <img class="street-lamp lamp-left" src="assets/ui/lamp-single.webp" alt="">
+        <img class="street-lamp lamp-right" src="assets/ui/lamp-double.webp" alt="">
+      </div>
+      <div class="route-rails"></div>
+      <div class="station station-home" data-station="home"><div class="station-deck"></div></div>
+      <div class="station station-about" data-station="about">
+        <div class="station-deck"></div>
+        <img class="station-equipment" src="assets/ui/workbench.webp" alt="">
+        <div class="station-composite"></div>
+      </div>
+      <div class="station station-projects" data-station="projects" data-asset-status="missing-projector">
+        <div class="station-deck"></div>
+      </div>
+      <div class="station station-contact" data-station="contact">
+        <div class="station-deck"></div>
+        <div class="station-equipment"></div>
+        <div class="station-composite"></div>
+      </div>
+      <div class="avatar" id="avatar"><span class="avatar-sprite"></span></div>
+      <div class="walkway"></div>
     </div>
-    <div class="walkway"></div>
   </div>
 
   <div class="journey-controls">
