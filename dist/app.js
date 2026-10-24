@@ -7,9 +7,9 @@ const SECTIONS = ['home', 'about', 'projects', 'contact'];
 // Footprints and controls are explicit: never infer them from frame alpha bounds.
 const STATIONS = [
   { id: 'home', at: 20, floor: 132, stop: [72, 132], equipment: null, companion: [28, 112, 92, 20], hands: null },
-  { id: 'about', at: 39, floor: 132, stop: [85, 132], equipment: [68, 129], companion: [36, 108, 96, 24], hands: [66, 81], frames: 8, loop: true, staticFrame: 0, actorX: [85, 85, 85, 85, 85, 85, 85, 85] },
-  { id: 'projects', at: 60, floor: 132, stop: [48, 132], equipment: [104, 132], companion: [8, 112, 64, 20], hands: null, missing: 'projector' },
-  { id: 'contact', at: 79, floor: 132, stop: [57, 132], equipment: [103, 131], companion: [10, 102, 28, 30], hands: [81, 114], controls: { panel: [81, 114], tuner: [103, 100] }, frames: 8, loop: false, staticFrame: 7, actorX: [57, 49, 49, 50, 51, 49, 52, 51] },
+  { id: 'about', at: 39, floor: 132, stop: [91, 132], equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91] },
+  { id: 'projects', at: 60, floor: 132, stop: [48, 132], equipment: [104, 132], companion: [8, 112, 64, 20], hands: null },
+  { id: 'contact', at: 79, floor: 132, stop: [61, 132], equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60] },
 ];
 const STOPS = STATIONS.map(station => station.at);
 const MODE_KEY = 'fs-mode';
@@ -53,6 +53,34 @@ let phase = 'waiting';
 let travel = null;
 const FRAME_MS = 400;
 const ALIGN_MS = 100;
+const RADIO_MIN_MS = 30000;
+const RADIO_MAX_MS = 45000;
+const RADIO_FRAME_MS = 250;
+const RADIO_SCAN = [1, 2, 3, 4, 5, 6, 7, 0, 1];
+let radioTimer;
+const radio = $('.station-contact .station-equipment');
+
+function radioAvailable() {
+  return !reduced && !document.hidden && !(isJourney() && current === 3 &&
+    ['approaching', 'aligning', 'interacting'].includes(phase));
+}
+
+function scheduleRadio() {
+  clearTimeout(radioTimer);
+  radio.style.setProperty('--radio-frame', 1);
+  radio.dataset.state = 'resting';
+  if (!radioAvailable()) return;
+  const delay = RADIO_MIN_MS + Math.random() * (RADIO_MAX_MS - RADIO_MIN_MS);
+  radioTimer = setTimeout(() => scanRadio(0), delay);
+}
+
+function scanRadio(index) {
+  if (!radioAvailable()) { scheduleRadio(); return; }
+  if (index === RADIO_SCAN.length) { scheduleRadio(); return; }
+  radio.dataset.state = 'scanning';
+  radio.style.setProperty('--radio-frame', RADIO_SCAN[index]);
+  radioTimer = setTimeout(() => scanRadio(index + 1), RADIO_FRAME_MS);
+}
 
 stationNodes.forEach((node, index) => {
   const station = STATIONS[index];
@@ -110,6 +138,7 @@ function setMode(mode, { save = false } = {}) {
     if (save) pages[current].scrollIntoView({ block: 'start', behavior: 'instant' });
     updateReadProgress();
   }
+  scheduleRadio();
 }
 
 $$('[data-mode]').forEach(button => {
@@ -135,13 +164,13 @@ function stopX(index) {
 
 function placeStations(journey) {
   stationNodes.forEach((node, index) => {
-    node.classList.remove('composite-active');
+    node.classList.remove('interaction-active');
     node.style.setProperty('--frame', STATIONS[index].staticFrame || 0);
     // Move the same node; no duplicate radio, desk, Frank or cat in hidden tabs.
     if (journey || !STATIONS[index].frames) world.insertBefore(node, avatar);
     else {
       pages[index].append(node);
-      node.classList.add('composite-active');
+      node.classList.add('interaction-active');
     }
   });
   layoutRoute(true);
@@ -180,8 +209,8 @@ function cancelStation() {
     avatar.style.left = `${world.clientWidth * station.at / 100 + (station.actorX[interactionFrame] - 72) * unit()}px`;
     avatar.classList.toggle('back', station.id === 'about');
   }
-  stationNodes.forEach(node => node.classList.remove('composite-active'));
-  avatar.classList.remove('composited');
+  stationNodes.forEach(node => node.classList.remove('interaction-active'));
+  avatar.classList.remove('station-owned');
   activeStation = null;
 }
 
@@ -218,6 +247,7 @@ function moveAvatar(index, previous, instant) {
     travel = { index, previous };
     walkTimer = setTimeout(arrive, duration);
   } else arrive();
+  scheduleRadio();
 }
 
 function arrive() {
@@ -230,7 +260,7 @@ function arrive() {
     if (current === 0) scheduleRest();
     return;
   }
-  // Orient before replacing the walking pair with the composite.
+  // Orient before replacing the walking pair with the actor layer.
   avatar.classList.toggle('back', station.id === 'about');
   setPhase('aligning');
   if (reduced || document.hidden) startInteraction(true);
@@ -243,9 +273,10 @@ function startInteraction(staticPose) {
   interactionFrame = staticPose ? station.staticFrame : 0;
   const node = stationNodes[current];
   node.style.setProperty('--frame', interactionFrame);
-  node.classList.add('composite-active');
-  avatar.classList.add('composited');
+  node.classList.add('interaction-active');
+  avatar.classList.add('station-owned');
   setPhase(staticPose ? 'waiting' : 'interacting');
+  scheduleRadio();
   if (!staticPose) stationTimer = setTimeout(advanceInteraction, FRAME_MS);
 }
 
@@ -254,7 +285,7 @@ function advanceInteraction() {
   const station = STATIONS[activeStation];
   if (interactionFrame === station.frames - 1) {
     setPhase('waiting');
-    if (!station.loop) return; // Radio: setup and stand-up play once.
+    if (!station.loop) { scheduleRadio(); return; } // Setup and stand-up play once.
   }
   interactionFrame = (interactionFrame + 1) % station.frames;
   stationNodes[activeStation].style.setProperty('--frame', interactionFrame);
@@ -289,6 +320,7 @@ document.addEventListener('visibilitychange', () => {
     }
   } else if (isJourney() && phase === 'aligning') arrive();
   else scheduleRest();
+  scheduleRadio();
 });
 
 let resizeFrame;
@@ -419,6 +451,7 @@ function setReduced(value) {
       stationTimer = setTimeout(advanceInteraction, FRAME_MS);
     } else scheduleRest();
   } else scheduleRest();
+  scheduleRadio();
 }
 $('#motion').addEventListener('click', () => setReduced(!reduced));
 reduceQuery.addEventListener('change', e => setReduced(e.matches));

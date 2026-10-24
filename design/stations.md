@@ -1,80 +1,82 @@
-# Postazioni: audit e registrazione
+# Postazioni: asset e keypoint
 
-Verificati gli originali PNG e gli atlanti WebP prima dell'intervento.
+## Asset attuali
 
-| Postazione | Asset effettivamente disponibile | Uso |
+| Postazione | Originale | Rendering |
 | --- | --- | --- |
-| Home | Riposo, carezza, camminata/corsa in `assets/sprite/` | Conservati, senza attrezzatura sulla zona di sosta |
-| About | `Animazione cyberpunk_ Frank e il gatto.png`, 1774 × 887 | Otto pose composite: scrivania, Frank alla tastiera, calica attorno alle gambe |
-| Contact | `Tecnico e gatto regolano la parabola.png`, 1774 × 887 | Otto pose composite: preparazione, pannello, regolazione, ritorno in piedi; nessun ciclo di preparazione |
-| Projects | Nessun proiettore o foglio di interazione trovato | Piazzola libera, riferimenti pronti, solo animazione base dei protagonisti |
+| Home | Riposo, carezza, camminata/corsa in `assets/sprite/` | Nessuna attrezzatura sulla zona di sosta |
+| About | `Frank e il gatto calico animato.png` (1774 × 887) | Solo Frank e gatta, sopra la scrivania statica |
+| Contact | `Frank e il gatto calico, otto pose.png` (1774 × 887) | Solo Frank e gatta, sopra il modulo radio persistente |
+| Projects | `Proiettore olografico cyberpunk in pixel art.png` | Base del proiettore, nessuna interazione inventata |
 
-I fogli base erano già esportati e animati; i due compositi non erano usati.
-La scrivania era nel contenuto About e la radio nel contenuto Contact, separate
-dalla passerella. La ringhiera era una fascia continua. Ora le postazioni sono
-figlie dello stesso mondo dell'avatar; l'area dei contenuti resta indipendente.
+I precedenti compositi, che includevano anche l'attrezzatura, sono stati
+sostituiti dagli asset aggiornati. Gli atlanti `interaction-*.webp` ora
+contengono solo i personaggi: scrivania e radio non vengono mai nascoste,
+clonate o sostituite. Il cambio di sagoma delle attrezzature è eliminato.
 
-## Coordinate
+## Riferimenti locali
 
-Il canvas di ogni composito è 144 × 136, con pavimento a y=132 e margine
-orizzontale di 8 pixel. La quota della passerella coincide con y=132. Il piano
-superiore dei pontili comincia quattro pixel più indietro/in alto; il bordo
-frontale e i supporti si sviluppano sotto i piedi.
+Canvas 144 × 136; pavimento y=132. Il piano dei pontili inizia quattro pixel
+più indietro/in alto; fascia frontale e supporti restano sotto i piedi.
 
-| Postazione | Arresto Frank | Appoggio attrezzatura | Area calica (x, y, w, h) | Comandi |
+| Postazione | Arresto Frank | Appoggio attrezzatura | Area calica (x,y,w,h) | Comandi |
 | --- | --- | --- | --- | --- |
 | Home | 72,132 | — | 28,112,92,20 | — |
-| About | 85,132 | 68,129 | 36,108,96,24 | Tastiera 66,81 |
-| Projects | 48,132 | Riservato 104,132 | 8,112,64,20 | Da registrare sull'asset mancante |
-| Contact | 57,132 | 103,131 | 10,102,28,30 | Pannello 81,114; regolazione 103,100 |
+| About | 91,132 | 68,129 | 36,108,96,24 | Tastiera 68,82 |
+| Projects | 48,132 | 104,132 | 8,112,64,20 | Nessuna sequenza PG disponibile |
+| Contact | 61,132 | 111,131 | 8,98,80,34 | Pannello 87,111; manopola 123,103 |
 
-Gli appoggi dell'attrezzatura sono arretrati sul piano superiore. La fascia
-frontale non viene usata come maschera dei protagonisti. L'interazione composita
-contiene già gli incroci davanti/dietro delle zampe e delle gambe.
+La scrivania è larga 140 pixel locali: la tastiera coincide con le mani del
+nuovo foglio. La radio passa da 91 a 102 pixel (+12,1%), mantenendo l'appoggio.
+Le misure seguono tutte la stessa `--scene-unit` responsive.
 
-`tools/export-interactions.py` usa un solo rapporto di scala per ciascun foglio,
-normalizzato sui 96 pixel di Frank in piedi. La seconda riga della radio inizia
-dopo il corridoio trasparente a y=470, non a metà altezza: il taglio a metà
-includeva frammenti dei piedi della prima riga. Non si usa il bounding box del
-contenuto per riposizionare ogni frame. I piccoli spostamenti disegnati nelle
-pose originali sono conservati; gli appoggi di uscita di Frank sono espliciti.
+`tools/export-interactions.py` usa un unico rapporto di scala per ogni foglio:
+96/438 per About e 96/380 per Contact, così Frank in piedi resta alto 96 pixel.
+Le righe About hanno origine y=0/443 e pavimento locale y=442/443; Contact ha
+origine y=0/470 e pavimento y=460/396. I tagli evitano residui della riga sopra.
+Ogni cella è isolata prima dell'inserimento nell'atlante.
 
-## Sequenza e interruzioni
+About mantiene la stessa origine x=36 in tutti i frame. Per Contact i keypoint
+manuali `CONTACT_HANDS` e `CONTACT_TARGETS` registrano il personaggio sul pannello
+o sulla manopola. Cambia soltanto la traslazione orizzontale dei personaggi;
+scala e pavimento restano costanti, anche nelle pose accovacciate. Non vengono
+calcolati centri o scale dal bounding box della sagoma animata. Gli appoggi di
+uscita di Frank, inclusi quelli vicino alla manopola, sono in `STATIONS.actorX`.
+Frank e la gatta restano una coppia nello stesso asset: le sovrapposizioni fra
+zampe e gambe sono quelle disegnate nel foglio.
 
-- Avvicinamento: camminata/corsa esistente e quota costante. La durata dipende
-  dalla distanza effettiva, anche quando una navigazione viene interrotta.
-- Allineamento: arresto sul riferimento locale e orientamento verso i comandi.
-- Interazione: un solo composito visibile, attrezzatura statica e avatar nascosti.
-- Attesa: About continua il ciclo disponibile; Contact mantiene il frame 7.
-- Uscita: cancellazione immediata dei timer, ripristino degli elementi statici
-  e ripartenza dell'avatar dalla posa corrente. Nessun blocco di navigazione.
+## Sequenza e scansione radio
 
-La modalità Lettura sposta i nodi esistenti nelle sezioni e mostra pose statiche.
-Il movimento ridotto seleziona About frame 0 e Contact frame 7. Nessun nuovo
-fotogramma o effetto decorativo è stato generato.
+1. Avvicinamento con camminata/corsa esistente e arresto sul riferimento locale.
+2. Allineamento e sostituzione del solo avatar itinerante con il livello animato.
+3. Interazione: ciclo About; una sola sequenza Contact, poi posa finale.
+4. Attesa: gli oggetti restano negli stessi nodi e nelle stesse posizioni.
+5. Uscita immediata e ripresa del percorso, annullando i timer dell'interazione.
 
-## Limiti degli asset e materiale necessario
+Il radar ha un timer indipendente: pausa casuale fra 30.000 e 45.000 ms,
+scansione singola di 2.250 ms (frame 1,2,3,4,5,6,7,0,1), poi nuova pausa.
+L'immagine resta sulla posa inclinata 1 fra le scansioni. La base del modulo
+mantiene posizione e dimensioni; il foglio originale anima disco e segnale.
 
-1. **Proiettore assente.** Servono il suo sprite statico trasparente, la quota
-   della base, il punto dell'emettitore e (solo quando disponibile) l'eventuale
-   foglio di interazione. Il terminale Home e il piedistallo per monitor non
-   sono proiettori e non vengono usati come sostituti.
-2. **Posa della calica in Contact.** Il composito la mostra ferma a terra accanto
-   a Frank, con una posa sulle zampe; non contiene una sequenza distinta di
-   seduta. Per una seduta inequivocabile occorre una variante del composito
-   Contact con la gatta seduta negli stessi riferimenti, oppure livelli separati
-   compatibili. La posa originale è mantenuta, senza inventare animazioni.
-3. **Attrezzature statiche e composite non identiche.** Gli originali separati
-   di scrivania e radio hanno proporzioni interne diverse dalle versioni nei
-   compositi. Pavimento e appoggi sono registrati, ma monitor/tastiera e disco
-   possono cambiare sagoma nel passaggio. Per una sostituzione perfettamente
-   identica serve una lastra statica dell'attrezzatura ricavata dallo stesso
-   disegno del composito, senza personaggi. Non vengono deformati gli originali
-   per nascondere questa differenza.
+Avvicinamento/allineamento/interazione Contact sospendono la scansione e
+ripristinano subito la posa di riferimento per mantenere il contatto con i
+comandi. La scansione può riprendere durante l'attesa finale. Movimento ridotto
+e documento nascosto cancellano il timer; la ripresa attende un nuovo intervallo
+completo, senza recuperare scansioni arretrate. Anche in Lettura la scansione
+occasionale rispetta movimento ridotto e visibilità del documento.
+
+## Limiti degli originali
+
+La gatta Contact mantiene la posa fornita nel nuovo foglio: ferma sulle zampe,
+non una seduta distinta. La coppia si sposta insieme durante la registrazione
+sui comandi. Un'eventuale gatta seduta completamente indipendente richiede un
+livello dedicato. Non è disponibile un'animazione di Frank col proiettore.
 
 ## Verifica
 
-`tools/check-stations.cjs` verifica nel browser quota e aperture, assenza di
-duplicazioni durante le interazioni, ciclo About, sequenza Contact non ripetuta,
-cambi rapidi di tab, movimento ridotto, Lettura e layout da 1440 a 320 pixel.
-Le schermate desktop/mobile sono state ispezionate anche visivamente.
+`tools/check-stations.cjs` verifica quota, aperture, attrezzature persistenti,
+un solo livello dei personaggi, ciclo About, sequenza Contact non ripetuta,
+cambi rapidi di tab, Lettura, movimento ridotto e viewport 1440/1024/390/320 px.
+Con l'orologio del browser controlla anche pausa di 30 e 45 secondi, scansione
+singola, stabilità del riquadro della radio e interruzione durante il lavoro.
+I keyframe Contact sono stati controllati anche con screenshot ravvicinati.

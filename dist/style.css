@@ -973,7 +973,7 @@ dialog p { color: #adbed7; }
   bottom: calc(var(--road-h) - 4 * var(--scene-unit));
   z-index: 4;
 }
-.journey-world .avatar.composited { visibility: hidden; }
+.journey-world .avatar.station-owned { visibility: hidden; }
 .station {
   position: absolute;
   width: calc(144 * var(--scene-unit));
@@ -1002,31 +1002,39 @@ dialog p { color: #adbed7; }
   aspect-ratio: 720 / 172;
   background-image: url('assets/ui/dock-supported.webp');
 }
-.station-equipment, .station-composite { position: absolute; image-rendering: pixelated; }
+.station-equipment, .station-actors { position: absolute; image-rendering: pixelated; }
 .station-about .station-equipment {
-  width: calc(120 * var(--scene-unit));
-  left: calc((var(--equipment-x) - 60) * var(--scene-unit));
+  width: calc(140 * var(--scene-unit));
+  left: calc((var(--equipment-x) - 70) * var(--scene-unit));
   bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
 }
 .station-contact .station-equipment {
-  width: calc(91 * var(--scene-unit));
-  height: calc(91 * var(--scene-unit));
-  left: calc((var(--equipment-x) - 45.5) * var(--scene-unit));
+  --radio-size: calc(102 * var(--scene-unit));
+  width: var(--radio-size);
+  height: var(--radio-size);
+  left: calc((var(--equipment-x) - 51) * var(--scene-unit));
   bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
-  /* Static, angled radio pose. Its setup sequence belongs to the composite. */
-  background: url('assets/ui/radio.webp') calc(-91 * var(--scene-unit)) 0 / 800% 100% no-repeat;
+  /* A single scan is scheduled by JS, then the angled pose is held. */
+  background: url('assets/ui/radio.webp') calc(var(--radio-frame, 1) * -1 * var(--radio-size)) 0 / 800% 100% no-repeat;
 }
-.station-composite {
+.station-actors {
   display: none;
   inset: 0;
   background-size: 800% 100%;
   background-position: calc(var(--frame) * -144 * var(--scene-unit)) 0;
   background-repeat: no-repeat;
 }
-.station-about .station-composite { background-image: url('assets/interaction-about.webp'); }
-.station-contact .station-composite { background-image: url('assets/interaction-contact.webp'); }
-.station.composite-active .station-equipment { visibility: hidden; }
-.station.composite-active .station-composite { display: block; }
+.station-about .station-actors { background-image: url('assets/interaction-about.webp'); }
+.station-contact .station-actors { background-image: url('assets/interaction-contact.webp'); }
+/* Equipment stays mounted through approach, interaction, wait and exit. */
+.station-equipment { z-index: 1; }
+.station-actors { z-index: 2; }
+.station-projects .station-equipment {
+  width: calc(80 * var(--scene-unit));
+  left: calc((var(--equipment-x) - 40) * var(--scene-unit));
+  bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
+}
+.station.interaction-active .station-actors { display: block; }
 /* Rail segments end outside the whole pad, including the companion's area.
    Terminals are the original left/right modules; nothing crosses the opening. */
 .route-rails { position: absolute; inset: 0; z-index: 1; }

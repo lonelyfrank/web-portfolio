@@ -1,8 +1,8 @@
-"""Export registered composites. Coordinates are measured in the source sheets.
+"""Register actor-only sheets by authored floor/hand keypoints, never alpha bounds.
 
-No per-frame bounding-box centering, scaling or head tracking: the desk/radio
-and the floor define the coordinate system, including when Frank crouches.
-Run with python3 tools/export-interactions.py (Pillow).
+A fixed scale preserves Frank's standing height (96px). Equipment is rendered
+separately and never replaced. Source keypoints are measured in each grid cell.
+Run: python3 tools/export-interactions.py (Pillow).
 """
 from pathlib import Path
 from PIL import Image
@@ -12,31 +12,50 @@ SRC = ROOT / 'assets'
 OUT = ROOT / 'dist/assets'
 CELL = (144, 136)
 FLOOR = 132
+# Floor registration is constant across each row. Hand targets translate the
+# Contact actor only, to the panel or the left rim of the tuning control.
+CONTACT_HANDS = [None, (300, 376), (322, 374), (310, 331), (320, 270), (333, 291), None, None]
+CONTACT_TARGETS = [None, (87, 111), (87, 111), (123, 103), (123, 103), (87, 105), None, None]
 
 
-def composite(source, name, scale, row_origins, ground):
+def actors(source, name, scale, rows, ground, origins):
     sheet = Image.open(SRC / 'sprite' / source).convert('RGBA')
     atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1]))
     for index in range(8):
         row, column = divmod(index, 4)
-        # Registered grid, not the bounds of the changing silhouette.
-        x, y = column * 444, row_origins[row]
-        end = row_origins[row + 1] if row == 0 else sheet.height
+        x, y = column * 444, rows[row]
+        end = rows[row + 1] if row == 0 else sheet.height
         frame = sheet.crop((x, y, min(x + 444, sheet.width), end))
         frame = frame.resize((round(frame.width * scale), round(frame.height * scale)), Image.Resampling.NEAREST)
-        atlas.paste(frame, (index * CELL[0] + 8, FLOOR - round(ground[row] * scale)))
+        # Paste into a separate cell so transparent margins cannot spill into
+        # adjacent frames. No per-frame bounding-box or head recentering.
+        cell = Image.new('RGBA', CELL)
+        cell.paste(frame, (round(origins[index]), FLOOR - round(ground[row] * scale)))
+        atlas.paste(cell, (index * CELL[0], 0))
     atlas.save(OUT / f'interaction-{name}.webp', lossless=True, method=6)
 
 
 def export_interactions():
     OUT.mkdir(parents=True, exist_ok=True)
-    composite('Animazione cyberpunk_ Frank e il gatto.png', 'about', 96 / 354, (0, 440), (414, 414))
-    composite('Tecnico e gatto regolano la parabola.png', 'contact', 96 / 336, (0, 470), (444, 386))
-    # Existing side terminals from the modular dock sheet, without stretching.
+    actors('Frank e il gatto calico animato.png', 'about', 96 / 438,
+           (0, 443), (442, 443), [36] * 8)
+    scale = 96 / 380
+    origins = [target[0] - hand[0] * scale if hand else 4
+               for hand, target in zip(CONTACT_HANDS, CONTACT_TARGETS)]
+    for index, (hand, target) in enumerate(zip(CONTACT_HANDS, CONTACT_TARGETS)):
+        if hand:
+            floor = (460, 396)[index // 4]
+            # Keep feet planted; the hand must overlap the control's 4px radius.
+            assert abs(FLOOR - (floor - hand[1]) * scale - target[1]) <= 4
+    actors('Frank e il gatto calico, otto pose.png', 'contact', scale,
+           (0, 470), (460, 396), origins)
     sheet = Image.open(SRC / 'Banchine industriali modulari in pixel art.png').convert('RGBA')
     for name, box in [('left', (48, 810, 383, 960)), ('right', (1152, 810, 1492, 960))]:
-        frame = sheet.crop(box)
-        frame.save(OUT / 'ui' / f'rail-end-{name}.webp', lossless=True, method=6)
+        sheet.crop(box).save(OUT / 'ui' / f'rail-end-{name}.webp', lossless=True, method=6)
+    # Existing projector asset, base only. No invented character interaction.
+    projector = Image.open(SRC / 'Proiettore olografico cyberpunk in pixel art.png').convert('RGBA')
+    projector.crop((25, 648, 746, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
+        OUT / 'ui/projector.webp', lossless=True, method=6)
 
 
 if __name__ == '__main__':

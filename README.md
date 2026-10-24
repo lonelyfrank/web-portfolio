@@ -29,7 +29,7 @@ design/               sfondo precedente, conservato come riferimento
 tools/export-assets.py
 tools/export-scene.py  esportazione del nuovo sfondo e del personaggio
 tools/export-props.py  skyline, banco da lavoro e arredo urbano
-tools/export-interactions.py  compositi registrati e terminali delle ringhiere
+tools/export-interactions.py  sprite registrati tramite keypoint, proiettore e terminali
 tools/check-stations.cjs  regressioni browser sulle postazioni
 ```
 
@@ -65,9 +65,10 @@ usano i pontili esistenti; Contact ha i supporti sotto il piano. La ringhiera
 è suddivisa in segmenti esterni alle piazzole e termina con i moduli laterali
 originali. Home resta libera. Gli oggetti decorativi sono dietro ai soggetti.
 
-About e Contact usano fogli compositi: Frank, gatta e attrezzatura sono una sola
-immagine durante l'interazione. Il nodo statico e l'avatar itinerante vengono
-nascosti insieme, quindi ripristinati all'uscita. About esegue un ciclo di 8
+About e Contact usano i nuovi fogli con soli Frank e gatta. Scrivania e radio
+rimangono montate e visibili durante tutte le fasi: cambia solo il livello dei
+personaggi, registrato tramite i keypoint di piedi e mani. L'avatar itinerante
+viene nascosto durante l'interazione e ripristinato all'uscita. About esegue un ciclo di 8
 fotogrammi; Contact esegue una sola sequenza e attende sull'ultima posa.
 In Lettura gli stessi nodi vengono spostati nelle rispettive sezioni, con pose
 statiche; non vengono clonati. Il footer conserva riposo e carezza.
@@ -85,9 +86,14 @@ uscita. Un cambio tab interrompe i timer e riparte dall'appoggio della posa
 corrente. Il movimento ridotto mostra una posa statica. La pagina nascosta
 sospende i timer delle interazioni senza ripetere la preparazione della radio.
 
-Vedi [audit degli asset e riferimenti](design/stations.md) per i limiti degli
-originali e gli asset ancora necessari. **Il proiettore non è presente:** la
-piazzola Projects e i suoi riferimenti sono predisposti, senza sostituti.
+La radio è larga 102 pixel locali (prima 91, circa +12%). Una scansione di 2,25
+secondi è seguita da una pausa casuale di 30–45 secondi. Il ciclo autonomo si
+sospende durante avvicinamento e lavoro di Frank alla radio, con movimento ridotto
+e quando il documento è nascosto; riprende in attesa senza ripetere la preparazione.
+
+Il proiettore ora disponibile è collocato sulla piazzola Projects; non viene
+aggiunta un'interazione di Frank non disponibile. Vedi l'[audit degli asset e
+riferimenti](design/stations.md) per la registrazione e i limiti degli originali.
 
 ## Anteprima in locale
 
@@ -105,6 +111,6 @@ PORTFOLIO_URL=http://127.0.0.1:8080 node tools/check-stations.cjs
 
 Se Playwright o Chromium sono esterni al progetto, impostare `PLAYWRIGHT_MODULE`
 e `BROWSER_EXECUTABLE` ai rispettivi percorsi. I controlli verificano quota,
-aperture della ringhiera, proprietà esclusiva dei compositi, navigazione rapida,
-radio non ripetuta, ciclo About, modalità Lettura, movimento ridotto e viewport
+aperture della ringhiera, proprietà esclusiva degli sprite e attrezzature persistenti, navigazione rapida,
+interazione radio non ripetuta, scansioni a intervalli di 30–45s, ciclo About, modalità Lettura, movimento ridotto e viewport
 1440, 1024, 390 e 320 pixel. Screenshot di verifica in `/tmp/stations-*-verified.png`.
