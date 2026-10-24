@@ -53,7 +53,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       name => document.querySelector('.journey-strip').dataset.phase === name, name, { timeout });
     const contentFollows = async (id, backwards = false) => {
       const snapshot = () => page.evaluate(id => ({
-        panel: document.querySelector(`#${id} .scenic`).getBoundingClientRect().left,
+        panel: document.querySelector(`#${id} .scenic, #${id} .about-layout`).getBoundingClientRect().left,
         station: document.querySelector(`[data-station="${id}"]`).getBoundingClientRect().left,
       }), id);
       const before = await snapshot();
@@ -78,8 +78,8 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       assert.ok(lifts.from && lifts.from[0] < lifts.from.at(-1), `Outgoing lift must descend immediately: ${JSON.stringify(lifts)}`);
       assert.ok(lifts.to && lifts.to[0] > lifts.to.at(-1), `Destination must rise during departure: ${JSON.stringify(lifts)}`);
       assert.equal(await page.locator(`#${to}`).getAttribute('data-stage'), 'on', 'Text begins appearing with its lift');
-      assert.equal(await page.locator(`#${to} .scenic`).first().evaluate(n => n.inert), false);
-      const names = { about: ['about'], projects: ['index', 'feature'], contact: ['contact'] }[to] || [];
+      assert.equal(await page.locator(`#${to} .scenic, #${to} .about-layout, #${to} .contact-layout`).first().evaluate(n => n.inert), false);
+      const names = { projects: ['index', 'feature'] }[to] || [];
       assert.deepEqual(await page.locator('.scene-link.on').evaluateAll(nodes => nodes.map(n => n.dataset.link).sort()), names.sort(),
         'Only the destination connections turn on as its lift rises');
       assert.equal(await page.locator(`[data-station="${to}"]`).evaluate(n => n.classList.contains('interaction-active')), false,
@@ -174,7 +174,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
           shown,
           visibleSets,
           overflow: document.documentElement.scrollWidth > innerWidth,
-          scenicInert: [...document.querySelectorAll(`#${id} .scenic`)].some(n => n.inert),
+          scenicInert: [...document.querySelectorAll(`#${id} .scenic, #${id} .about-layout`)].some(n => n.inert),
           contentOffset: parseFloat(getComputedStyle(document.querySelector(`#${id}`)).translate) || 0,
         };
       }, id);
@@ -191,6 +191,10 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     const fits = () => page.evaluate(() => {
       const main = document.querySelector('main').getBoundingClientRect();
       const active = document.querySelector('.page.active');
+      // Desktop Contact fits above the scene without a vertical scroll range.
+      if (active.id === 'contact') return active.scrollWidth <= active.clientWidth + 1
+        && active.scrollHeight <= active.clientHeight + 1
+        && main.bottom <= document.querySelector('.journey-strip').getBoundingClientRect().top + 1;
       return active.scrollHeight <= active.clientHeight + 1 && [...active.querySelectorAll('.scenic')].every(n => {
         const r = n.getBoundingClientRect();
         return r.top >= main.top - 1 && r.bottom <= main.bottom + 1;
@@ -206,13 +210,13 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await gait('walking');
     await overlappingLifts('home', 'about');
     await page.waitForTimeout(200);
-    assert.ok(await page.locator('#about .scenic').evaluate(n => parseFloat(getComputedStyle(n).opacity) > 0));
+    assert.ok(await page.locator('#about .about-layout').evaluate(n => parseFloat(getComputedStyle(n).opacity) > 0));
     assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('walking')), true);
     await phase('interacting');
     await stage('about');
     assert.equal(await page.locator('.station-about .station-actors').evaluate(n => getComputedStyle(n).display), 'block');
     assert.equal(await page.locator('#avatar').evaluate(n => getComputedStyle(n).visibility), 'hidden');
-    assert.equal(await page.locator('[data-link="about"]').evaluate(n => n.classList.contains('on')), true);
+    assert.equal(await page.locator('[data-link="about"]').count(), 0);
     assert.ok(await fits());
     // Desk keyboard stays under the authored hands: equipment never moves at rest.
     const desk = await page.locator('.station-about .station-equipment').boundingBox();
@@ -262,7 +266,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     // Backwards: world and character turn around.
     await nav('about');
     await gait('walking', true);
-    await contentFollows('about', true);
+    assert.equal(await page.locator('#about').evaluate(n => getComputedStyle(n).translate), 'none');
     await settled('about');
     await stage('about');
 
@@ -384,9 +388,9 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await page.locator('[data-mode="read"]').click();
     assert.equal(await page.locator('#about > .station-about').count(), 1);
     assert.equal(await page.locator('#contact > .station-contact').count(), 1);
-    assert.equal(await page.locator('.about-grid > article:visible').count(), 3);
+    assert.equal(await page.locator('.about-layout > :visible').count(), 3);
     assert.equal(await page.locator('.project:visible').count(), 4);
-    assert.equal(await page.locator('.view-tabs').isVisible(), false);
+    assert.equal(await page.locator('#about [role="tab"], #about [role="tabpanel"]').count(), 0);
     assert.equal(await page.locator('.journey-strip').isVisible(), false);
     await page.locator('[data-mode="journey"]').click();
     await settled('about');

@@ -299,6 +299,8 @@ h3 { font-size: 20px; margin: 12px 0 22px; }
   Lo sfondo resta dentro la cornice (padding-box) per non uscire dagli angoli smussati.
 */
 .panel { position: relative; }
+.panel > .micro { display: block; }
+.panel > .micro + h3 { margin-top: 10px; }
 .panel, dialog {
   padding: 24px;
   border: 12px solid transparent;
@@ -408,57 +410,58 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .welcome strong { font-family: var(--font-display); font-size: 19px; line-height: 1.2; color: var(--cyan); text-shadow: 0 0 12px #00daff66; }
 .welcome-next { font-size: 12px; color: var(--body); }
 
-/* About */
-/* Tre pannelli con lo stesso schema (etichetta, titolo, contenuto) e la stessa altezza. */
-.about-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
-.panel > .micro { display: block; }
-.panel > .micro + h3 { margin-top: 10px; }
-
-.skills-panel { display: flex; flex-direction: column; }
-.skills-panel #workbench-skill { color: var(--cyan); }
-.skills {
+/* About: composizione aperta, indipendente dalla scrivania. */
+.about-layout {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px 8px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .85fr);
+  gap: clamp(28px, 3.8vw, 60px);
+  align-items: start;
 }
-.skills button {
-  justify-self: center;
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  border-color: #2fc3f9;
-  background: #05152cbb;
-  font-family: var(--font-display);
-  font-size: 21px;
-  line-height: 1.1;
-  box-shadow: 0 0 30px #009dff20;
-  transition: transform .2s, box-shadow .2s;
+.about-layout > * { min-width: 0; }
+#about-title {
+  font-size: clamp(56px, 7.4vw, 112px);
+  line-height: .95;
+  letter-spacing: -4px;
+  margin: 0 0 28px;
+  font-weight: 700;
 }
-.skills button:hover, .skills button.selected {
-  transform: translateY(-6px);
-  box-shadow: 0 0 28px #00daff60;
-  border-color: var(--pink);
-}
-.skills small { display: block; font-size: 10px; padding-top: 4px; }
-#skill-info { min-height: 3.3em; margin: 18px 0 0; font-size: 14px; line-height: 1.65; color: var(--body); }
-
-.bio p { color: var(--body); font-size: 15px; }
+.about-bio p:not(.eyebrow) { max-width: 42ch; color: var(--body); font-size: 15px; margin: 0 0 16px; }
+.about-bio p.about-lead { color: var(--text); font-size: clamp(19px, 1.5vw, 22px); line-height: 1.45; font-weight: 500; }
 .text-link { display: block; margin-top: 22px; font-size: 13px; color: var(--cyan); }
-
-.timeline div { position: relative; padding: 0 0 20px 20px; border-left: 1px solid var(--line-strong); }
-.timeline div::before {
-  content: '';
-  position: absolute;
-  left: -5px;
-  top: 4px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--pink);
+.about-layout h3 { margin: 3px 0 32px; font-size: 16px; letter-spacing: 1.5px; text-transform: uppercase; }
+.about-layout h3::before { content: ''; display: inline-block; width: 6px; height: 6px; margin: 0 10px 3px 0; background: var(--cyan); }
+.about-education h3::before { background: var(--pink); }
+.skill-orbits {
+  --bubble-size: 88px;
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px 14px;
+  max-width: 420px;
 }
-.timeline small { font-family: var(--font-display); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
-.timeline h4 { font-size: 16px; margin: 4px 0; }
-.timeline p { font-size: 13px; margin: 0; color: var(--muted); }
+.skill-orbits li { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 0; }
+.skill-orb { display: block; width: min(var(--bubble-size), 100%); aspect-ratio: 1; flex: none; }
+.skill-orb img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+/* Names remain accessible without visible subtitles. */
+.skill-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Ten compact bubbles; births grow while neighbouring positions redistribute. */
+.skill-orbits.is-floating { position: relative; display: block; height: 340px; padding: 0; overflow: clip; }
+.skill-orbits.is-floating li { position: absolute; top: 0; left: 0; width: var(--bubble-size); opacity: 0; pointer-events: none; }
+.skill-orbits.is-floating li[data-alive] { will-change: transform, opacity; }
+.skill-orbits.is-floating .skill-orb img { transform: scale(var(--birth-scale, 1)); }
+.skill-orbits.is-floating .skill-orb { animation: skill-float 7s ease-in-out infinite; }
+.skill-orbits.is-floating li:nth-child(2n) .skill-orb { animation-duration: 8.2s; animation-delay: -2.3s; }
+.skill-orbits.is-floating li:nth-child(3n) .skill-orb { animation-duration: 7.6s; animation-delay: -4.1s; }
+.skill-orbits.is-paused .skill-orb { animation-play-state: paused; }
+@keyframes skill-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+.education-course { border-left: 1px solid var(--line-strong); padding-left: 20px; }
+.education-provider { margin: 0 0 8px; color: var(--cyan); font-family: var(--font-display); font-size: 14px; }
+.education-course h4 { font-size: clamp(22px, 2vw, 28px); line-height: 1.2; margin: 0 0 22px; }
+.education-course ul { margin: 0; padding-left: 17px; color: var(--body); font-size: 14px; }
+.education-course li { padding-left: 3px; margin-bottom: 12px; }
+.education-course li::marker { color: var(--dim); }
 
 /* Projects */
 .projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; padding: 8px 4px; }
@@ -559,39 +562,64 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 
 .gallery-controls { display: none; }
 
-/* Contact */
-.contact-layout { display: flex; justify-content: space-between; align-items: center; gap: 50px; }
-.contact-panel { width: 440px; max-width: 100%; padding: 24px; }
-.contact-panel a,
-.contact-panel button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  margin-top: 9px;
-  padding: 12px 16px;
-  border: 1px solid var(--line);
-  background: #06142cb3;
-  text-align: left;
-  font-size: 15px;
+/* Contact: contenuti aperti sopra la scena, satelliti in ordine di lettura. */
+.contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+  gap: clamp(32px, 4vw, 64px);
+  align-items: start;
 }
-.contact-panel a:hover, .contact-panel button:hover { border-color: var(--cyan); }
-.contact-panel .channel { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
-.contact-panel .channel i { width: 16px; font-style: normal; text-align: center; color: var(--cyan); }
-.contact-panel .value { font-size: 13px; color: var(--muted); }
-
-.closing { padding: 25px; }
-
-.closing p {
-  margin: 18px 0;
+.contact-layout > * { min-width: 0; }
+#contact-title {
+  font-size: clamp(56px, 7.4vw, 112px);
+  line-height: .95;
+  letter-spacing: -4px;
+  margin: 0 0 32px;
+  font-weight: 700;
+}
+.contact-message {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(28px, 3.7vw, 50px);
+  font-size: clamp(28px, 3.1vw, 44px);
   font-weight: 600;
   line-height: 1.2;
 }
-.closing em { font-style: normal; color: var(--cyan); }
-.journey .closing p { text-shadow: 0 2px 0 var(--navy), 0 0 18px var(--navy), 0 0 36px #050918b3; }
+.contact-message em { font-style: italic; color: var(--cyan); }
+.contact-satellites {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px clamp(20px, 3vw, 48px);
+}
+.contact-satellites li { min-width: 0; }
+.contact-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 10px 8px;
+  text-align: center;
+}
+.contact-visual {
+  display: block;
+  width: min(100%, 288px);
+  animation: satellite-float 6.4s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.contact-visual img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.contact-satellites li:nth-child(2) .contact-visual { animation-duration: 7.2s; animation-delay: -2.1s; }
+.contact-satellites li:nth-child(3) .contact-visual { animation-duration: 5.8s; animation-delay: -3.4s; }
+.contact-satellites li:nth-child(4) .contact-visual { animation-duration: 7.8s; animation-delay: -1.3s; }
+.contact-visual.is-floating { animation-play-state: running; }
+.contact-channel:is(:hover, :focus-within) .contact-visual { animation-play-state: paused; }
+.contact-plate { display: block; width: min(100%, 260px); height: auto; margin-top: 12px; image-rendering: pixelated; }
+.contact-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.contact-status { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.contact-channel[href]:is(:hover, :focus-visible) .contact-plate { filter: brightness(1.2); }
+.contact-channel[href]:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; }
+@keyframes satellite-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
 /* Footer (solo Lettura): il viaggio finisce su un ponte */
 .site-footer {
@@ -805,46 +833,20 @@ dialog p { color: var(--body); }
 .journey .section-heading > p:last-child { margin-top: 10px; }
 .journey .district-services { display: none; }
 
-/* About: un pannello editoriale con tre viste, sopra la scrivania. */
-.view-tabs, .holo-index { display: none; }
-/* Pannelli a schede: l'attributo hidden prevale sul display dei singoli pannelli. */
-.journey :is(.about-grid > article, .project)[hidden] { display: none !important; }
-.journey .about-console {
-  position: relative;
-  align-self: center;
-  width: min(800px, 100%);
-  padding: 4px 28px 22px;
-  border: solid transparent;
-  border-width: 12px 14px;
-  border-image: url('assets/ui/frame-panel.webp') 24 27 24 27 / 12px 14px stretch;
-  background: linear-gradient(135deg, #0a1936f5, #061027f5) padding-box;
-  filter: drop-shadow(0 15px 30px #0005);
-}
-.journey .view-tabs { display: flex; gap: 4px; margin: 0 0 18px; border-bottom: 1px solid var(--line); }
+/* About resta fermo e leggibile mentre la scena arriva nella fascia inferiore. */
+.journey #about { translate: none; padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
+.journey #about-title { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
+
+/* Le schede restano soltanto nei progetti. */
+.holo-index { display: none; }
+.journey .project[hidden] { display: none !important; }
 .journey [role='tab'] {
   border: 0;
   font-family: var(--font-display);
   color: var(--muted);
   transition: color .2s, background-color .2s, border-color .2s;
 }
-.journey .view-tabs [role='tab'] {
-  margin-bottom: -1px;
-  padding: 12px 16px 10px;
-  border-bottom: 2px solid transparent;
-  font-size: 12px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
 .journey [role='tab']:hover { color: var(--text); }
-.journey .view-tabs [aria-selected='true'] { color: var(--cyan); border-bottom-color: var(--cyan); }
-.journey .about-grid { display: block; min-height: 214px; }
-.journey .about-grid > .panel { padding: 0; border: 0; background: none; filter: none; }
-.journey .about-grid > .panel > .micro { display: none; }
-.journey .about-grid h3 { margin: 0 0 12px; font-size: 18px; }
-.journey .bio p { max-width: 62ch; }
-.journey .about-console .skills { grid-template-columns: repeat(6, auto); justify-content: start; gap: 12px 18px; }
-.journey .about-console .timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; }
-.journey .about-console .timeline > h3 { grid-column: 1 / -1; }
 
 /* Projects: ologrammi leggeri, ciascuno collegato al proprio emettitore. */
 .journey .holo-deck { display: flex; align-items: flex-end; justify-content: center; gap: clamp(32px, 6vw, 96px); }
@@ -910,41 +912,9 @@ dialog p { color: var(--body); }
 .journey .when-read { display: none; }
 .journey .when-journey { display: inline; }
 
-/* Contact: monitor fisico sulla parabola, con il messaggio accanto. */
-.journey .contact-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: end;
-  gap: clamp(24px, 4vw, 56px);
-}
-.journey .contact-panel {
-  grid-column: 2;
-  grid-row: 1;
-  width: 420px;
-  margin-bottom: 18px;
-  padding: 4px 18px 12px;
-  border: solid transparent;
-  border-width: 26px 27px 29px;
-  border-image: url('assets/ui/frame-monitor-cyan.webp') 53 55 58 54 / 26px 27px 29px stretch;
-  background: linear-gradient(145deg, #0b1f3a, #050f22) padding-box;
-}
-/* Sostegno del monitor verso il cavo della parabola */
-.journey .contact-panel::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 29px);
-  width: 30px;
-  height: 18px;
-  margin-left: -15px;
-  border: 1px solid #2f5d8f;
-  border-top: 0;
-  background: linear-gradient(90deg, #0b1c35, #1b3a63 45%, #0b1c35);
-}
-.journey .contact-panel h3 { margin: 6px 0 12px; }
-.journey .contact-panel :is(a, button) { margin-top: 7px; padding: 10px 14px; }
-.journey .closing { grid-column: 1; grid-row: 1; justify-self: end; padding: 0 0 24px; text-align: right; }
-.journey .closing p { font-size: clamp(22px, 2.3vw, 34px); margin: 10px 0 0; }
+/* Contact resta consultabile anche mentre la parabola raggiunge la postazione. */
+.journey #contact { translate: none; padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
+.journey #contact-title { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
 
 .journey .journey-controls { display: flex; }
 
@@ -980,25 +950,33 @@ dialog p { color: var(--body); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* Compact spacing before reducing the readable text area. */
+@media (min-width: 1001px) and (max-height: 820px) {
+  .journey #about { padding-top: 16px; padding-bottom: 16px; }
+  .journey #about-title { margin-bottom: 18px; }
+  .journey .about-layout h3 { margin-bottom: 22px; }
+  .journey .about-bio p:not(.eyebrow) { margin-bottom: 12px; }
+  .journey .about-bio .text-link { margin-top: 14px; }
+  .journey .skill-orbits { --bubble-size: 72px; gap: 22px 12px; }
+  .journey .skill-orbits.is-floating { height: 300px; }
+}
+@media (max-width: 1000px) {
+  .about-layout { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .about-bio p:not(.eyebrow) { max-width: 58ch; }
+  .about-layout h3 { margin-bottom: 24px; }
+  .skill-orbits { max-width: 420px; gap: 26px 20px; }
+  .education-course { max-width: 48ch; }
+  #about-title, .journey #about-title { font-size: clamp(48px, 13vw, 85px); letter-spacing: -2px; }
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1100px) {
   .site-nav { gap: 20px; }
   .github { display: none; }
-  .about-grid { gap: 16px; }
   .panel { padding: 20px; }
-  .skills { gap: 12px 4px; }
-  .skills button { width: 60px; height: 60px; font-size: 19px; }
   .journey .project { --pad-x: 12px; --pad-y: 12px; }
   .journey .project h3 { font-size: 16px; }
-}
-
-/* Schermi medi: la scena dei Contatti si rimpicciolisce per lasciare spazio al testo */
-@media (max-width: 1400px) {
-  .contact-layout { gap: 32px; }
-  .contact-panel { width: 380px; }
-  .closing { padding: 25px 0; }
-  .closing p { font-size: clamp(24px, 2.8vw, 44px); }
 }
 
 /* Schermi desktop bassi: città più compatta */
@@ -1015,25 +993,13 @@ dialog p { color: var(--body); }
   .journey .page { padding-top: 14px; }
   .journey .role { margin: 14px 0 12px; }
   .journey .actions { margin-top: 20px; }
-  .journey .contact-panel { padding: 0 16px 8px; }
   .journey .panel h3 { margin: 4px 0 10px; }
-  .journey .about-console { padding: 0 24px 16px; }
-  .journey .view-tabs { margin-bottom: 12px; }
-  .journey .view-tabs [role='tab'] { padding: 10px 14px 8px; }
-  .journey .about-grid { min-height: 180px; }
-  .journey .skills button { width: 58px; height: 58px; font-size: 18px; }
-  .journey #skill-info { margin-top: 10px; }
   .journey .panel > .micro { display: none; }
-  .journey .bio p { margin: 8px 0; }
-  .journey .timeline div { padding-bottom: 10px; }
   .journey .holo-index { padding-top: 10px; }
   .journey .holo-index [role='tab'] { padding: 7px 12px; }
   .journey .project { padding: 16px 22px 14px; row-gap: 6px; }
   .journey .project-media { width: 56px; height: 56px; font-size: 26px; }
   .journey .project { grid-template-columns: 56px minmax(0, 1fr); }
-  .journey .contact-panel :is(a, button) { margin-top: 6px; padding: 8px 14px; }
-  .journey .contact-panel { margin-bottom: 14px; }
-  .journey .closing p { font-size: clamp(20px, 2.2vw, 30px); }
 }
 
 /* Desktop alti e larghi: scena più grande, con la stessa composizione. */
@@ -1042,12 +1008,7 @@ dialog p { color: var(--body); }
 }
 
 @media (max-width: 900px) {
-  .about-grid { display: flex; flex-direction: column; }
-  .about-grid > .panel { width: 100%; }
   .projects-grid { grid-template-columns: 1fr; }
-  .contact-layout { display: block; }
-  .contact-panel { width: 100%; }
-  .closing { margin: 20px 0; padding: 25px 0; }
 }
 
 @media (max-width: 760px) {
@@ -1089,11 +1050,6 @@ dialog p { color: var(--body); }
 
   .section-heading h2 { font-size: 43px; }
   .section-heading > p:last-child { font-size: 15px; }
-  .skills button { width: 68px; height: 68px; font-size: 21px; }
-  .bio, .timeline { padding: 24px; }
-  .contact-panel { padding: 14px; }
-  .contact-panel :is(a, button) { padding: 12px; }
-  .closing p { font-size: 30px; }
   .footer-row { padding: 20px 16px 28px; }
   .bridge::after { background-size: 160px auto; }
   dialog { padding: 35px 22px; }
@@ -1113,13 +1069,6 @@ dialog p { color: var(--body); }
   .journey .projects-grid { width: auto; }
   .journey .project { padding: 16px; grid-template-columns: 48px minmax(0, 1fr); column-gap: 14px; }
   .journey .project-media { width: 48px; height: 48px; font-size: 22px; }
-  .journey .about-console { padding: 0 14px 14px; }
-  .journey .view-tabs [role='tab'] { padding: 10px; letter-spacing: .5px; }
-  .journey .about-console .skills { grid-template-columns: repeat(3, auto); }
-  .journey .about-console .timeline { display: block; }
-  .journey .contact-layout { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
-  .journey .contact-panel { width: auto; }
-  .journey .closing { order: 2; justify-self: auto; text-align: left; }
   .journey-controls { gap: 16px; padding: 0 16px; }
   .hint { display: none; }
   #motion { margin-left: auto; }
@@ -1135,6 +1084,49 @@ dialog p { color: var(--body); }
   .lamp-right { right: -20px; }
 }
 @keyframes steam-small-frames { to { background-position-x: -240px; } }
+
+/* Contact: prima il testo, poi due colonne; una sui telefoni più stretti. */
+@media (max-width: 1100px) {
+  .contact-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .contact-satellites { width: 100%; max-width: 700px; justify-self: center; }
+  #contact-title, .journey #contact-title { font-size: clamp(48px, 10vw, 85px); letter-spacing: -2px; }
+}
+@media (min-width: 900px) {
+  .contact-visual { width: min(100%, 220px); }
+  .contact-plate { width: min(100%, 200px); }
+
+  /* The page has a definite height above the stage. Size the artwork from
+     that content box, reserving room for two plaques, statuses and spacing.
+     Keep overflow auto as an accessibility fallback, not as the desktop layout. */
+  .journey #contact {
+    container-type: size;
+    padding-top: clamp(12px, 2vh, 24px);
+    padding-bottom: clamp(12px, 2vh, 24px);
+  }
+  .journey .contact-layout {
+    --contact-plate-width: clamp(160px, 32cqh, 200px);
+    --contact-art-width: clamp(56px, calc((100cqh - var(--contact-plate-width) * .45 - 88px) / 1.25), 220px);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+    gap: clamp(24px, 3vw, 48px);
+  }
+  .journey #contact-title {
+    font-size: clamp(48px, min(7.4vw, 20cqh), 112px);
+    margin-bottom: clamp(12px, 5cqh, 28px);
+  }
+  .journey .contact-message { font-size: clamp(22px, min(3.1vw, 10cqh), 40px); }
+  .journey .contact-satellites { gap: 12px clamp(16px, 2vw, 32px); }
+  .journey .contact-channel { padding: 6px 4px; }
+  .journey .contact-visual { width: min(100%, var(--contact-art-width)); }
+  .journey .contact-plate { width: min(100%, var(--contact-plate-width)); margin-top: 4px; }
+}
+@media (max-width: 360px) {
+  .contact-satellites { grid-template-columns: minmax(0, 1fr); }
+  .contact-visual { max-width: 240px; }
+}
+@media (min-width: 361px) and (max-width: 600px) {
+  .contact-satellites { column-gap: 16px; }
+  .contact-channel { padding-inline: 0; }
+}
 
 /* Postazioni: una sola scala per personaggi, attrezzature e ponte.
    Coordinate locali in pixel dell'atlante 144 × 136, appoggio y=132. */

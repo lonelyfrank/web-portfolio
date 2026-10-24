@@ -95,6 +95,23 @@ piedi di Frank.
 7. Composizione già attiva all'arrivo, senza ripetere l'accensione degli effetti.
 8. Interazione: ciclo About; una sola sequenza Contact, poi posa finale.
 
+About mantiene soltanto la scena della scrivania: console, schede e cavo HTML
+sono stati rimossi. Biografia, competenze e formazione restano visibili nella
+parte superiore dalla selezione della sezione, senza attendere la salita o
+l'interazione. Non seguono la camera del ponte. La fascia contenuti scorre
+verticalmente quando necessario, mentre la scena conserva scala e animazioni.
+Le regole di comparsa e collegamento sopra descritte rimangono per Projects.
+`tools/check-about.cjs` verifica layout, scorrimento, accessibilità e
+movimento ridotto da 320 a 1920 px, in entrambe le modalità.
+
+Contact segue la stessa separazione: titolo e messaggio a sinistra, quattro
+satelliti su due colonne a destra, scena nella fascia inferiore. Il monitor
+dei canali e il relativo cavo HTML sono rimossi, senza modificare radio,
+personaggi, keypoint o elevatore. I contenuti non seguono la camera e restano
+consultabili durante il trasferimento. `tools/check-contact.cjs` verifica
+anche focus, fluttuazione, assenza del vecchio pannello, composizione senza
+scroll sui desktop bassi e scorrimento accessibile su mobile.
+
 Il radar ha un timer indipendente: pausa casuale fra 30.000 e 45.000 ms,
 scansione singola di 2.250 ms (frame 1,2,3,4,5,6,7,0,1), poi nuova pausa.
 L'immagine resta sulla posa inclinata 1 fra le scansioni. La base del modulo

@@ -91,58 +91,142 @@
     </section>
 
     <section id="about" class="page" aria-labelledby="about-title">
-      <div class="section-heading">
-        <p class="eyebrow">02 / Il mio percorso</p>
-        <h2 id="about-title" tabindex="-1">ABOUT ME<span class="dot">.</span></h2>
-        <p>Un mix di codice, creatività e curiosità.</p>
-      </div>
-      <div class="about-console scenic">
-        <div class="view-tabs" role="tablist" aria-label="Sezioni del profilo">
-          <button type="button" role="tab" id="about-tab-bio" aria-controls="about-bio">Profilo</button>
-          <button type="button" role="tab" id="about-tab-skills" aria-controls="about-skills">Competenze</button>
-          <button type="button" role="tab" id="about-tab-path" aria-controls="about-path">Percorso</button>
-        </div>
-      <div class="about-grid">
-        <article class="panel bio" id="about-bio" aria-labelledby="about-tab-bio">
-          <span class="micro">Profilo / Francesco Spina</span>
-          <h3>CHI SONO</h3>
-          <p>Sviluppo web, gestione di contenuti digitali e progetti personali.</p>
+      <div class="about-layout">
+        <div class="about-bio">
+          <p class="eyebrow">02 / Il mio percorso</p>
+          <h2 id="about-title" tabindex="-1">ABOUT<span class="dot">.</span></h2>
+          <p class="about-lead">Sviluppo web, gestione di contenuti digitali e progetti personali.</p>
           <p>La mia esperienza in agenzia incontra la formazione full stack e la curiosità di sperimentare con il codice.</p>
+          <p>Mi occupo di web operations con AEM, WordPress e Jira. Nei progetti personali esploro web app e homelab Linux.</p>
           <a href="#projects" class="text-link">Esplora i miei progetti →</a>
-        </article>
-        <article class="panel skills-panel" id="about-skills" aria-labelledby="about-tab-skills">
-          <span class="micro">Dev / Workspace · <span id="workbench-skill">HELLO, WORLD_</span></span>
-          <h3>COMPETENZE</h3>
-          <div class="skills" aria-label="Competenze">
-            <button type="button" data-skill="HTML / CSS">&lt;/&gt;<small>HTML / CSS</small></button>
-            <button type="button" data-skill="JavaScript">JS<small>JavaScript</small></button>
-            <button type="button" data-skill="Vue">V<small>Vue</small></button>
-            <button type="button" data-skill="PHP / Laravel">php<small>PHP / Laravel</small></button>
-            <button type="button" data-skill="AEM">A<small>AEM</small></button>
-            <button type="button" data-skill="WordPress">W<small>WordPress</small></button>
+        </div>
+        <section class="about-skills" aria-labelledby="skills-title">
+          <h3 id="skills-title">Competenze</h3>
+          <!-- Tutti i 18 asset richiesti, incluse due varianti Windows.
+               La lista resta completa per lettori di schermo, senza annunci live. -->
+          <ul class="skill-orbits" aria-label="Tecnologie e strumenti">
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/html.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">HTML</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/css.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">CSS</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/javascript.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">JavaScript</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/windows.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Windows</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/vue.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Vue</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/php.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">PHP</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/laravel.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Laravel</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/aem.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">AEM</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/wordpress.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">WordPress</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/jira.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Jira</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/linux.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Linux</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/github.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">GitHub</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/windows-blue.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Windows</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/react.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">React</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/python.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Python</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/typescript.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">TypeScript</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/claude.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Claude</span>
+            </li>
+            <li>
+              <span class="skill-orb" aria-hidden="true">
+                <img src="assets/skills/shopify.webp" alt="" width="256" height="256">
+              </span>
+              <span class="skill-name">Shopify</span>
+            </li>
+          </ul>
+        </section>
+        <section class="about-education" aria-labelledby="education-title">
+          <h3 id="education-title">Formazione</h3>
+          <div class="education-course">
+            <p class="education-provider">Boolean</p>
+            <h4>Full Stack<br>Development</h4>
+            <ul>
+              <li>Struttura e interfacce responsive con HTML e CSS.</li>
+              <li>Logica frontend con JavaScript e Vue.</li>
+              <li>Sviluppo backend con PHP e Laravel.</li>
+            </ul>
           </div>
-          <p id="skill-info" aria-live="polite">Seleziona una tecnologia per esplorare.</p>
-        </article>
-        <article class="panel timeline" id="about-path" aria-labelledby="about-tab-path">
-          <span class="micro">Percorso / Timeline</span>
-          <h3>ESPERIENZA E FORMAZIONE</h3>
-          <div>
-            <small>Esperienza · <span class="todo">periodo</span></small>
-            <h4>Web operations</h4>
-            <p>AEM · WordPress · Jira</p>
-          </div>
-          <div>
-            <small>Formazione · <span class="todo">periodo</span></small>
-            <h4>Boolean</h4>
-            <p>Full Stack Development</p>
-          </div>
-          <div>
-            <small>Sperimentazione</small>
-            <h4>Progetti personali</h4>
-            <p>Web app · Homelab Linux</p>
-          </div>
-        </article>
-      </div>
+        </section>
       </div>
     </section>
 
@@ -276,26 +360,47 @@
     </section>
 
     <section id="contact" class="page" aria-labelledby="contact-title">
-      <div class="section-heading">
-        <p class="eyebrow">04 / Nuovi orizzonti</p>
-        <h2 id="contact-title" tabindex="-1">CONTACT<span class="dot">.</span></h2>
-        <p>Costruiamo qualcosa insieme.</p>
-      </div>
-      <div class="contact-layout scenic">
-        <article class="panel contact-panel">
-          <span class="micro">Canale di comunicazione</span>
-          <h3>RESTIAMO IN CONTATTO</h3>
-          <a href="https://github.com/lonelyfrank" target="_blank" rel="noopener"><span class="channel"><i aria-hidden="true">⌘</i>GitHub</span><span class="value">@lonelyfrank ↗</span></a>
-          <!-- TODO: sostituire i <button data-placeholder> con <a href="mailto:…">, LinkedIn e assets/cv.pdf -->
-          <button type="button" data-placeholder="Email"><span class="channel"><i aria-hidden="true">✉</i>Email</span><span class="todo">link</span></button>
-          <button type="button" data-placeholder="LinkedIn"><span class="channel"><i aria-hidden="true">in</i>LinkedIn</span><span class="todo">link</span></button>
-          <button type="button" data-placeholder="Curriculum"><span class="channel"><i aria-hidden="true">↓</i>Curriculum</span><span class="todo">link</span></button>
-        </article>
-        <div class="closing">
-          <span class="micro">Il viaggio continua</span>
-          <p>NEW IDEAS.<br>NEW WORLDS.<br><em>LET’S CREATE<br>TOGETHER.</em></p>
+      <div class="contact-layout">
+        <div class="contact-intro">
+          <p class="eyebrow">04 / Nuovi orizzonti</p>
+          <h2 id="contact-title" tabindex="-1">CONTACT<span class="dot">.</span></h2>
+          <p class="contact-message">NEW IDEAS.<br>NEW WORLDS.<br><em>LET’S CREATE<br>TOGETHER.</em></p>
         </div>
-
+        <ul class="contact-satellites" aria-label="Contatti">
+          <li>
+            <a class="contact-channel" href="https://github.com/lonelyfrank" target="_blank" rel="noopener noreferrer">
+              <span class="contact-visual"><img src="assets/contact/satellite-github.webp" alt="" width="512" height="320"></span>
+              <img class="contact-plate" src="assets/contact/cta-github.webp" alt="" width="640" height="144">
+              <span class="contact-label">GitHub</span>
+            </a>
+          </li>
+          <!-- Destinazioni non ancora fornite: contenuti statici, senza link o pulsanti fittizi.
+               Quando disponibili, sostituire i div con a: mailto, profilo LinkedIn, PDF con download. -->
+          <li>
+            <div class="contact-channel" data-unavailable>
+              <span class="contact-visual"><img src="assets/contact/satellite-email.webp" alt="" width="512" height="320"></span>
+              <img class="contact-plate" src="assets/contact/cta-email.webp" alt="" width="640" height="144">
+              <span class="contact-label">Email</span>
+              <span class="contact-status">Email non disponibile</span>
+            </div>
+          </li>
+          <li>
+            <div class="contact-channel" data-unavailable>
+              <span class="contact-visual"><img src="assets/contact/satellite-linkedin.webp" alt="" width="512" height="320"></span>
+              <img class="contact-plate" src="assets/contact/cta-linkedin.webp" alt="" width="640" height="144">
+              <span class="contact-label">LinkedIn</span>
+              <span class="contact-status">Profilo non disponibile</span>
+            </div>
+          </li>
+          <li>
+            <div class="contact-channel" data-unavailable>
+              <span class="contact-visual"><img src="assets/contact/satellite-cv.webp" alt="" width="512" height="320"></span>
+              <img class="contact-plate" src="assets/contact/cta-cv.webp" alt="" width="640" height="144">
+              <span class="contact-label">Scarica CV</span>
+              <span class="contact-status">PDF non disponibile</span>
+            </div>
+          </li>
+        </ul>
       </div>
     </section>
   </main>
@@ -355,10 +460,8 @@
   </div>
   <!-- Fasci dei proiettori e collegamenti fra postazioni e schermi (solo Viaggio) -->
   <div class="scene-links" aria-hidden="true">
-    <div class="scene-link" data-link="about"></div>
     <div class="scene-link beam" data-link="index"></div>
     <div class="scene-link beam" data-link="feature"></div>
-    <div class="scene-link" data-link="contact"></div>
   </div>
 
   <div class="journey-controls">
@@ -376,5 +479,7 @@
   </dialog>
 
   <script src="app.js"></script>
+  <script src="skills.js"></script>
+  <script src="contact.js"></script>
 </body>
 </html>

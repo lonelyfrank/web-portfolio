@@ -8,12 +8,12 @@ const SECTIONS = ['home', 'about', 'projects', 'contact'];
 // Footprints and controls are explicit: never infer them from frame alpha bounds.
 // `bay` is the canvas x of the lift shaft centre, `focus` the canvas x of the
 // character + equipment group, which is the one centred in the viewport.
-// `link` is where the screen connector starts (desk monitor, dish).
+// `link` is where the remaining screen connector starts (dish).
 const STATIONS = [
   { id: 'home', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [28, 112, 92, 20], hands: null },
-  { id: 'about', floor: 132, stop: [91, 132], bay: 53, focus: 56, equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91], link: [68, 48] },
+  { id: 'about', floor: 132, stop: [91, 132], bay: 53, focus: 56, equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91] },
   { id: 'projects', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [8, 112, 64, 20], hands: null },
-  { id: 'contact', floor: 132, stop: [61, 132], bay: 145, focus: 118, equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60], link: [111, 36] },
+  { id: 'contact', floor: 132, stop: [61, 132], bay: 145, focus: 118, equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60] },
 ];
 const MODE_KEY = 'fs-mode';
 const REST_MS = 6400; // due giri della gatta prima della carezza
@@ -38,15 +38,6 @@ const TIMING = {
   lower: 360,      // discesa completa del piano
   rise: 420,       // salita completa del piano
   activate: 240,   // accensione di schermi e proiezioni
-};
-
-const SKILLS = {
-  'HTML / CSS': 'Struttura, layout e interfacce responsive: parte della formazione full stack.',
-  'JavaScript': 'Interazioni e logica frontend nel percorso di sviluppo web.',
-  'Vue': 'Framework frontend affrontato durante la formazione Boolean.',
-  'PHP / Laravel': 'Sviluppo backend nel percorso di formazione full stack.',
-  'AEM': 'Gestione di contenuti web nell’esperienza in agenzia.',
-  'WordPress': 'Gestione di siti e contenuti digitali nell’esperienza lavorativa.',
 };
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
@@ -145,6 +136,8 @@ function setMode(mode, { save = false } = {}) {
   const journey = mode === 'journey';
   director.cancel();
   cancelStation();
+  // A pending Journey fade must not hide sections after entering Reading.
+  clearTimeout(leaveTimer);
   root.classList.toggle('journey', journey);
   placeStations(journey);
   setViews(journey);
@@ -152,6 +145,9 @@ function setMode(mode, { save = false } = {}) {
 
   if (journey) {
     show(current, { instant: true });
+    // Reading can change the active section without changing the hash. Keep
+    // both in sync when switching modes so clicking the old anchor still works.
+    if (save) history.replaceState(history.state, '', `#${SECTIONS[current]}`);
     // il salto all'ancora del caricamento può aver spostato il documento
     window.scrollTo(0, 0);
   } else {
@@ -292,7 +288,7 @@ function positionContent() {
   const cam = currentCam();
   const su = unit();
   pages.forEach((page, index) => {
-    if (page.hidden) return;
+    if (page.hidden || ['about', 'contact'].includes(page.id)) return;
     const anchor = contentPositions.get(index) ?? cam;
     page.style.setProperty('--content-x', `${(anchor - cam) * su}px`);
   });
@@ -513,6 +509,8 @@ function settle(target) {
 let leaveTimer;
 function setStageContent(index, on) {
   const page = pages[index];
+  // About and Contact stay readable independently of their scene equipment.
+  if (['about', 'contact'].includes(page.id)) on = true;
   page.dataset.stage = on ? 'on' : 'off';
   $$('.scenic', page).forEach(node => { node.inert = !on; });
 }
@@ -552,7 +550,7 @@ function powerUp(index, { instant = false } = {}) {
   poweredStation = index;
   if (SECTIONS[index] === 'projects') stationNodes[2].dataset.power = 'on';
   placeLinks(index);
-  const names = { about: ['about'], projects: ['index', 'feature'], contact: ['contact'] }[SECTIONS[index]] || [];
+  const names = { projects: ['index', 'feature'] }[SECTIONS[index]] || [];
   names.forEach(name => {
     links[name].style.transitionDelay = instant || reduced ? '0ms' : `${SECTIONS[index] === 'projects' ? TIMING.activate / 2 : 0}ms`;
     links[name].classList.add('on');
@@ -565,16 +563,6 @@ function placeLinks(index) {
   const id = SECTIONS[index];
   const node = stationNodes[index];
   const box = target => target.getBoundingClientRect();
-  const station = STATIONS[index];
-  const canvas = box(node);
-  const su = unit();
-  const point = ([x, y]) => [canvas.left + x * su, canvas.top + y * su];
-  const cable = (link, [x, y], panel) => {
-    const top = panel.bottom;
-    Object.assign(link.style, { left: `${x}px`, top: `${top}px`, height: `${Math.max(0, y - top)}px` });
-  };
-  if (id === 'about') cable(links.about, point(station.link), box($('.about-console')));
-  if (id === 'contact') cable(links.contact, point(station.link), box($('.contact-panel')));
   if (id === 'projects') {
     [['index', $('.holo-index')], ['feature', $('.projects-grid')]].forEach(([name, panel]) => {
       const emitter = box($(`[data-emitter="${name}"]`, node));
@@ -805,7 +793,7 @@ $('main').addEventListener('touchend', e => {
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(current + (dx < 0 ? 1 : -1));
 }, { passive: true });
 
-/* ---------- Viste: profilo a schede e progetto in evidenza (solo Viaggio) ---------- */
+/* ---------- Viste: progetto in evidenza (solo Viaggio) ---------- */
 
 // In Lettura tutti i pannelli restano visibili e le schede sono nascoste;
 // in Viaggio un solo pannello per volta, con il pattern ARIA delle schede.
@@ -843,9 +831,6 @@ function tabs(list, buttons, panels, select) {
   };
 }
 
-const aboutList = $('.about-console .view-tabs');
-const aboutTabs = tabs(aboutList, $$('[role="tab"]', aboutList), $$('.about-grid > article'));
-
 const projectList = $('#project-tabs');
 projects.forEach((project, i) => {
   project.id = `project-${i + 1}`;
@@ -868,9 +853,7 @@ const projectTabs = tabs(projectList, $$('[role="tab"]', projectList), projects,
 });
 
 function setViews(journey) {
-  if (aboutTabs.selected() < 0) aboutTabs.activate(0);
   if (projectTabs.selected() < 0) projectTabs.activate(0);
-  aboutTabs.mode(journey);
   projectTabs.mode(journey);
   projects.forEach((project, i) => {
     if (journey) project.setAttribute('aria-labelledby', `project-tab-${i + 1}`);
@@ -958,31 +941,11 @@ grid.addEventListener('click', e => {
   );
 });
 
-$$('[data-placeholder]').forEach(button => {
-  button.addEventListener('click', () => {
-    const title = el('h2', '', button.dataset.placeholder);
-    title.id = 'detail-title';
-    openDetail(
-      el('p', 'eyebrow', 'Prototipo visivo'),
-      title,
-      el('p', '', 'Questo collegamento sarà configurato con i dati professionali verificati prima della pubblicazione del portfolio definitivo.'),
-    );
-  });
-});
-
 $('.close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', e => {
   if (e.target !== dialog) return;
   const r = dialog.getBoundingClientRect();
   if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close();
-});
-
-$$('[data-skill]').forEach(button => {
-  button.addEventListener('click', () => {
-    $$('[data-skill]').forEach(b => b.classList.toggle('selected', b === button));
-    $('#skill-info').textContent = SKILLS[button.dataset.skill];
-    $('#workbench-skill').textContent = button.dataset.skill;
-  });
 });
 
 $('#project-prev').addEventListener('click', () => grid.scrollBy({ left: -grid.clientWidth * .9, behavior: reduced ? 'instant' : 'smooth' }));
