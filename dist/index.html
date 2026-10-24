@@ -17,6 +17,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
   <link rel="preload" href="assets/character-motion.webp" as="image">
   <link rel="preload" href="assets/character-pet.webp" as="image">
+  <link rel="preload" href="assets/ui/lift-shaft.webp" as="image">
+  <link rel="preload" href="assets/ui/lift-plate.webp" as="image">
+  <link rel="preload" href="assets/ui/lift-rod.webp" as="image">
+  <link rel="preload" href="assets/ui/projector-on.webp" as="image">
   <link rel="stylesheet" href="style.css">
   <script>
     // Sceglie la modalità prima del primo paint, così non c'è sfarfallio di layout.
@@ -70,7 +74,7 @@
         <p class="role">CREATIVE DEVELOPER</p>
         <p class="intro">Codice, creatività e curiosità.<br>Un viaggio attraverso il mio universo digitale.</p>
         <div class="actions">
-          <a class="button primary" href="#projects">Esplora i progetti <span aria-hidden="true">↗</span></a>
+          <a class="button primary" href="#projects">Esplora i progetti <span aria-hidden="true">→</span></a>
           <a class="button" href="#about">Il mio percorso <span aria-hidden="true">→</span></a>
         </div>
       </div>
@@ -92,28 +96,36 @@
         <h2 id="about-title" tabindex="-1">ABOUT ME<span class="dot">.</span></h2>
         <p>Un mix di codice, creatività e curiosità.</p>
       </div>
+      <div class="about-console scenic">
+        <div class="view-tabs" role="tablist" aria-label="Sezioni del profilo">
+          <button type="button" role="tab" id="about-tab-bio" aria-controls="about-bio">Profilo</button>
+          <button type="button" role="tab" id="about-tab-skills" aria-controls="about-skills">Competenze</button>
+          <button type="button" role="tab" id="about-tab-path" aria-controls="about-path">Percorso</button>
+        </div>
       <div class="about-grid">
-        <div class="skills-workshop">
-          <p class="workshop-caption micro">DEV / WORKSPACE · <span id="workbench-skill">HELLO, WORLD_</span></p>
-        <div class="skills panel" aria-label="Competenze">
-          <button type="button" data-skill="HTML / CSS">&lt;/&gt;<small>HTML / CSS</small></button>
-          <button type="button" data-skill="JavaScript">JS<small>JavaScript</small></button>
-          <button type="button" data-skill="Vue">V<small>Vue</small></button>
-          <button type="button" data-skill="PHP / Laravel">php<small>PHP / Laravel</small></button>
-          <button type="button" data-skill="AEM">A<small>AEM</small></button>
-          <button type="button" data-skill="WordPress">W<small>WordPress</small></button>
-          <p id="skill-info" aria-live="polite">Seleziona una tecnologia per esplorare.</p>
-        </div>
-        </div>
-        <article class="panel bio">
+        <article class="panel bio" id="about-bio" aria-labelledby="about-tab-bio">
           <span class="micro">Profilo / Francesco Spina</span>
           <h3>CHI SONO</h3>
           <p>Sviluppo web, gestione di contenuti digitali e progetti personali.</p>
           <p>La mia esperienza in agenzia incontra la formazione full stack e la curiosità di sperimentare con il codice.</p>
           <a href="#projects" class="text-link">Esplora i miei progetti →</a>
         </article>
-        <article class="panel timeline">
-          <h3>IL MIO PERCORSO</h3>
+        <article class="panel skills-panel" id="about-skills" aria-labelledby="about-tab-skills">
+          <span class="micro">Dev / Workspace · <span id="workbench-skill">HELLO, WORLD_</span></span>
+          <h3>COMPETENZE</h3>
+          <div class="skills" aria-label="Competenze">
+            <button type="button" data-skill="HTML / CSS">&lt;/&gt;<small>HTML / CSS</small></button>
+            <button type="button" data-skill="JavaScript">JS<small>JavaScript</small></button>
+            <button type="button" data-skill="Vue">V<small>Vue</small></button>
+            <button type="button" data-skill="PHP / Laravel">php<small>PHP / Laravel</small></button>
+            <button type="button" data-skill="AEM">A<small>AEM</small></button>
+            <button type="button" data-skill="WordPress">W<small>WordPress</small></button>
+          </div>
+          <p id="skill-info" aria-live="polite">Seleziona una tecnologia per esplorare.</p>
+        </article>
+        <article class="panel timeline" id="about-path" aria-labelledby="about-tab-path">
+          <span class="micro">Percorso / Timeline</span>
+          <h3>ESPERIENZA E FORMAZIONE</h3>
           <div>
             <small>Esperienza · <span class="todo">periodo</span></small>
             <h4>Web operations</h4>
@@ -131,6 +143,7 @@
           </div>
         </article>
       </div>
+      </div>
     </section>
 
     <section id="projects" class="page" aria-labelledby="projects-title">
@@ -147,6 +160,8 @@
         - .case-body: problema, soluzione, ruolo e link. È mostrato inline in modalità Lettura
           e dentro il dialog in modalità Viaggio.
       -->
+      <div class="holo-deck scenic">
+      <div class="holo-index" role="tablist" aria-label="Seleziona un progetto" id="project-tabs"></div>
       <div class="projects-grid" id="projects-grid">
         <article class="project">
           <div class="project-media" aria-hidden="true">◎</div>
@@ -155,7 +170,7 @@
           <p class="summary">Un companion per organizzare giocatori, tornei e risultati attorno al totem Pub Time Darts.</p>
           <ul class="stack" aria-label="Tecnologie"><li class="todo">stack</li></ul>
           <details class="case">
-            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">↗</span></summary>
+            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">→</span></summary>
             <div class="case-body">
               <dl>
                 <dt>Il problema</dt>
@@ -180,7 +195,7 @@
           <p class="summary">Un progetto personale dedicato a un’interfaccia desktop moderna e semplice.</p>
           <ul class="stack" aria-label="Tecnologie"><li class="todo">stack</li></ul>
           <details class="case">
-            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">↗</span></summary>
+            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">→</span></summary>
             <div class="case-body">
               <dl>
                 <dt>Il problema</dt>
@@ -204,7 +219,7 @@
           <p class="summary"><span class="todo">descrizione in una frase</span></p>
           <ul class="stack" aria-label="Tecnologie"><li class="todo">stack</li></ul>
           <details class="case">
-            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">↗</span></summary>
+            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">→</span></summary>
             <div class="case-body">
               <dl>
                 <dt>Il problema</dt>
@@ -228,7 +243,7 @@
           <p class="summary"><span class="todo">descrizione in una frase</span></p>
           <ul class="stack" aria-label="Tecnologie"><li class="todo">stack</li></ul>
           <details class="case">
-            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">↗</span></summary>
+            <summary><span class="when-read">Caso di studio</span><span class="when-journey">Apri caso di studio</span><span aria-hidden="true">→</span></summary>
             <div class="case-body">
               <dl>
                 <dt>Il problema</dt>
@@ -244,6 +259,7 @@
             </div>
           </details>
         </article>
+      </div>
       </div>
 
       <div class="gallery-controls">
@@ -265,15 +281,15 @@
         <h2 id="contact-title" tabindex="-1">CONTACT<span class="dot">.</span></h2>
         <p>Costruiamo qualcosa insieme.</p>
       </div>
-      <div class="contact-layout">
+      <div class="contact-layout scenic">
         <article class="panel contact-panel">
           <span class="micro">Canale di comunicazione</span>
           <h3>RESTIAMO IN CONTATTO</h3>
-          <a href="https://github.com/lonelyfrank" target="_blank" rel="noopener"><span>⌘ &nbsp; GitHub<small>@lonelyfrank</small></span>↗</a>
+          <a href="https://github.com/lonelyfrank" target="_blank" rel="noopener"><span class="channel"><i aria-hidden="true">⌘</i>GitHub</span><span class="value">@lonelyfrank ↗</span></a>
           <!-- TODO: sostituire i <button data-placeholder> con <a href="mailto:…">, LinkedIn e assets/cv.pdf -->
-          <button type="button" data-placeholder="Email"><span>✉ &nbsp; Email</span><span class="todo">link</span></button>
-          <button type="button" data-placeholder="LinkedIn"><span>in &nbsp; LinkedIn</span><span class="todo">link</span></button>
-          <button type="button" data-placeholder="Curriculum"><span>↓ &nbsp; Curriculum</span><span class="todo">link</span></button>
+          <button type="button" data-placeholder="Email"><span class="channel"><i aria-hidden="true">✉</i>Email</span><span class="todo">link</span></button>
+          <button type="button" data-placeholder="LinkedIn"><span class="channel"><i aria-hidden="true">in</i>LinkedIn</span><span class="todo">link</span></button>
+          <button type="button" data-placeholder="Curriculum"><span class="channel"><i aria-hidden="true">↓</i>Curriculum</span><span class="todo">link</span></button>
         </article>
         <div class="closing">
           <span class="micro">Il viaggio continua</span>
@@ -306,32 +322,43 @@
     </div>
   </footer>
 
-  <!-- Modalità Viaggio: la strada e l'omino -->
+  <!-- Modalità Viaggio: ponte modulare, vani elevatori e personaggio.
+       I vani sono generati da app.js; gli allestimenti delle aree salgono dal vano centrale. -->
   <div class="journey-strip" aria-hidden="true">
-    <div class="journey-world">
-      <div class="street-props">
-        <img class="street-lamp lamp-left" src="assets/ui/lamp-single.webp" alt="">
-        <img class="street-lamp lamp-right" src="assets/ui/lamp-double.webp" alt="">
+    <div class="bridge-track">
+      <div class="track-walkway track-walkway-top"></div>
+      <div class="track-walkway"></div>
+    </div>
+    <div class="avatar" id="avatar"><span class="avatar-sprite"></span></div>
+    <div class="set-storage">
+      <div class="station station-home" data-station="home">
+        <img class="station-lamp lamp-out-left" src="assets/ui/lamp-single.webp" alt="">
+        <img class="station-lamp lamp-out-right" src="assets/ui/lamp-single.webp" alt="">
       </div>
-      <div class="route-rails"></div>
-      <div class="station station-home" data-station="home"><div class="station-deck"></div></div>
       <div class="station station-about" data-station="about">
         <div class="station-deck"></div>
+        <img class="station-lamp" src="assets/ui/lamp-single.webp" alt="">
         <img class="station-equipment" src="assets/ui/workbench.webp" alt="">
         <div class="station-actors"></div>
       </div>
       <div class="station station-projects" data-station="projects">
-        <div class="station-deck"></div>
-        <img class="station-equipment" src="assets/ui/projector.webp" alt="">
+        <div class="projector" data-emitter="index"><img src="assets/ui/projector.webp" alt=""><img class="projector-on" src="assets/ui/projector-on.webp" alt=""></div>
+        <div class="projector" data-emitter="feature"><img src="assets/ui/projector.webp" alt=""><img class="projector-on" src="assets/ui/projector-on.webp" alt=""></div>
       </div>
       <div class="station station-contact" data-station="contact">
         <div class="station-deck"></div>
+        <img class="station-lamp" src="assets/ui/lamp-double.webp" alt="">
         <div class="station-equipment"></div>
         <div class="station-actors"></div>
       </div>
-      <div class="avatar" id="avatar"><span class="avatar-sprite"></span></div>
-      <div class="walkway"></div>
     </div>
+  </div>
+  <!-- Fasci dei proiettori e collegamenti fra postazioni e schermi (solo Viaggio) -->
+  <div class="scene-links" aria-hidden="true">
+    <div class="scene-link" data-link="about"></div>
+    <div class="scene-link beam" data-link="index"></div>
+    <div class="scene-link beam" data-link="feature"></div>
+    <div class="scene-link" data-link="contact"></div>
   </div>
 
   <div class="journey-controls">

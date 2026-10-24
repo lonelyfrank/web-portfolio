@@ -1,23 +1,44 @@
 // Francesco Spina — Space Journey
 // Due modalità: "read" (pagina che scorre, default su mobile e senza JS)
-// e "journey" (tappe a schermo intero, l'omino cammina lungo la strada).
+// e "journey" (un'area alla volta: il mondo scorre attorno al personaggio
+// e l'allestimento dell'area sale da un vano elevatore del ponte).
 
 const SECTIONS = ['home', 'about', 'projects', 'contact'];
 // Local coordinates use the exported 144 × 136 canvas (floor y=132).
 // Footprints and controls are explicit: never infer them from frame alpha bounds.
+// `bay` is the canvas x of the lift shaft centre, `focus` the canvas x of the
+// character + equipment group, which is the one centred in the viewport.
+// `link` is where the screen connector starts (desk monitor, dish).
 const STATIONS = [
-  { id: 'home', at: 20, floor: 132, stop: [72, 132], equipment: null, companion: [28, 112, 92, 20], hands: null },
-  { id: 'about', at: 39, floor: 132, stop: [91, 132], equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91] },
-  { id: 'projects', at: 60, floor: 132, stop: [48, 132], equipment: [104, 132], companion: [8, 112, 64, 20], hands: null },
-  { id: 'contact', at: 79, floor: 132, stop: [61, 132], equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60] },
+  { id: 'home', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [28, 112, 92, 20], hands: null },
+  { id: 'about', floor: 132, stop: [91, 132], bay: 53, focus: 56, equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91], link: [68, 48] },
+  { id: 'projects', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [8, 112, 64, 20], hands: null },
+  { id: 'contact', floor: 132, stop: [61, 132], bay: 145, focus: 118, equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60], link: [111, 36] },
 ];
-const STOPS = STATIONS.map(station => station.at);
 const MODE_KEY = 'fs-mode';
-const WALK_MS = 1050;
-const RUN_SPEED = 1.8; // velocità relativa alla camminata per salti di più tappe
 const REST_MS = 6400; // due giri della gatta prima della carezza
 const PET_MS = 3200;
 const WHEEL_COOLDOWN_MS = 800;
+
+// Ponte modulare (unità di scena "su": il personaggio in piedi è alto 96 su).
+const STAGE = {
+  bay: 330,        // passo fra due vani elevatori
+  drop: 106,       // corsa del piano: copre l'allestimento più alto (parabola, 102 su)
+  bays: 8,         // vani generati su ciascun lato del centro
+  runSpeed: 300,   // su/s del ponte durante il trasferimento
+  runStride: 120,  // avanzamento della corsa per ciclo di 8 fotogrammi (due passi)
+  walkSpeed: 72,   // su/s per i piccoli aggiustamenti all'arrivo
+};
+// Sequenza della transizione (ms). Le fasi compatibili si sovrappongono:
+// la discesa parte con lo spegnimento, la salita prima dell'arresto.
+const TIMING = {
+  contentOut: 180, // dissolvenza dei contenuti scenici
+  depart: 160,     // la corsa parte mentre la postazione sta ancora scendendo
+  lower: 360,      // discesa completa del piano
+  rise: 420,       // salita completa del piano
+  riseLead: 220,   // la salita inizia prima dell'arresto del ponte
+  activate: 240,   // accensione di schermi e proiezioni
+};
 
 const SKILLS = {
   'HTML / CSS': 'Struttura, layout e interfacce responsive: parte della formazione full stack.',
@@ -35,22 +56,23 @@ const root = document.documentElement;
 const pages = $$('.page');
 const navLinks = $$('.site-nav a');
 const avatar = $('#avatar');
-const world = $('.journey-world');
+const strip = $('.journey-strip');
+const track = $('.bridge-track');
+const storage = $('.set-storage');
 const stationNodes = STATIONS.map(station => $(`[data-station="${station.id}"]`));
 const dialog = $('#detail');
 const grid = $('#projects-grid');
+const projects = $$('.project', grid);
 const journeyQuery = matchMedia('(min-width: 900px) and (min-height: 640px)');
 const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
 
 let current = Math.max(0, SECTIONS.indexOf(location.hash.slice(1)));
 let reduced = reduceQuery.matches;
-let walkTimer;
 let restTimer;
 let stationTimer;
 let activeStation = null;
 let interactionFrame = 0;
 let phase = 'waiting';
-let travel = null;
 const FRAME_MS = 400;
 const ALIGN_MS = 100;
 const RADIO_MIN_MS = 30000;
@@ -60,9 +82,10 @@ const RADIO_SCAN = [1, 2, 3, 4, 5, 6, 7, 0, 1];
 let radioTimer;
 const radio = $('.station-contact .station-equipment');
 
+// In Viaggio la parabola esiste solo nell'area Contact: niente timer per un
+// allestimento chiuso nel vano, né durante transizioni e lavoro di Frank.
 function radioAvailable() {
-  return !reduced && !document.hidden && !(isJourney() && current === 3 &&
-    ['approaching', 'aligning', 'interacting'].includes(phase));
+  return !reduced && !document.hidden && (!isJourney() || (current === 3 && phase === 'waiting'));
 }
 
 function scheduleRadio() {
@@ -85,6 +108,7 @@ function scanRadio(index) {
 stationNodes.forEach((node, index) => {
   const station = STATIONS[index];
   node.style.setProperty('--floor-y', station.floor);
+  node.style.setProperty('--bay-x', station.bay);
   if (station.equipment) {
     node.style.setProperty('--equipment-x', station.equipment[0]);
     node.style.setProperty('--equipment-y', station.equipment[1]);
@@ -119,9 +143,11 @@ function setMode(mode, { save = false } = {}) {
     try { localStorage.setItem(MODE_KEY, mode); } catch { /* storage non disponibile */ }
   }
   const journey = mode === 'journey';
+  director.cancel();
   cancelStation();
   root.classList.toggle('journey', journey);
   placeStations(journey);
+  setViews(journey);
   $$('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
 
   if (journey) {
@@ -131,7 +157,13 @@ function setMode(mode, { save = false } = {}) {
   } else {
     stopAvatar();
     scheduleRest();
-    pages.forEach(page => { page.hidden = false; page.classList.remove('active'); });
+    pages.forEach(page => {
+      page.hidden = false;
+      page.inert = false;
+      page.classList.remove('active', 'leaving');
+      delete page.dataset.stage;
+    });
+    $$('.scenic').forEach(node => { node.inert = false; });
     root.style.setProperty('--step', 0);
     document.title = 'Francesco Spina — Space Journey';
     setActiveNav(current);
@@ -149,54 +181,387 @@ journeyQuery.addEventListener('change', e => {
   if (!savedMode()) setMode(e.matches ? 'journey' : 'read');
 });
 
-/* ---------- Viaggio: tappe e omino ---------- */
+/* ---------- Viaggio: ponte, vani e allestimenti ---------- */
 
 function setPhase(next) {
   phase = next;
-  world.dataset.phase = next;
+  strip.dataset.phase = next;
 }
 
 function unit() { return avatar.offsetWidth / 128; }
-function stopX(index) {
-  const station = STATIONS[index];
-  return world.clientWidth * station.at / 100 + (station.stop[0] - 72) * unit();
+
+// Camera position (su) that places bay k under the area's composition.
+const restCam = (k, index) => k * STAGE.bay + STATIONS[index].focus - STATIONS[index].bay;
+const restActor = index => STATIONS[index].stop[0] - STATIONS[index].focus;
+
+function translateOf(node, axis) {
+  const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+  return axis === 'y' ? matrix.m42 : matrix.m41;
 }
+
+// Bays: identical modules of the bridge. Each one owns its shaft, plate, rods and
+// cylinders. An area's equipment ("set") is mounted on one bay's plate at a time.
+const bays = [];
+function buildBays() {
+  for (let k = -STAGE.bays; k <= STAGE.bays; k++) {
+    const el = document.createElement('div');
+    el.className = 'bay';
+    el.innerHTML = `
+      <div class="bay-rail"></div>
+      <div class="bay-bracket"></div>
+      <div class="bay-shaft"></div>
+      <div class="bay-pad bay-pad-top"></div>
+      <div class="bay-lift"><div class="bay-rod bay-rod-left"></div><div class="bay-rod bay-rod-right"></div><div class="bay-plate"></div><div class="bay-mount"></div></div>
+      <div class="bay-cylinder bay-cylinder-left"></div>
+      <div class="bay-cylinder bay-cylinder-right"></div>
+      <div class="bay-pad bay-pad-front"></div>
+      <div class="bay-edge"></div>`;
+    track.append(el);
+    const bay = { el, k, lift: $('.bay-lift', el), mount: $('.bay-mount', el), set: null, level: STAGE.drop };
+    setBayIndex(bay, k);
+    bays.push(bay);
+  }
+}
+
+function setBayIndex(bay, k) {
+  bay.k = k;
+  bay.el.style.setProperty('--k', k);
+}
+
+const bayOfSet = index => bays.find(bay => bay.set === index) || null;
+const bayAt = k => bays.find(bay => bay.k === k);
+// The equipment darkens as it sinks and fades out in the lowest part of the
+// shaft; plate, rods and cylinders belong to the bay and stay visible.
+const shade = level => {
+  const depth = Math.min(1, Math.max(0, level / STAGE.drop));
+  return {
+    filter: depth < .005 ? 'none' : `brightness(${(1 - .7 * depth).toFixed(3)})`,
+    opacity: Math.min(1, (1 - depth) / .35).toFixed(3),
+  };
+};
+
+function liftLevel(bay) {
+  if (!bay.lift.getAnimations().length) return bay.level;
+  return translateOf(bay.lift, 'y') / unit();
+}
+
+// Rigid move of plate, rods and equipment together; returns when it stops.
+function moveLift(bay, level, duration, easing) {
+  const from = liftLevel(bay);
+  [bay.lift, bay.mount].forEach(node => node.getAnimations().forEach(animation => animation.cancel()));
+  bay.level = level;
+  const end = { transform: `translateY(${level * unit()}px)` };
+  Object.assign(bay.lift.style, end);
+  Object.assign(bay.mount.style, shade(level));
+  bay.el.classList.toggle('raised', level < STAGE.drop - .5);
+  const time = duration * Math.abs(level - from) / STAGE.drop;
+  if (time < 16) return Promise.resolve();
+  const options = { duration: time, easing };
+  // Same timing for the rigid move and the darkness of the shaft.
+  bay.mount.animate([0, .25, .5, .75, 1].map(offset => ({ ...shade(from + (level - from) * offset), offset })), options);
+  const animation = bay.lift.animate([{ transform: `translateY(${from * unit()}px)` }, end], options);
+  return animation.finished.then(() => {}, () => {});
+}
+
+function mountSet(bay, index) {
+  const previous = bayOfSet(index);
+  if (previous && previous !== bay) previous.set = null;
+  if (bay.set !== null && bay.set !== index) unmountSet(bay);
+  bay.set = index;
+  bay.mount.append(stationNodes[index]);
+}
+
+function unmountSet(bay) {
+  if (bay.set === null) return;
+  if (stationNodes[bay.set].parentNode === bay.mount) storage.append(stationNodes[bay.set]);
+  bay.set = null;
+}
+
+function setCam(cam, duration = 0) {
+  track.style.transition = duration ? `transform ${duration}ms linear` : 'none';
+  track.style.setProperty('--cam', cam);
+  if (!duration) void track.offsetWidth;
+}
+function currentCam() { return -translateOf(track, 'x') / unit(); }
+
+function setActor(offset, duration = 0) {
+  avatar.style.transition = duration ? `transform ${duration}ms linear` : 'none';
+  avatar.style.setProperty('--actor-x', offset);
+}
+function currentActor() { return translateOf(avatar, 'x') / unit(); }
+
+function setParallax(index, duration = 0) {
+  root.style.setProperty('--travel-ms', `${duration}ms`);
+  root.style.setProperty('--step', index);
+}
+
+// Bridge texture shifts with normalisation so the periodic modules never jump.
+let textureOffset = 0;
+function normalize() {
+  const shift = Math.round(currentCam() / STAGE.bay);
+  if (!shift || bays.some(bay => bay.lift.getAnimations().length)) return;
+  const span = 2 * STAGE.bays + 1;
+  bays.forEach(bay => {
+    let k = bay.k - shift;
+    if (k < -STAGE.bays || k > STAGE.bays) {
+      // Recycled out of view: always closed and empty.
+      k += k < 0 ? span : -span;
+      unmountSet(bay);
+      moveLift(bay, STAGE.drop, 0);
+    }
+    setBayIndex(bay, k);
+  });
+  textureOffset = (textureOffset + shift * STAGE.bay) % 1000000;
+  track.style.setProperty('--texture-x', textureOffset);
+  setCam(currentCam() - shift * STAGE.bay);
+}
+
+/* ---------- Regia delle transizioni ---------- */
+
+// One owner of the stage. Every request supersedes the previous one: pending
+// timers and awaits of older requests return early, animations are retargeted
+// from their current values, so nothing queues up or freezes midway.
+const director = {
+  run: 0,
+  timers: new Set(),
+  requested: current,
+  cancel() {
+    this.run++;
+    this.timers.forEach(clearTimeout);
+    this.timers.clear();
+  },
+  wait(ms) {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => { this.timers.delete(timer); resolve(); }, Math.max(0, ms));
+      this.timers.add(timer);
+    });
+  },
+};
+
+function chooseBay(target, from) {
+  const cam = currentCam();
+  const here = cam / STAGE.bay;
+  const dir = Math.sign(target - from) || 1;
+  const own = bayOfSet(target);
+  // A quick return finds its equipment still in the nearby shaft.
+  if (own && Math.abs(own.k - here) <= 1.6 && ((own.k - here) * dir > -.75 || own.k === Math.round(here))) return own.k;
+  const k = dir > 0 ? Math.floor(here + .5) + 1 : Math.ceil(here - .5) - 1;
+  return Math.max(-STAGE.bays + 1, Math.min(STAGE.bays - 1, k));
+}
+
+async function stageTo(target, { instant = false } = {}) {
+  director.cancel();
+  const run = director.run;
+  const alive = () => run === director.run && isJourney();
+  const from = director.requested;
+  director.requested = target;
+  clearTimeout(stationTimer);
+  cancelStation();
+  clearRest();
+  powerDown();
+  setStageContent(target, false);
+
+  if (instant || reduced || document.hidden) { settle(target); return; }
+
+  // 1–3. Exit the interaction, fade out, lower every other set.
+  setPhase('leaving');
+  scheduleRadio();
+  const k = chooseBay(target, from);
+  const destination = bayAt(k);
+  bays.forEach(bay => {
+    if (bay.set !== null && bay.set !== target && bay.level < STAGE.drop) {
+      // Parked sets stay in their dark shaft: a quick return raises them again there.
+      moveLift(bay, STAGE.drop, TIMING.lower, 'cubic-bezier(.5,0,.75,.6)').then(() => {
+        if (['waiting', 'interacting'].includes(phase)) normalize();
+      });
+    }
+  });
+  // The destination's own set may be parked in another shaft: send it down first.
+  const own = bayOfSet(target);
+  if (own && own !== destination) moveLift(own, STAGE.drop, TIMING.lower, 'ease-in');
+
+  // 4. Transfer: the bridge runs under the character at stride speed.
+  const camFrom = currentCam();
+  const camTo = restCam(k, target);
+  // Ground speed under the feet = bridge motion relative to the character,
+  // so the stop offset he covers on screen is part of the synchronised run.
+  const ground = (camTo + restActor(target)) - (camFrom + currentActor());
+  const travel = Math.abs(camTo - camFrom) > .5 ? Math.round(Math.abs(ground) / STAGE.runSpeed * 1000) : 0;
+  const busy = bays.some(bay => bay.set !== null && bay.set !== target && liftLevel(bay) < STAGE.drop - 40);
+  let walk = 0;
+  if (travel) {
+    await director.wait(busy ? TIMING.depart : 40);
+    if (!alive()) return;
+    setPhase('approaching');
+    avatar.classList.add('running');
+    avatar.classList.toggle('back', ground < 0);
+    avatar.style.setProperty('--cycle-ms', `${Math.round(STAGE.runStride / STAGE.runSpeed * 1000)}ms`);
+    setCam(camTo, travel);
+    setActor(restActor(target), travel);
+    setParallax(target, travel);
+    await director.wait(travel - TIMING.riseLead);
+    if (!alive()) return;
+  } else {
+    // Same shaft (a quick return): only a short local walk to the stop.
+    const offset = restActor(target) - currentActor();
+    if (Math.abs(offset) > 2) {
+      avatar.classList.add('walking');
+      avatar.classList.toggle('back', offset < 0);
+    }
+    walk = Math.abs(offset) / STAGE.walkSpeed * 1000;
+    setActor(restActor(target), walk);
+    setParallax(target, 400);
+  }
+
+  // 5–6. The destination shaft is centred: mount and raise.
+  if (own && own !== destination && own.level < STAGE.drop) await moveLift(own, STAGE.drop, TIMING.lower, 'ease-in');
+  if (!alive()) return;
+  if (destination.set !== target && destination.set !== null && liftLevel(destination) < STAGE.drop - .5) {
+    await moveLift(destination, STAGE.drop, TIMING.lower, 'ease-in');
+    if (!alive()) return;
+  }
+  mountSet(destination, target);
+  const rising = moveLift(destination, 0, TIMING.rise, 'cubic-bezier(.2,.7,.25,1)');
+  if (travel || walk) {
+    await director.wait(travel ? TIMING.riseLead : walk);
+    if (!alive()) return;
+  }
+  avatar.classList.remove('running', 'walking');
+  avatar.style.removeProperty('--cycle-ms');
+  setPhase('arriving');
+  await rising;
+  if (!alive()) return;
+
+  // 7. Screens and projections switch on, then 8. the interaction resumes.
+  normalize();
+  setStageContent(target, true);
+  powerUp(target);
+  arrive();
+}
+
+// Stable, complete composition without travel (load, resize, reduced motion).
+function settle(target) {
+  director.requested = target;
+  bays.forEach(bay => {
+    bay.lift.getAnimations().forEach(animation => animation.cancel());
+    unmountSet(bay);
+  });
+  const shift = Math.round(currentCam() / STAGE.bay);
+  bays.forEach(bay => {
+    let k = bay.k - shift;
+    const span = 2 * STAGE.bays + 1;
+    while (k < -STAGE.bays) k += span;
+    while (k > STAGE.bays) k -= span;
+    setBayIndex(bay, k);
+    moveLift(bay, STAGE.drop, 0);
+  });
+  textureOffset = (textureOffset + shift * STAGE.bay) % 1000000;
+  track.style.setProperty('--texture-x', textureOffset);
+  const centre = bayAt(0);
+  mountSet(centre, target);
+  moveLift(centre, 0, 0);
+  setCam(restCam(0, target));
+  setActor(restActor(target));
+  setParallax(target, 0);
+  avatar.classList.remove('running', 'walking');
+  setStageContent(target, true);
+  powerUp(target, { instant: true });
+  arrive();
+}
+
+/* ---------- Contenuti scenici, schermi e proiezioni ---------- */
+
+let leaveTimer;
+function setStageContent(index, on) {
+  const page = pages[index];
+  page.dataset.stage = on ? 'on' : 'off';
+  $$('.scenic', page).forEach(node => { node.inert = !on; });
+}
+
+// Old page fades out while the new heading is already focusable.
+function showPage(index, instant) {
+  clearTimeout(leaveTimer);
+  pages.forEach((page, i) => {
+    const active = i === index;
+    const leaving = !active && !instant && !page.hidden && page.classList.contains('active');
+    page.classList.toggle('active', active);
+    page.classList.toggle('leaving', leaving);
+    page.inert = !active;
+    page.hidden = !active && !leaving;
+  });
+  if (!instant) {
+    leaveTimer = setTimeout(() => pages.forEach((page, i) => {
+      if (i !== index) { page.hidden = true; page.classList.remove('leaving'); }
+    }), TIMING.contentOut);
+  }
+}
+
+const links = Object.fromEntries($$('.scene-link').map(node => [node.dataset.link, node]));
+
+function powerDown() {
+  stationNodes[2].dataset.power = 'off';
+  Object.values(links).forEach(node => node.classList.remove('on'));
+}
+
+function powerUp(index, { instant = false } = {}) {
+  if (!isJourney()) return;
+  if (SECTIONS[index] === 'projects') stationNodes[2].dataset.power = 'on';
+  placeLinks(index);
+  const names = { about: ['about'], projects: ['index', 'feature'], contact: ['contact'] }[SECTIONS[index]] || [];
+  names.forEach(name => {
+    links[name].style.transitionDelay = instant || reduced ? '0ms' : `${SECTIONS[index] === 'projects' ? TIMING.activate / 2 : 0}ms`;
+    links[name].classList.add('on');
+  });
+}
+
+// Connectors are measured from the real panels and equipment, so they follow
+// the layout at any viewport (and are re-measured on resize and tab changes).
+function placeLinks(index) {
+  const id = SECTIONS[index];
+  const node = stationNodes[index];
+  const box = target => target.getBoundingClientRect();
+  const station = STATIONS[index];
+  const canvas = box(node);
+  const su = unit();
+  const point = ([x, y]) => [canvas.left + x * su, canvas.top + y * su];
+  const cable = (link, [x, y], panel) => {
+    const top = panel.bottom;
+    link.style.cssText = `left:${x}px; top:${top}px; height:${Math.max(0, y - top)}px;`;
+  };
+  if (id === 'about') cable(links.about, point(station.link), box($('.about-console')));
+  if (id === 'contact') cable(links.contact, point(station.link), box($('.contact-panel')));
+  if (id === 'projects') {
+    [['index', $('.holo-index')], ['feature', $('.projects-grid')]].forEach(([name, panel]) => {
+      const emitter = box($(`[data-emitter="${name}"]`, node));
+      const target = box(panel);
+      const lensY = emitter.top + emitter.height * .22;
+      const lensL = emitter.left + emitter.width * .3;
+      const lensR = emitter.right - emitter.width * .3;
+      const left = Math.min(lensL, target.left + 8);
+      const right = Math.max(lensR, target.right - 8);
+      const width = right - left;
+      const height = Math.max(1, lensY - target.bottom);
+      const pct = x => `${((x - left) / width * 100).toFixed(2)}%`;
+      links[name].style.cssText = `left:${left}px; top:${target.bottom}px; width:${width}px; height:${height}px;` +
+        `clip-path: polygon(${pct(target.left + 8)} 0, ${pct(target.right - 8)} 0, ${pct(lensR)} 100%, ${pct(lensL)} 100%);`;
+    });
+  }
+}
+
+/* ---------- Viaggio: personaggio e interazioni ---------- */
 
 function placeStations(journey) {
   stationNodes.forEach((node, index) => {
     node.classList.remove('interaction-active');
     node.style.setProperty('--frame', STATIONS[index].staticFrame || 0);
     // Move the same node; no duplicate radio, desk, Frank or cat in hidden tabs.
-    if (journey || !STATIONS[index].frames) world.insertBefore(node, avatar);
-    else {
+    if (journey || !STATIONS[index].frames) {
+      if (!node.closest('.bay-mount')) storage.append(node);
+    } else {
+      bays.forEach(bay => { if (bay.set === index) bay.set = null; });
       pages[index].append(node);
       node.classList.add('interaction-active');
     }
-  });
-  layoutRoute(true);
-}
-
-function layoutRoute(instant = false) {
-  const scale = unit();
-  const width = world.clientWidth;
-  const viewport = $('.journey-strip').clientWidth;
-  // Small screens pan over the same world, without scaling actors separately.
-  const camera = Math.min(0, Math.max(viewport - width, viewport / 2 - stopX(current)));
-  world.style.transition = instant || reduced ? 'none' : '';
-  world.style.setProperty('--camera-x', `${camera}px`);
-  const rails = $('.route-rails');
-  let start = 0;
-  rails.replaceChildren();
-  [...STATIONS, { at: 100 + 92 * scale / width * 100 }].forEach(station => {
-    const end = Math.min(width, width * station.at / 100 - 92 * scale);
-    if (end > start) {
-      const segment = document.createElement('div');
-      segment.className = 'route-rail';
-      segment.style.left = `${start}px`;
-      segment.style.width = `${end - start}px`;
-      rails.append(segment);
-    }
-    start = width * station.at / 100 + 92 * scale;
   });
 }
 
@@ -205,8 +570,7 @@ function cancelStation() {
   // Exit from the authored pose's foot anchor, even if interrupted mid-sequence.
   if (activeStation !== null && isJourney()) {
     const station = STATIONS[activeStation];
-    avatar.style.transition = 'none';
-    avatar.style.left = `${world.clientWidth * station.at / 100 + (station.actorX[interactionFrame] - 72) * unit()}px`;
+    setActor(station.actorX[interactionFrame] - station.focus);
     avatar.classList.toggle('back', station.id === 'about');
   }
   stationNodes.forEach(node => node.classList.remove('interaction-active'));
@@ -215,49 +579,20 @@ function cancelStation() {
 }
 
 function stopAvatar() {
-  clearTimeout(walkTimer);
-  travel = null;
   avatar.classList.remove('walking', 'running');
+  avatar.style.removeProperty('--cycle-ms');
   clearRest();
-}
-
-function moveAvatar(index, previous, instant) {
-  cancelStation();
-  // Freeze the interpolated position before retargeting rapid tab changes.
-  const from = parseFloat(getComputedStyle(avatar).left) || stopX(previous);
-  stopAvatar();
-  setPhase('exiting');
-  avatar.style.transition = 'none';
-  avatar.style.left = `${from}px`;
-  void avatar.offsetWidth;
-  const target = stopX(index);
-  const distance = Math.abs(target - from);
-  const running = Math.abs(index - previous) > 1;
-  const spacing = world.clientWidth * .2;
-  const duration = Math.max(120, Math.round(WALK_MS * distance / spacing / (running ? RUN_SPEED : 1)));
-  avatar.style.setProperty('--travel-ms', `${duration}ms`);
-  world.style.setProperty('--travel-ms', `${duration}ms`);
-  avatar.classList.toggle('back', target < from);
-  avatar.style.transition = instant || reduced ? 'none' : '';
-  avatar.style.left = `${target}px`;
-  layoutRoute(instant);
-  if (!instant && !reduced && distance > 1) {
-    setPhase('approaching');
-    avatar.classList.add(running ? 'running' : 'walking');
-    travel = { index, previous };
-    walkTimer = setTimeout(arrive, duration);
-  } else arrive();
-  scheduleRadio();
 }
 
 function arrive() {
   stopAvatar();
   if (!isJourney()) return;
   const station = STATIONS[current];
-  avatar.style.left = `${stopX(current)}px`;
   if (!station.frames) {
+    avatar.classList.remove('back');
     setPhase('waiting');
     if (current === 0) scheduleRest();
+    scheduleRadio();
     return;
   }
   // Orient before replacing the walking pair with the actor layer.
@@ -311,8 +646,11 @@ document.addEventListener('visibilitychange', () => {
   clearRest();
   clearTimeout(stationTimer);
   if (document.hidden) {
-    // Never let a delayed arrival start an interaction in a hidden document.
-    if (travel) { avatar.style.transition = 'none'; avatar.style.left = `${stopX(current)}px`; arrive(); }
+    // Never leave a transfer or a lift halfway in a hidden document.
+    if (isJourney() && !['waiting', 'interacting', 'aligning'].includes(phase)) {
+      director.cancel();
+      settle(current);
+    }
   } else if (activeStation !== null) {
     const station = STATIONS[activeStation];
     if (!reduced && (station.loop || interactionFrame < station.frames - 1)) {
@@ -328,25 +666,25 @@ window.addEventListener('resize', () => {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
     if (!isJourney()) return;
-    layoutRoute(true);
-    if (travel) moveAvatar(current, travel.previous, false);
-    else { avatar.style.transition = 'none'; avatar.style.left = `${stopX(current)}px`; }
+    if (['waiting', 'interacting', 'aligning'].includes(phase)) {
+      // Pixel values depend on the scene unit: re-apply them, keep the pose.
+      bays.forEach(bay => moveLift(bay, bay.level, 0));
+      placeLinks(current);
+    } else {
+      director.cancel();
+      cancelStation();
+      settle(current);
+    }
   });
 });
 
 function show(index, { instant = false } = {}) {
   index = Math.max(0, Math.min(SECTIONS.length - 1, index));
-  const previous = current;
   current = index;
 
-  root.style.setProperty('--step', index);
-  root.style.setProperty('--origin-x', `${STOPS[index]}%`);
-  pages.forEach((page, i) => {
-    page.hidden = i !== index;
-    page.classList.toggle('active', i === index);
-  });
+  showPage(index, instant || reduced);
   setActiveNav(index);
-  moveAvatar(index, previous, instant);
+  stageTo(index, { instant });
 
   $('#counter').textContent = `${pad(index + 1)} / ${pad(SECTIONS.length)}`;
   $('#prev').disabled = index === 0;
@@ -370,21 +708,23 @@ $('#prev').addEventListener('click', () => go(current - 1));
 $('#next').addEventListener('click', () => go(current + 1));
 
 window.addEventListener('keydown', e => {
-  if (!isJourney() || dialog.open || e.target.closest('button, input, textarea, select')) return;
+  if (!isJourney() || dialog.open || e.target.closest('button, input, textarea, select, [role="tab"]')) return;
   if (e.key === 'ArrowRight') { e.preventDefault(); go(current + 1); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
 });
 
-// La rotella cambia tappa solo quando la pagina corrente è già a fine corsa.
+// La rotella cambia tappa solo quando il contenuto corrente è già a fine corsa.
 let wheelAmount = 0;
 let lastWheel = 0;
 window.addEventListener('wheel', e => {
   if (!isJourney() || dialog.open || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-  const page = pages[current];
   const direction = Math.sign(e.deltaY);
-  const canScrollDown = page.scrollTop + page.clientHeight < page.scrollHeight - 3;
-  const canScrollUp = page.scrollTop > 3;
-  if ((direction > 0 && canScrollDown) || (direction < 0 && canScrollUp)) return;
+  const scroller = e.target.closest?.('.page, .scroll-area');
+  if (scroller && pages[current].contains(scroller)) {
+    const canScrollDown = scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 3;
+    const canScrollUp = scroller.scrollTop > 3;
+    if ((direction > 0 && canScrollDown) || (direction < 0 && canScrollUp)) return;
+  }
 
   e.preventDefault();
   const now = Date.now();
@@ -404,11 +744,84 @@ $('main').addEventListener('touchstart', e => {
   touchY = e.touches[0].clientY;
 }, { passive: true });
 $('main').addEventListener('touchend', e => {
-  if (!isJourney() || dialog.open || e.target.closest('.projects-grid')) return;
+  if (!isJourney() || dialog.open || e.target.closest('.projects-grid, .holo-index')) return;
   const dx = e.changedTouches[0].clientX - touchX;
   const dy = e.changedTouches[0].clientY - touchY;
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(current + (dx < 0 ? 1 : -1));
 }, { passive: true });
+
+/* ---------- Viste: profilo a schede e progetto in evidenza (solo Viaggio) ---------- */
+
+// In Lettura tutti i pannelli restano visibili e le schede sono nascoste;
+// in Viaggio un solo pannello per volta, con il pattern ARIA delle schede.
+function tabs(list, buttons, panels, select) {
+  const activate = (index, focus) => {
+    buttons.forEach((button, i) => {
+      const selected = i === index;
+      button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
+      if (isJourney()) panels[i].hidden = !selected;
+    });
+    if (focus) buttons[index].focus();
+    select?.(index);
+    if (isJourney() && phase !== 'leaving') placeLinks(current);
+  };
+  buttons.forEach((button, i) => button.addEventListener('click', () => activate(i, false)));
+  list.addEventListener('keydown', e => {
+    const i = buttons.indexOf(document.activeElement);
+    if (i < 0) return;
+    const next = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: buttons.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    activate((next + buttons.length) % buttons.length, true);
+  });
+  return {
+    selected: () => buttons.findIndex(b => b.getAttribute('aria-selected') === 'true'),
+    activate,
+    mode(journey) {
+      panels.forEach((panel, i) => {
+        if (journey) panel.setAttribute('role', 'tabpanel');
+        else panel.removeAttribute('role');
+        panel.hidden = journey && i !== Math.max(0, this.selected());
+      });
+    },
+  };
+}
+
+const aboutList = $('.about-console .view-tabs');
+const aboutTabs = tabs(aboutList, $$('[role="tab"]', aboutList), $$('.about-grid > article'));
+
+const projectList = $('#project-tabs');
+projects.forEach((project, i) => {
+  project.id = `project-${i + 1}`;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.setAttribute('role', 'tab');
+  button.id = `project-tab-${i + 1}`;
+  button.setAttribute('aria-controls', project.id);
+  button.innerHTML = `<span class="holo-num">${pad(i + 1)}</span><span class="holo-name"></span>`;
+  $('.holo-name', button).textContent = $('h3', project).textContent;
+  projectList.append(button);
+});
+const projectTabs = tabs(projectList, $$('[role="tab"]', projectList), projects, () => {
+  // Retune the featured projection without leaving the area.
+  const feature = links.feature;
+  if (!feature.classList.contains('on')) return;
+  feature.classList.remove('flicker');
+  void feature.offsetWidth;
+  feature.classList.add('flicker');
+});
+
+function setViews(journey) {
+  if (aboutTabs.selected() < 0) aboutTabs.activate(0);
+  if (projectTabs.selected() < 0) projectTabs.activate(0);
+  aboutTabs.mode(journey);
+  projectTabs.mode(journey);
+  projects.forEach((project, i) => {
+    if (journey) project.setAttribute('aria-labelledby', `project-tab-${i + 1}`);
+    else project.removeAttribute('aria-labelledby');
+  });
+}
 
 /* ---------- Lettura: sezione attiva e progresso ---------- */
 
@@ -444,8 +857,8 @@ function setReduced(value) {
   const button = $('#motion');
   button.setAttribute('aria-pressed', String(value));
   button.title = value ? 'Riattiva movimento' : 'Riduci movimento';
-  if (isJourney()) {
-    if (value) moveAvatar(current, current, true);
+  if (isJourney() && bays.length) {
+    if (value) { director.cancel(); cancelStation(); settle(current); }
     else if (activeStation !== null && STATIONS[activeStation].loop) {
       clearTimeout(stationTimer);
       stationTimer = setTimeout(advanceInteraction, FRAME_MS);
@@ -470,11 +883,13 @@ function el(tag, className, text) {
   return node;
 }
 
-// In Viaggio la scheda progetto apre il caso di studio nel dialog;
+// In Viaggio il caso di studio si apre nel dialog;
 // in Lettura il <details> si espande sul posto.
 grid.addEventListener('click', e => {
   const project = e.target.closest('.project');
   if (!isJourney() || !project || e.target.closest('a')) return;
+  // Desktop: only the explicit command opens it; the projection is for reading.
+  if (!e.target.closest('summary') && matchMedia('(min-width: 761px)').matches) return;
   e.preventDefault();
   const title = el('h2', '', $('h3', project).textContent);
   title.id = 'detail-title';
@@ -522,5 +937,6 @@ $('#year').textContent = new Date().getFullYear();
 
 /* ---------- Avvio ---------- */
 
+buildBays();
 setReduced(reduced);
 setMode(isJourney() ? 'journey' : 'read');

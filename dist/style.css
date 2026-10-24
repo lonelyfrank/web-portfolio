@@ -48,7 +48,7 @@ body {
 }
 
 a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; cursor: pointer; background: none; border: 1px solid #315077; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 1px solid var(--line); }
 button, a { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--yellow); outline-offset: 4px; }
 h1:focus, h2:focus, main:focus, .page:focus { outline: none; }
@@ -144,7 +144,12 @@ p { line-height: 1.65; }
   opacity: .7;
   transform: translateX(calc(var(--step) * -8%));
 }
-.journey .skyline { bottom: calc(var(--controls-h) + var(--road-h)); transition: transform 1.2s var(--ease); }
+/* In Viaggio la parallasse dipende dall'indice dell'area (0–3): spostamenti limitati,
+   mai cumulativi, sempre più lenti del ponte (che avanza di un modulo per tappa). */
+.journey .skyline { bottom: var(--controls-h); transition: transform var(--travel-ms, 0ms) linear; }
+.journey .skyline-far { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.1)); }
+.journey .skyline-mid { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.2)); }
+.journey .skyline-near { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.32)); }
 
 /* Navi che attraversano il cielo. Senza animazione restano ferme nella loro posizione. */
 .ship {
@@ -201,8 +206,10 @@ p { line-height: 1.65; }
   gap: 6px;
   font-size: 13px;
   letter-spacing: 1px;
-  color: #b5c5de;
+  color: var(--muted);
+  transition: color .2s;
 }
+.site-nav a:hover { color: var(--text); }
 .site-nav b { font-weight: 500; color: var(--dim); }
 .site-nav a[aria-current] { color: var(--pink); }
 .site-nav a[aria-current] b { color: inherit; }
@@ -219,23 +226,37 @@ p { line-height: 1.65; }
 
 .header-tools { display: flex; align-items: center; gap: 12px; }
 
-.mode-switch { display: flex; border: 1px solid var(--line); }
+.mode-switch { display: flex; height: 36px; border: 1px solid var(--line); }
 .mode-switch button {
   display: flex;
   gap: 6px;
   align-items: center;
   border: 0;
-  padding: 8px 12px;
+  padding: 0 12px;
   font-family: var(--font-display);
   font-size: 12px;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
 }
+.mode-switch button:hover { color: var(--text); }
 .mode-switch button[aria-pressed='true'] { background: #12304d; color: var(--cyan); }
 html:not(.js) .mode-switch { display: none; }
 
-.github { font-family: var(--font-display); font-size: 13px; border: 1px solid #41658d; padding: 9px 16px; }
+.github {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color .2s, border-color .2s;
+}
+.github:hover { color: var(--cyan); border-color: var(--line-strong); }
 
 .read-progress {
   position: absolute;
@@ -262,8 +283,8 @@ main {
 .page[hidden] { display: none !important; }
 .page + .page { border-top: 1px solid #77b3ff14; }
 
-.eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--pink); margin: 0 0 18px; }
-.micro { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #8aa6c6; }
+.eyebrow { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--pink); margin: 0 0 18px; }
+.micro { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
 .dot { color: var(--pink); }
 
 .section-heading { margin: 0 0 32px; }
@@ -320,7 +341,7 @@ h3 { font-size: 20px; margin: 12px 0 22px; }
 .hero { max-width: 790px; }
 h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4px; margin: 0; font-weight: 700; }
 .role { font-size: clamp(18px, 2.3vw, 30px); letter-spacing: 2px; color: var(--cyan); margin: 22px 0 18px; }
-.intro { font-size: 17px; line-height: 1.8; color: #bdcbe1; margin: 0; }
+.intro { font-size: 17px; line-height: 1.8; color: var(--body); margin: 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 30px; }
 
 /*
@@ -388,28 +409,27 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .welcome-next { font-size: 12px; color: var(--body); }
 
 /* About */
-.about-grid { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 24px; align-items: stretch; }
-.skills-workshop { display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; }
-.skills-workshop .skills { gap: 14px 8px; }
-.skills-workshop .skills button { width: 64px; height: 64px; font-size: 20px; }
-.about-grid > .bio, .about-grid > .timeline { align-self: center; }
+/* Tre pannelli con lo stesso schema (etichetta, titolo, contenuto) e la stessa altezza. */
+.about-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
+.panel > .micro { display: block; }
+.panel > .micro + h3 { margin-top: 10px; }
 
+.skills-panel { display: flex; flex-direction: column; }
+.skills-panel #workbench-skill { color: var(--cyan); }
 .skills {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px 12px;
-  align-content: center;
-  padding: 22px 14px 14px;
+  gap: 14px 8px;
 }
 .skills button {
   justify-self: center;
-  width: 80px;
-  height: 80px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   border-color: #2fc3f9;
   background: #05152cbb;
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1.1;
   box-shadow: 0 0 30px #009dff20;
   transition: transform .2s, box-shadow .2s;
@@ -420,13 +440,12 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   border-color: var(--pink);
 }
 .skills small { display: block; font-size: 10px; padding-top: 4px; }
-.skills p { grid-column: 1 / -1; min-height: 54px; margin: 0; font-size: 14px; text-align: center; color: #b2c9e2; }
+#skill-info { min-height: 3.3em; margin: 18px 0 0; font-size: 14px; line-height: 1.65; color: var(--body); }
 
 .bio p { color: var(--body); font-size: 15px; }
 .text-link { display: block; margin-top: 22px; font-size: 13px; color: var(--cyan); }
 
-.timeline { padding: 22px; }
-.timeline div { position: relative; padding: 0 0 20px 20px; border-left: 1px solid #328aac; }
+.timeline div { position: relative; padding: 0 0 20px 20px; border-left: 1px solid var(--line-strong); }
 .timeline div::before {
   content: '';
   position: absolute;
@@ -437,8 +456,8 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   border-radius: 50%;
   background: var(--pink);
 }
-.timeline small { font-family: var(--font-display); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #819abb; }
-.timeline h4 { font-size: 16px; margin: 6px 0; }
+.timeline small { font-family: var(--font-display); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+.timeline h4 { font-size: 16px; margin: 4px 0; }
 .timeline p { font-size: 13px; margin: 0; color: var(--muted); }
 
 /* Projects */
@@ -466,7 +485,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 var(--pad-x) var(--pad-y);
+  padding: 0 var(--pad-x) calc(var(--pad-y) + var(--pad-y-fix, 0px));
   border: solid transparent;
   border-width: 26px 27px 29px;
   border-image: url('assets/ui/frame-monitor-cyan.webp') 53 55 58 54 / 26px 27px 29px stretch;
@@ -475,6 +494,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 }
 .project:nth-child(even) {
   --accent: var(--pink);
+  --pad-y-fix: -3px;
   border-width: 26px 26px 32px;
   border-image: url('assets/ui/frame-monitor-pink.webp') 53 52 66 51 / 26px 26px 32px stretch;
 }
@@ -485,7 +505,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   place-items: center;
   overflow: hidden;
   margin: 0 calc(-1 * var(--pad-x)) 4px;
-  border-bottom: 1px solid #2c526f;
+  border-bottom: 1px solid var(--line);
   background:
     repeating-linear-gradient(0deg, #203b581f 0 1px, transparent 1px 17px),
     radial-gradient(ellipse, #163055, #050c1b);
@@ -504,14 +524,15 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   font-size: 11px;
   letter-spacing: 1px;
   padding: 3px 8px;
-  border: 1px solid #2c526f;
-  color: #9fc2dc;
+  border: 1px solid var(--line);
+  color: var(--muted);
 }
 
-.case { margin-top: auto; border-top: 1px solid #35516a; padding-top: 12px; }
+.case { margin-top: auto; border-top: 1px solid var(--line); padding-top: 12px; }
 .case summary {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   list-style: none;
   cursor: pointer;
   font-size: 14px;
@@ -550,14 +571,15 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   width: 100%;
   margin-top: 9px;
   padding: 12px 16px;
-  border: 1px solid #25415d;
+  border: 1px solid var(--line);
   background: #06142cb3;
   text-align: left;
   font-size: 15px;
 }
 .contact-panel a:hover, .contact-panel button:hover { border-color: var(--cyan); }
-.contact-panel :is(a, button) > span:first-child { white-space: nowrap; }
-.contact-panel small { display: block; margin: 4px 0 0 27px; font-size: 12px; color: #86a2c4; }
+.contact-panel .channel { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.contact-panel .channel i { width: 16px; font-style: normal; text-align: center; color: var(--cyan); }
+.contact-panel .value { font-size: 13px; color: var(--muted); }
 
 .closing { padding: 25px; }
 
@@ -569,6 +591,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   line-height: 1.2;
 }
 .closing em { font-style: normal; color: var(--cyan); }
+.journey .closing p { text-shadow: 0 2px 0 var(--navy), 0 0 18px var(--navy), 0 0 36px #050918b3; }
 
 /* Footer (solo Lettura): il viaggio finisce su un ponte */
 .site-footer {
@@ -612,7 +635,7 @@ dialog {
 }
 dialog::backdrop { background: #020612c9; backdrop-filter: blur(8px); }
 dialog h2 { font-size: 32px; margin: 10px 0 20px; }
-dialog p { color: #adbed7; }
+dialog p { color: var(--body); }
 #detail-content .project-media { margin-bottom: 8px; }
 #detail-content .stack { margin: 12px 0 4px; }
 .close { position: absolute; right: 12px; top: 8px; border: 0; font-size: 30px; }
@@ -647,6 +670,9 @@ dialog p { color: #adbed7; }
   animation: pet-frames 3.2s steps(8) infinite;
 }
 .avatar:is(.walking, .running) .avatar-sprite {
+  /* Celle di movimento 160 × 112: stesso centro e scala delle pose 128 × 112. */
+  width: 125%;
+  margin-left: -12.5%;
   background-image: url('assets/character-motion.webp');
   background-size: 800% 200%;
   animation: sprite-frames var(--cycle-ms) steps(8) infinite;
@@ -712,17 +738,19 @@ dialog p { color: #adbed7; }
   gap: 24px;
   padding: 0 var(--gutter);
   background: #050b1beb;
-  border-top: 1px solid #273d57;
+  border-top: 1px solid var(--line);
   font-size: 12px;
   letter-spacing: 1px;
 }
-.journey-controls button { height: 32px; min-width: 32px; border: 0; color: #abc3df; }
+.journey-controls button { height: 32px; min-width: 32px; border: 0; color: var(--body); transition: color .2s; }
+.journey-controls button:not(:disabled):hover { color: var(--cyan); }
+#prev, #next { font-size: 18px; }
 .journey-controls button:disabled { opacity: .25; cursor: default; }
 .progress { display: flex; gap: 14px; }
-.progress a { width: 10px; height: 10px; border: 1px solid #728cad; border-radius: 50%; }
+.progress a { width: 10px; height: 10px; border: 1px solid var(--dim); border-radius: 50%; }
 .progress a.active { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 15px #ff2e9170; }
-#counter { color: #b8cce3; }
-.hint { margin-left: auto; color: #7892b0; text-transform: uppercase; }
+#counter { color: var(--body); }
+.hint { margin-left: auto; color: var(--dim); text-transform: uppercase; }
 #motion { font-size: 11px; text-transform: uppercase; }
 
 /* ---------- Modalità Viaggio ---------- */
@@ -734,65 +762,195 @@ dialog p { color: #adbed7; }
     linear-gradient(90deg, #050918b3 0%, #05091859 40%, transparent 65%),
     linear-gradient(180deg, #05091830, #05091800 65%);
 }
-.journey .scenery { transition: transform 1.2s var(--ease); }
+.journey .scenery {
+  transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.05));
+  transition: transform var(--travel-ms, 0ms) linear;
+}
+.journey .stars { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.02)); transition: transform var(--travel-ms, 0ms) linear; }
+/* Navi solo come traffico lontano sopra la città, dietro alle postazioni. */
+.journey .ship { top: auto; }
+.journey .ship-cargo { bottom: calc(var(--controls-h) + var(--strip-h) + 4px); width: 150px; opacity: .22; }
+.journey .ship-shuttle { bottom: calc(var(--controls-h) + var(--stage-below) + 70 * var(--scene-unit)); width: 110px; opacity: .3; }
+.journey .ship-scout { display: none; }
 .journey .read-progress, .journey .site-footer { display: none; }
 
-.journey main { height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h)); padding-top: 24px; }
-/* Contenuto centrato nell'area libera; se non ci sta, i distanziatori si azzerano e la pagina scorre */
+.journey main { height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h)); }
+/* Titolo in alto, contenuti scenici in basso, vicini alla postazione che li alimenta.
+   Le pagine si sovrappongono per la dissolvenza; se il contenuto non entra, la pagina scorre. */
 .journey .page {
+  position: absolute;
+  inset: 0 var(--gutter);
   display: flex;
   flex-direction: column;
-  height: 100%;
   overflow: auto;
-  padding: 0 4px 16px;
+  padding: 20px 4px 12px;
   border: 0;
   scrollbar-width: thin;
 }
 .journey .page > * { flex-shrink: 0; }
-.journey .page::before, .journey .page::after { content: ''; flex: 1 1 0; }
-.journey .page::after { flex-grow: 1.4; }
-.journey .page.active { animation: appear .55s var(--ease); transform-origin: var(--origin-x, 50%) 100%; }
+.journey .page.active { animation: appear .3s var(--ease); }
+.journey .page.leaving { opacity: 0; transition: opacity .18s; pointer-events: none; }
+.journey .scenic { margin-top: auto; transition: opacity .28s var(--ease), transform .28s var(--ease); }
+.journey .page[data-stage='off'] .scenic { opacity: 0; transform: translateY(10px); transition-duration: .12s; }
+.journey #projects[data-stage='on'] .scenic { transition-delay: .16s; }
 
 .journey #home { flex-direction: row; flex-wrap: nowrap; align-items: center; min-height: 0; }
-.journey #home::before, .journey #home::after { display: none; }
-.journey .welcome-stand { margin-top: auto; }
-.journey .section-heading { margin: 0 0 22px; }
+/* Il nome resta protagonista anche sui desktop bassi: la misura segue anche l'altezza. */
+.journey h1 { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
+.journey .section-heading { margin: 0 0 14px; }
 .journey .section-heading h2 { font-size: clamp(40px, 4.4vw, 60px); }
+.journey .eyebrow { margin-bottom: 12px; }
+.journey .section-heading > p:last-child { margin-top: 10px; }
+.journey .district-services { display: none; }
 
-.journey .projects-grid { grid-template-columns: repeat(4, 1fr); gap: 22px; }
-.journey .project { --pad-x: 16px; --pad-y: 14px; cursor: pointer; gap: 10px; }
-.journey .project-media { aspect-ratio: auto; height: 110px; font-size: 46px; }
-.journey .project:hover { transform: translateY(-8px); filter: brightness(1.12); }
-.journey .project h3 { font-size: 18px; }
-.journey .summary {
-  font-size: 14px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* About: un pannello editoriale con tre viste, sopra la scrivania. */
+.view-tabs, .holo-index { display: none; }
+/* Pannelli a schede: l'attributo hidden prevale sul display dei singoli pannelli. */
+.journey :is(.about-grid > article, .project)[hidden] { display: none !important; }
+.journey .about-console {
+  position: relative;
+  align-self: center;
+  width: min(800px, 100%);
+  padding: 4px 28px 22px;
+  border: solid transparent;
+  border-width: 12px 14px;
+  border-image: url('assets/ui/frame-panel.webp') 24 27 24 27 / 12px 14px stretch;
+  background: linear-gradient(135deg, #0a1936f5, #061027f5) padding-box;
+  filter: drop-shadow(0 15px 30px #0005);
 }
+.journey .view-tabs { display: flex; gap: 4px; margin: 0 0 18px; border-bottom: 1px solid var(--line); }
+.journey [role='tab'] {
+  border: 0;
+  font-family: var(--font-display);
+  color: var(--muted);
+  transition: color .2s, background-color .2s, border-color .2s;
+}
+.journey .view-tabs [role='tab'] {
+  margin-bottom: -1px;
+  padding: 12px 16px 10px;
+  border-bottom: 2px solid transparent;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.journey [role='tab']:hover { color: var(--text); }
+.journey .view-tabs [aria-selected='true'] { color: var(--cyan); border-bottom-color: var(--cyan); }
+.journey .about-grid { display: block; min-height: 214px; }
+.journey .about-grid > .panel { padding: 0; border: 0; background: none; filter: none; }
+.journey .about-grid > .panel > .micro { display: none; }
+.journey .about-grid h3 { margin: 0 0 12px; font-size: 18px; }
+.journey .bio p { max-width: 62ch; }
+.journey .about-console .skills { grid-template-columns: repeat(6, auto); justify-content: start; gap: 12px 18px; }
+.journey .about-console .timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; }
+.journey .about-console .timeline > h3 { grid-column: 1 / -1; }
+
+/* Projects: ologrammi leggeri, ciascuno collegato al proprio emettitore. */
+.journey .holo-deck { display: flex; align-items: flex-end; justify-content: center; gap: clamp(32px, 6vw, 96px); }
+.journey :is(.holo-index, .projects-grid) {
+  position: relative;
+  background:
+    repeating-linear-gradient(to bottom, #00daff0b 0 1px, transparent 1px 3px),
+    linear-gradient(to bottom, #062a44e0, #041a2ee6);
+  border: 1px solid #00daff5c;
+  box-shadow: 0 0 0 1px #00daff12, 0 0 28px #00daff24, inset 0 0 36px #00daff12;
+}
+.journey .holo-index { display: flex; flex-direction: column; gap: 2px; width: 250px; padding: 14px 10px 10px; }
+.journey .holo-index::before {
+  content: 'Archivio progetti';
+  padding: 0 12px 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.journey .holo-index [role='tab'] {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 12px;
+  border-left: 2px solid transparent;
+  text-align: left;
+  font-size: 14px;
+  color: var(--body);
+}
+.journey .holo-index [role='tab']:hover { background: #00daff0f; }
+.journey .holo-index [aria-selected='true'] { border-left-color: var(--cyan); background: #00daff1c; color: var(--text); }
+.holo-num { font-size: 11px; letter-spacing: 1.5px; color: var(--dim); }
+.journey .holo-index [aria-selected='true'] .holo-num { color: var(--cyan); }
+.journey .projects-grid { display: block; width: min(580px, 100%); padding: 0; }
+.journey .project {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  column-gap: 20px;
+  row-gap: 8px;
+  padding: 22px 26px 18px;
+  border: 0;
+  background: none;
+  cursor: default;
+}
+.journey .project > * { grid-column: 2; }
+.journey .project-media {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  width: 72px;
+  height: 72px;
+  aspect-ratio: 1;
+  margin: 0;
+  border: 1px solid #00daff40;
+  font-size: 34px;
+}
+.journey .project h3 { font-size: 22px; }
+.journey .summary { font-size: 15px; }
+.journey .case { margin-top: 6px; border-top-color: #00daff30; }
+.journey .case summary { width: fit-content; gap: 14px; }
 .journey .case-body { display: none; }
 .journey .when-read { display: none; }
 .journey .when-journey { display: inline; }
 
-.journey .journey-strip {
-  display: block;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: var(--controls-h);
-  z-index: 3;
-  height: var(--strip-h);
-  pointer-events: none;
-  background: linear-gradient(to top, #050918 0 calc(var(--road-h) / 2), #050918b3 60%, transparent);
+/* Contact: monitor fisico sulla parabola, con il messaggio accanto. */
+.journey .contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(24px, 4vw, 56px);
 }
+.journey .contact-panel {
+  grid-column: 2;
+  grid-row: 1;
+  width: 420px;
+  margin-bottom: 18px;
+  padding: 4px 18px 12px;
+  border: solid transparent;
+  border-width: 26px 27px 29px;
+  border-image: url('assets/ui/frame-monitor-cyan.webp') 53 55 58 54 / 26px 27px 29px stretch;
+  background: linear-gradient(145deg, #0b1f3a, #050f22) padding-box;
+}
+/* Sostegno del monitor verso il cavo della parabola */
+.journey .contact-panel::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 29px);
+  width: 30px;
+  height: 18px;
+  margin-left: -15px;
+  border: 1px solid #2f5d8f;
+  border-top: 0;
+  background: linear-gradient(90deg, #0b1c35, #1b3a63 45%, #0b1c35);
+}
+.journey .contact-panel h3 { margin: 6px 0 12px; }
+.journey .contact-panel :is(a, button) { margin-top: 7px; padding: 10px 14px; }
+.journey .closing { grid-column: 1; grid-row: 1; justify-self: end; padding: 0 0 24px; text-align: right; }
+.journey .closing p { font-size: clamp(22px, 2.3vw, 34px); margin: 10px 0 0; }
+
 .journey .journey-controls { display: flex; }
 
 /* ---------- Animazioni ---------- */
 
 @keyframes appear {
-  from { opacity: 0; transform: translateY(16px) scale(.98); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes sprite-frames {
   to { background-position-x: calc(-512 * var(--u) * 1px); }
@@ -816,10 +974,10 @@ dialog p { color: #adbed7; }
 @media (max-width: 1100px) {
   .site-nav { gap: 20px; }
   .github { display: none; }
-  .about-grid { grid-template-columns: .9fr 1fr 1fr; gap: 15px; }
+  .about-grid { gap: 16px; }
   .panel { padding: 20px; }
-  .skills { gap: 18px 5px; }
-  .skills button { width: 68px; height: 68px; font-size: 21px; }
+  .skills { gap: 12px 4px; }
+  .skills button { width: 60px; height: 60px; font-size: 19px; }
   .journey .project { --pad-x: 12px; --pad-y: 12px; }
   .journey .project h3 { font-size: 16px; }
 }
@@ -827,7 +985,6 @@ dialog p { color: #adbed7; }
 /* Schermi medi: la scena dei Contatti si rimpicciolisce per lasciare spazio al testo */
 @media (max-width: 1400px) {
   .contact-layout { gap: 32px; }
-  .about-grid { grid-template-columns: .9fr 1fr 1.15fr; }
   .contact-panel { width: 380px; }
   .closing { padding: 25px 0; }
   .closing p { font-size: clamp(24px, 2.8vw, 44px); }
@@ -843,24 +1000,39 @@ dialog p { color: #adbed7; }
   .journey .section-heading > p:last-child { display: none; }
   .journey .welcome-stand { width: 250px; }
   .journey .welcome-stand .dock { --pillar: 60px; }
-  .journey .panel { padding: 14px 20px; }
-  .journey .panel h3 { margin: 4px 0 12px; }
-  .journey .skills { padding: 14px 10px 8px; gap: 12px 6px; }
-  .journey .skills button { width: 66px; height: 66px; font-size: 20px; }
-  .journey .district-services { height: 48px; margin-top: 12px; }
-  .journey .timeline h4 { margin: 2px 0; }
+  /* Prima si riducono decorazioni e spaziature, il testo resta leggibile. */
+  .journey .page { padding-top: 14px; }
+  .journey .role { margin: 14px 0 12px; }
+  .journey .actions { margin-top: 20px; }
+  .journey .contact-panel { padding: 0 16px 8px; }
+  .journey .panel h3 { margin: 4px 0 10px; }
+  .journey .about-console { padding: 0 24px 16px; }
+  .journey .view-tabs { margin-bottom: 12px; }
+  .journey .view-tabs [role='tab'] { padding: 10px 14px 8px; }
+  .journey .about-grid { min-height: 180px; }
+  .journey .skills button { width: 58px; height: 58px; font-size: 18px; }
+  .journey #skill-info { margin-top: 10px; }
+  .journey .panel > .micro { display: none; }
   .journey .bio p { margin: 8px 0; }
   .journey .timeline div { padding-bottom: 10px; }
-  .journey .project .micro, .journey .project .stack { display: none; }
-  .journey .project-media { height: 80px; font-size: 36px; }
-  .journey .summary { -webkit-line-clamp: 2; }
+  .journey .holo-index { padding-top: 10px; }
+  .journey .holo-index [role='tab'] { padding: 7px 12px; }
+  .journey .project { padding: 16px 22px 14px; row-gap: 6px; }
+  .journey .project-media { width: 56px; height: 56px; font-size: 26px; }
+  .journey .project { grid-template-columns: 56px minmax(0, 1fr); }
   .journey .contact-panel :is(a, button) { margin-top: 6px; padding: 8px 14px; }
-  .journey .closing p { font-size: clamp(26px, 3vw, 40px); margin: 10px 0; }
+  .journey .contact-panel { margin-bottom: 14px; }
+  .journey .closing p { font-size: clamp(20px, 2.2vw, 30px); }
+}
+
+/* Desktop alti e larghi: scena più grande, con la stessa composizione. */
+@media (min-width: 1600px) and (min-height: 1000px) {
+  :root { --u: 2.5; --road-h: 60px; }
 }
 
 @media (max-width: 900px) {
   .about-grid { display: flex; flex-direction: column; }
-  .skills-workshop, .about-grid > .bio, .about-grid > .timeline { width: 100%; }
+  .about-grid > .panel { width: 100%; }
   .projects-grid { grid-template-columns: 1fr; }
   .contact-layout { display: block; }
   .contact-panel { width: 100%; }
@@ -899,13 +1071,14 @@ dialog p { color: #adbed7; }
   h1 { font-size: clamp(48px, 13vw, 85px); letter-spacing: -2px; }
   .role { font-size: 18px; }
   .intro { font-size: 15px; }
-  .actions { gap: 10px; margin-top: 24px; }
+  .actions { flex-direction: column; gap: 10px; margin-top: 24px; }
+  .actions .button { justify-content: space-between; }
   .button { font-size: 13px; padding: 2px 10px; gap: 15px; }
   .welcome-stand { width: min(280px, 100%); align-self: center; }
 
   .section-heading h2 { font-size: 43px; }
   .section-heading > p:last-child { font-size: 15px; }
-  .skills button { width: 72px; height: 72px; }
+  .skills button { width: 68px; height: 68px; font-size: 21px; }
   .bio, .timeline { padding: 24px; }
   .contact-panel { padding: 14px; }
   .contact-panel :is(a, button) { padding: 12px; }
@@ -920,24 +1093,22 @@ dialog p { color: #adbed7; }
   .journey #home { flex-direction: column; align-items: stretch; }
   .journey .welcome-stand { margin: 28px auto 0; }
   .journey .welcome-stand .dock { --pillar: 40px; }
-  .journey .projects-grid {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 22px;
-    padding: 8px 8px 20px;
-  }
-  .journey .project { flex: 0 0 87%; scroll-snap-align: center; }
-  .journey .gallery-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: var(--font-display);
-    font-size: 11px;
-    text-transform: uppercase;
-    color: #94aaca;
-  }
-  .gallery-controls button { padding: 6px 16px; }
+  /* Viaggio forzato su mobile: stessa scena, contenuti in colonna. */
+  .journey .holo-deck { flex-direction: column; align-items: stretch; gap: 14px; }
+  .journey .holo-index { flex-direction: row; width: auto; overflow-x: auto; padding: 6px; }
+  .journey .holo-index::before { display: none; }
+  .journey .holo-index [role='tab'] { flex: none; border-left: 0; border-bottom: 2px solid transparent; }
+  .journey .holo-index [aria-selected='true'] { border-bottom-color: var(--cyan); }
+  .journey .projects-grid { width: auto; }
+  .journey .project { padding: 16px; grid-template-columns: 48px minmax(0, 1fr); column-gap: 14px; }
+  .journey .project-media { width: 48px; height: 48px; font-size: 22px; }
+  .journey .about-console { padding: 0 14px 14px; }
+  .journey .view-tabs [role='tab'] { padding: 10px; letter-spacing: .5px; }
+  .journey .about-console .skills { grid-template-columns: repeat(3, auto); }
+  .journey .about-console .timeline { display: block; }
+  .journey .contact-layout { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .journey .contact-panel { width: auto; }
+  .journey .closing { order: 2; justify-self: auto; text-align: left; }
   .journey-controls { gap: 16px; padding: 0 16px; }
   .hint { display: none; }
   #motion { margin-left: auto; }
@@ -954,40 +1125,16 @@ dialog p { color: #adbed7; }
 }
 @keyframes steam-small-frames { to { background-position-x: -240px; } }
 
-/* Postazioni: un solo pavimento e una sola scala per tutto il percorso.
+/* Postazioni: una sola scala per personaggi, attrezzature e ponte.
    Coordinate locali in pixel dell'atlante 144 × 136, appoggio y=132. */
 :root { --scene-unit: calc(var(--u) * .5px); }
-.journey { --strip-h: calc(140 * var(--scene-unit) + var(--road-h)); }
-.journey .journey-strip { overflow: hidden; }
-.journey-world {
-  position: absolute;
-  bottom: 0;
-  width: max(100%, calc(1000 * var(--scene-unit)));
-  height: 100%;
-  transform: translateX(var(--camera-x, 0px));
-  transition: transform var(--travel-ms, 1050ms) linear;
-}
-.journey-world .walkway { z-index: 0; height: calc(var(--road-h) + 4 * var(--scene-unit)); }
-.journey-world .street-props { z-index: 1; bottom: var(--road-h); }
-.journey-world .avatar {
-  bottom: calc(var(--road-h) - 4 * var(--scene-unit));
-  z-index: 4;
-}
-.journey-world .avatar.station-owned { visibility: hidden; }
 .station {
   position: absolute;
   width: calc(144 * var(--scene-unit));
   height: calc(136 * var(--scene-unit));
-  margin-left: calc(-72 * var(--scene-unit));
-  bottom: calc(var(--road-h) - 4 * var(--scene-unit));
-  z-index: 2;
   --frame: 0;
   --floor-y: 132;
 }
-.station-home { left: 20%; }
-.station-about { left: 39%; }
-.station-projects { left: 60%; }
-.station-contact { left: 79%; }
 .station-deck {
   position: absolute;
   left: calc(-18 * var(--scene-unit));
@@ -1002,7 +1149,7 @@ dialog p { color: #adbed7; }
   aspect-ratio: 720 / 172;
   background-image: url('assets/ui/dock-supported.webp');
 }
-.station-equipment, .station-actors { position: absolute; image-rendering: pixelated; }
+.station-equipment, .station-actors, .station-lamp, .projector { position: absolute; image-rendering: pixelated; }
 .station-about .station-equipment {
   width: calc(140 * var(--scene-unit));
   left: calc((var(--equipment-x) - 70) * var(--scene-unit));
@@ -1026,25 +1173,91 @@ dialog p { color: #adbed7; }
 }
 .station-about .station-actors { background-image: url('assets/interaction-about.webp'); }
 .station-contact .station-actors { background-image: url('assets/interaction-contact.webp'); }
-/* Equipment stays mounted through approach, interaction, wait and exit. */
+/* Lamps light their own area and travel with it on the lift (100 su, taller than Frank). */
+.station-lamp { z-index: 0; height: calc(100 * var(--scene-unit)); bottom: calc(6 * var(--scene-unit)); }
+.station-about .station-lamp { left: calc(-35 * var(--scene-unit)); }
+.station-contact .station-lamp { left: calc(162 * var(--scene-unit)); }
+.lamp-out-left { left: calc(-84 * var(--scene-unit)); transform: scaleX(-1); }
+.lamp-out-right { left: calc(127 * var(--scene-unit)); }
 .station-equipment { z-index: 1; }
 .station-actors { z-index: 2; }
-.station-projects .station-equipment {
+/* Two emitters of the existing projector, off and on frames registered on each other. */
+.projector {
   width: calc(80 * var(--scene-unit));
-  left: calc((var(--equipment-x) - 40) * var(--scene-unit));
-  bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
+  height: calc(37 * var(--scene-unit));
+  bottom: calc(6 * var(--scene-unit));
 }
+.projector[data-emitter='index'] { left: calc(-14 * var(--scene-unit)); }
+.projector[data-emitter='feature'] { left: calc(78 * var(--scene-unit)); }
+.projector img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.projector-on { opacity: 0; transition: opacity .18s steps(3); }
+.station-projects[data-power='on'] .projector-on { opacity: 1; }
 .station.interaction-active .station-actors { display: block; }
-/* Rail segments end outside the whole pad, including the companion's area.
-   Terminals are the original left/right modules; nothing crosses the opening. */
-.route-rails { position: absolute; inset: 0; z-index: 1; }
-.route-rail {
+
+/* ---------- Scena Viaggio: un'area alla volta ----------
+   Livelli, dal fondo: cielo e città (.world, parallasse) → ringhiera e staffe →
+   vano → superficie della piazzola → piano mobile con l'allestimento → cilindri →
+   passerella → fascia della piazzola e bordo frontale → personaggio → HTML. */
+.journey {
+  --stage-above: calc(112 * var(--scene-unit));
+  --stage-below: calc(126 * var(--scene-unit));
+  --strip-h: calc(var(--stage-above) + var(--stage-below));
+  --bay: 330;
+}
+.journey .journey-strip {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--controls-h);
+  z-index: 3;
+  height: var(--strip-h);
+  pointer-events: none;
+  /* Bottom and sides are clipped: the shafts continue below the frame. Lamps may rise above. */
+  clip-path: inset(-200px 0 0 0);
+  background: linear-gradient(to top, #050918 0, #050918d9 calc(var(--stage-below) * .45), #05091800 var(--stage-below));
+}
+.set-storage { display: none; }
+
+.bridge-track {
   position: absolute;
-  bottom: var(--road-h);
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  transform: translateX(calc(var(--cam, 0) * -1 * var(--scene-unit)));
+  will-change: transform;
+}
+.track-walkway {
+  position: absolute;
+  z-index: 6;
+  left: calc(var(--bay) * -9 * var(--scene-unit));
+  width: calc(var(--bay) * 18 * var(--scene-unit));
+  top: var(--stage-above);
+  height: calc(48 * var(--scene-unit));
+  background: url('assets/ui/walkway.webp') repeat-x;
+  background-size: auto calc(52 * var(--scene-unit));
+  background-position: calc(var(--texture-x, 0) * -1 * var(--scene-unit)) calc(-4 * var(--scene-unit));
+}
+/* The walkway's top surface stays behind the feet and the lifted equipment. */
+.track-walkway-top {
+  z-index: 3;
+  top: calc(var(--stage-above) - 4 * var(--scene-unit));
+  height: calc(4 * var(--scene-unit));
+  background-position-y: 0;
+}
+
+.bay { position: absolute; left: calc(var(--k) * var(--bay) * var(--scene-unit)); top: var(--stage-above); width: 0; height: 0; }
+.bay > * { position: absolute; image-rendering: pixelated; }
+.bay-rail {
+  z-index: 1;
+  left: calc(90 * var(--scene-unit));
+  width: calc((var(--bay) - 180) * var(--scene-unit));
+  top: calc(-36 * var(--scene-unit));
   height: calc(36 * var(--scene-unit));
   background: url('assets/ui/railing.webp') center bottom / auto 100% repeat-x;
 }
-.route-rail::before, .route-rail::after {
+.bay-rail::before, .bay-rail::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -1052,11 +1265,128 @@ dialog p { color: #adbed7; }
   height: calc(35 * var(--scene-unit));
   background: url('assets/ui/rail-end-left.webp') left bottom / auto 100% no-repeat;
 }
-.route-rail::before { left: 0; }
-.route-rail::after { right: 0; background-image: url('assets/ui/rail-end-right.webp'); background-position: right bottom; }
-.route-rail { min-width: 0; }
-.route-rail::before, .route-rail::after { max-width: 50%; }
-.workshop-caption { margin: 0 0 12px; text-align: center; color: var(--cyan); }
+.bay-rail::before { left: 0; }
+.bay-rail::after { right: 0; background-image: url('assets/ui/rail-end-right.webp'); background-position: right bottom; }
+.bay-bracket {
+  z-index: 2;
+  left: calc((var(--bay) / 2 - 55) * var(--scene-unit));
+  top: calc(48 * var(--scene-unit));
+  width: calc(110 * var(--scene-unit));
+  height: calc(62 * var(--scene-unit));
+  background: url('assets/ui/bracket.webp') center top / 100% auto no-repeat;
+  -webkit-mask-image: linear-gradient(#000 45%, transparent);
+  mask-image: linear-gradient(#000 45%, transparent);
+}
+.bay-shaft {
+  z-index: 2;
+  left: calc(-107 * var(--scene-unit));
+  top: calc(60 * var(--scene-unit));
+  width: calc(214 * var(--scene-unit));
+  height: calc(66 * var(--scene-unit));
+  background: url('assets/ui/lift-shaft.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-shaft::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 100%, #00daff2e, transparent 70%);
+  opacity: 0;
+  transition: opacity .4s;
+}
+.bay.raised .bay-shaft::after { opacity: 1; }
+.bay-pad {
+  left: calc(-90 * var(--scene-unit));
+  width: calc(180 * var(--scene-unit));
+  background: url('assets/ui/dock-deck.webp') 0 0 / calc(180 * var(--scene-unit)) calc(19 * var(--scene-unit)) no-repeat;
+}
+.bay-pad-top { z-index: 3; top: calc(-4 * var(--scene-unit)); height: calc(4 * var(--scene-unit)); }
+.bay-pad-front { z-index: 7; top: 0; height: calc(15 * var(--scene-unit)); background-position: 0 calc(-4 * var(--scene-unit)); }
+/* Plate, rods and equipment move together (transform only). */
+.bay-lift {
+  z-index: 4;
+  left: calc(-88 * var(--scene-unit));
+  top: calc(-4 * var(--scene-unit));
+  width: calc(176 * var(--scene-unit));
+  height: 0;
+  transform: translateY(calc(106 * var(--scene-unit)));
+  will-change: transform;
+}
+.bay-lift > * { position: absolute; }
+.bay-plate {
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(11 * var(--scene-unit));
+  background: url('assets/ui/lift-plate.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-rod {
+  top: calc(7 * var(--scene-unit));
+  width: calc(17 * var(--scene-unit));
+  height: calc(124 * var(--scene-unit));
+  background: url('assets/ui/lift-rod.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-rod-left { left: calc(12.5 * var(--scene-unit)); }
+.bay-rod-right { left: calc(151.5 * var(--scene-unit)); }
+.bay-mount { z-index: 2; left: 0; top: 0; }
+.bay-mount .station { left: calc((88 - var(--bay-x)) * var(--scene-unit)); top: calc(-128 * var(--scene-unit)); }
+.bay-mount .station-deck { display: none; }
+/* Cylinders stay anchored at the bottom of the shaft; the rods slide inside them. */
+.bay-cylinder {
+  z-index: 5;
+  top: calc(113 * var(--scene-unit));
+  width: calc(26 * var(--scene-unit));
+  height: calc(47.5 * var(--scene-unit));
+  background: url('assets/ui/lift-cylinder.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-cylinder-left { left: calc(-80 * var(--scene-unit)); }
+.bay-cylinder-right { left: calc(59 * var(--scene-unit)); }
+.bay-edge {
+  z-index: 7;
+  left: calc(-107 * var(--scene-unit));
+  top: calc(48 * var(--scene-unit));
+  width: calc(214 * var(--scene-unit));
+  height: calc(15.5 * var(--scene-unit));
+  background: url('assets/ui/lift-edge.webp') 0 0 / 100% 100% no-repeat;
+}
+
+.journey-strip .avatar {
+  left: 50%;
+  bottom: calc(var(--stage-below) - 4 * var(--scene-unit));
+  z-index: 2;
+  transform: translateX(calc(var(--actor-x, 0) * var(--scene-unit)));
+}
+.journey-strip .avatar.station-owned { visibility: hidden; }
+/* During a transfer app.js sets --cycle-ms from STAGE.runStride / STAGE.runSpeed. */
+
+/* Collegamenti fra postazioni e schermi */
+.scene-links { display: none; }
+.journey .scene-links { display: block; position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.scene-link {
+  position: fixed;
+  width: 2px;
+  margin-left: -1px;
+  opacity: 0;
+  background: repeating-linear-gradient(to bottom, var(--cyan) 0 6px, transparent 6px 10px);
+  box-shadow: 0 0 8px #00daff80;
+  transition: opacity .3s;
+}
+.scene-link.on { opacity: .75; }
+.scene-link.beam {
+  width: auto;
+  margin-left: 0;
+  box-shadow: none;
+  background:
+    repeating-linear-gradient(to bottom, #00daff14 0 1px, transparent 1px 4px),
+    linear-gradient(to top, #00daffc0, #00daff40 55%, #00daff14);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform .26s cubic-bezier(.2, .8, .3, 1), opacity .26s;
+}
+.scene-link.beam.on { transform: none; opacity: .85; }
+.scene-link.beam.flicker { animation: retune .32s steps(4); }
+@keyframes retune { 0%, 50% { opacity: .3; } 25%, 100% { opacity: .85; } }
+
 /* Home's welcome terminal remains a content link, outside the resting pad. */
 .journey .welcome-stand { display: none; }
 /* In Reading, the same station nodes sit beside their section, as static poses. */
@@ -1070,4 +1400,5 @@ dialog p { color: #adbed7; }
 }
 .page .station-contact { margin-bottom: 72px; }
 .page .station-projects { display: none; }
+.page .station-lamp { display: none; }
 .reduced { scroll-behavior: auto; }

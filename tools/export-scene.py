@@ -1,8 +1,8 @@
 """Esporta sfondo e personaggio caricati in assets/, senza modificare gli originali.
 
 Uso: python3 tools/export-scene.py (richiede Pillow).
-Il foglio originale non ha celle regolari: alcuni fotogrammi di corsa si
-sovrappongono in orizzontale. Il canale alpha permette di separarli senza tagli.
+Il foglio di movimento ha quattro righe di quattro pose. Il canale alpha
+permette di separare le due righe di corsa senza tagliare capelli e scarpe.
 """
 from pathlib import Path
 
@@ -81,24 +81,36 @@ def seam(alpha, expected, radius=36):
 
 
 def motion_rows(sheet):
-    rows = []
-    for row in range(2):
-        image = sheet.crop((0, row * sheet.height // 2, sheet.width, (row + 1) * sheet.height // 2))
-        alpha = image.getchannel('A')
-        boundaries = [[0] * image.height]
-        boundaries += [seam(alpha, round(column * image.width / 8) + 12) for column in range(1, 8)]
-        boundaries += [[image.width] * image.height]
+    """Riordina il foglio 4 × 4: otto pose di camminata, poi otto di corsa.
+
+    Le ultime due righe si sfiorano: il confine segue lo spazio trasparente
+    invece di tagliare orizzontalmente scarpe, capelli e code.
+    """
+    alpha = sheet.getchannel('A')
+    transposed = alpha.transpose(Image.Transpose.TRANSPOSE)
+    boundaries = [[0] * sheet.width]
+    boundaries += [seam(transposed, y, radius=24) for y in (255, 498, 698)]
+    boundaries += [[sheet.height] * sheet.width]
+    rows = [[], []]
+    for row in range(4):
+        mask = bytearray(sheet.width * sheet.height)
+        for x in range(sheet.width):
+            for y in range(boundaries[row][x], boundaries[row + 1][x]):
+                mask[y * sheet.width + x] = 255
+        band = sheet.copy()
+        band.putalpha(ImageChops.multiply(alpha, Image.frombytes('L', sheet.size, bytes(mask))))
         frames = []
-        for column in range(8):
-            mask = bytearray(image.width * image.height)
-            for y in range(image.height):
-                start, end = boundaries[column][y], boundaries[column + 1][y]
-                mask[y * image.width + start:y * image.width + end] = b'\xff' * (end - start)
-            figure = image.copy()
-            figure.putalpha(ImageChops.multiply(alpha, Image.frombytes('L', image.size, bytes(mask))))
-            box = figure.getchannel('A').point(lambda a: 255 if a > 16 else 0).getbbox()
-            frames.append((box, figure.crop(box)))
-        rows.append(frames)
+        for column in range(4):
+            left, right = round(column * sheet.width / 4), round((column + 1) * sheet.width / 4)
+            cell = band.crop((left, 0, right, sheet.height))
+            box = cell.getchannel('A').point(lambda a: 255 if a > 16 else 0).getbbox()
+            if box is None:
+                raise ValueError(f'Fotogramma vuoto: riga {row}, colonna {column}')
+            frames.append((box, cell.crop(box)))
+        ground = max(box[3] for box, _ in frames)
+        # Le due righe di ogni animazione condividono la stessa quota dei piedi.
+        rows[row // 2].extend(((box[0], box[1] - ground, box[2], box[3] - ground), figure)
+                              for box, figure in frames)
     return rows
 
 
@@ -112,9 +124,9 @@ def rest_frames(name):
     return rows[0] + rows[1]
 
 
-def export_atlas(rows, name, airborne=False):
+def export_atlas(rows, name, airborne=False, cell=CELL):
     scale = CHARACTER_HEIGHT / max(figure.height for _, figure in rows[0])
-    atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1] * len(rows)))
+    atlas = Image.new('RGBA', (cell[0] * 8, cell[1] * len(rows)))
     for row_index, frames in enumerate(rows):
         ground = max(box[3] for box, _ in frames)
         for column, (box, figure) in enumerate(frames):
@@ -124,18 +136,18 @@ def export_atlas(rows, name, airborne=False):
             head_box = head.point(lambda a: 255 if a > 64 else 0).getbbox()
             anchor = (head_box[0] + head_box[2]) / 2
             figure = figure.resize((round(figure.width * scale), round(figure.height * scale)), Image.Resampling.NEAREST)
-            x = CELL[0] // 2 - round(anchor * scale)
+            x = cell[0] // 2 - round(anchor * scale)
             lift = round((ground - box[3]) * scale) if airborne else 0
-            y = CELL[1] - 4 - lift - figure.height
-            if x < 0 or x + figure.width > CELL[0] or y < 0:
+            y = cell[1] - 4 - lift - figure.height
+            if x < 0 or x + figure.width > cell[0] or y < 0:
                 raise ValueError(f'Fotogramma fuori cella: {name}, {row_index}, {column}')
-            atlas.paste(figure, (column * CELL[0] + x, row_index * CELL[1] + y))
+            atlas.paste(figure, (column * cell[0] + x, row_index * cell[1] + y))
     atlas.save(OUT / name, lossless=True, method=6)
 
 
 def export_character():
-    sheet = Image.open(SPRITES / 'Animazione pixel cyberpunk con gatto calico.png').convert('RGBA')
-    export_atlas(motion_rows(sheet), 'character-motion.webp', airborne=True)
+    sheet = Image.open(SPRITES / 'Frank e il gatto calico in movimento.png').convert('RGBA')
+    export_atlas(motion_rows(sheet), 'character-motion.webp', airborne=True, cell=(160, 112))
     export_atlas([rest_frames('Otto fotogrammi_ gatta calico tra le gambe.png')], 'character-idle.webp')
     export_atlas([rest_frames('Animazione pixel_ ragazzo accarezza la gatta.png')], 'character-pet.webp')
 
