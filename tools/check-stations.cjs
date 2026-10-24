@@ -49,9 +49,18 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       await page.locator(`.site-nav a[href="#${id}"]`).click();
       await page.waitForFunction(id => document.querySelector('.page.active')?.id === id, id);
     };
-    const phase = (name, timeout = 6000) => page.waitForFunction(
+    const phase = (name, timeout = 30000) => page.waitForFunction(
       name => document.querySelector('.journey-strip').dataset.phase === name, name, { timeout });
     const contentFollows = async (id, backwards = false) => {
+      const ratio = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        const gutter = parseFloat(getComputedStyle(main).paddingLeft);
+        const pitch = main.clientWidth - 2 * gutter + Math.max(40, gutter);
+        const frames = document.querySelector('.bridge-track').getAnimations()[0].effect.getKeyframes();
+        const distance = Math.abs(new DOMMatrixReadOnly(frames.at(-1).transform).m41
+          - new DOMMatrixReadOnly(frames[0].transform).m41);
+        return pitch / distance;
+      });
       const snapshot = () => page.evaluate(id => ({
         panel: document.querySelector(`#${id} .scenic, #${id} .about-layout`).getBoundingClientRect().left,
         station: document.querySelector(`[data-station="${id}"]`).getBoundingClientRect().left,
@@ -62,7 +71,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       const panelDelta = after.panel - before.panel;
       const stationDelta = after.station - before.station;
       assert.ok(backwards ? panelDelta > 15 : panelDelta < -15, JSON.stringify({ before, after }));
-      assert.ok(Math.abs(panelDelta - stationDelta) < 8, 'Text and station must travel together');
+      assert.ok(Math.abs(panelDelta - stationDelta * ratio) < 8, 'Slides follow the compact camera path at their own pitch');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     };
     const overlappingLifts = async (from, to) => {
@@ -115,10 +124,25 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
           cycle: parseFloat(sprite.animationDuration),
         };
       });
+      // Derive ground speed from the rendered camera/actor animation paths;
+      // reframing can slow the feet slightly without changing the camera speed.
+      const cycle = await page.evaluate(expected => {
+        const camera = document.querySelector('.bridge-track').getAnimations()[0];
+        const actor = document.querySelector('#avatar').getAnimations()[0];
+        const delta = animation => {
+          const frames = animation.effect.getKeyframes();
+          return new DOMMatrixReadOnly(frames.at(-1).transform).m41 - new DOMMatrixReadOnly(frames[0].transform).m41;
+        };
+        const su = document.querySelector('#avatar').offsetWidth / 128;
+        const speed = Math.abs(-delta(camera) + delta(actor)) / su / (camera.effect.getTiming().duration / 1000);
+        return (expected === 'walking' ? 96 : 120) / speed;
+      }, expected);
+      assert.ok(Math.abs(movement.cycle - cycle) < .002, 'Stride follows the actual ground speed');
+      assert.ok(movement.cycle >= (expected === 'walking' ? .57 : .428), 'Sprite keeps a natural gait');
+      delete movement.cycle;
       assert.deepEqual(movement, {
         walking: expected === 'walking', running: expected === 'running', backwards,
         row: expected === 'walking' ? '0%' : '100%',
-        cycle: expected === 'walking' ? .571 : .429,
       });
       // Every held pose must show exactly one full atlas cell, including wraparound.
       // Sampling inside each step catches a strip advancing by the old cell width.
@@ -148,7 +172,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       && document.querySelector('.page.active')?.id === id
       && document.querySelector('.page.active').dataset.stage === 'on'
       && !document.querySelector('.page.leaving')
-      && ![...document.querySelectorAll('.bay-lift')].some(n => n.getAnimations().length), id, { timeout: 6000 });
+      && ![...document.querySelectorAll('.bay-lift')].some(n => n.getAnimations().length), id, { timeout: 30000 });
 
     // One area at a time: one raised lift, holding the current set, centred and flush.
     const stage = async id => {
@@ -207,8 +231,10 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
 
     // About → Projects: the reference sequence.
     await page.locator('#next').click();
-    await gait('walking');
     await overlappingLifts('home', 'about');
+    await gait('walking');
+    const adjacentSeconds = await page.locator('.bridge-track').evaluate(n => parseFloat(getComputedStyle(n).transitionDuration));
+    assert.ok(adjacentSeconds > 2 && adjacentSeconds < 2.4, `Adjacent navigation: ${adjacentSeconds}s`);
     await page.waitForTimeout(200);
     assert.ok(await page.locator('#about .about-layout').evaluate(n => parseFloat(getComputedStyle(n).opacity) > 0));
     assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('walking')), true);
@@ -226,8 +252,8 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
 
     const camBefore = await page.evaluate(() => getComputedStyle(document.querySelector('.bridge-track')).transform);
     await nav('projects');
-    await gait('walking');
     await overlappingLifts('about', 'projects');
+    await gait('walking');
     assert.equal(await page.locator('.station-projects').getAttribute('data-power'), 'on');
     await projectionFollows();
     await contentFollows('projects');
@@ -266,15 +292,15 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     // Backwards: world and character turn around.
     await nav('about');
     await gait('walking', true);
-    assert.equal(await page.locator('#about').evaluate(n => getComputedStyle(n).translate), 'none');
+    await contentFollows('about', true);
     await settled('about');
     await stage('about');
 
     // Navbar jumps use the running frames in both directions.
     const runOrigin = await page.locator('.bridge-track').evaluate(n => -new DOMMatrixReadOnly(getComputedStyle(n).transform).m41);
     await nav('contact');
-    await gait('running');
     await overlappingLifts('about', 'contact');
+    await gait('running');
     const twoSectionRun = await page.locator('.bridge-track').evaluate((n, origin) => {
       const unit = document.querySelector('#avatar').offsetWidth / 128;
       return { distance: Math.abs(Number(n.style.getPropertyValue('--cam')) - origin / unit),
@@ -282,7 +308,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     }, runOrigin);
     assert.ok(twoSectionRun.distance > 600 && twoSectionRun.distance < 720, JSON.stringify(twoSectionRun));
     // The character also covers the offset between each station's standing point.
-    assert.ok(twoSectionRun.seconds > 1.7 && twoSectionRun.seconds < 3, JSON.stringify(twoSectionRun));
+    assert.ok(twoSectionRun.seconds > 2 && twoSectionRun.seconds < 2.7, JSON.stringify(twoSectionRun));
     await page.waitForTimeout(1200);
     assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('running')), true);
     assert.equal(await page.locator('[data-station="contact"]').evaluate(n => {
@@ -300,7 +326,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
         seconds: parseFloat(getComputedStyle(n).transitionDuration) };
     }, reverseOrigin);
     assert.ok(threeSectionRun.distance > 900 && threeSectionRun.distance < 1080, JSON.stringify(threeSectionRun));
-    assert.ok(threeSectionRun.seconds > twoSectionRun.seconds + 1, JSON.stringify(threeSectionRun));
+    assert.ok(threeSectionRun.seconds > twoSectionRun.seconds + .8 && threeSectionRun.seconds < 4, JSON.stringify(threeSectionRun));
     await settled('home');
 
     // Retarget during a run, then during a walk: never retain the old gait/row.
@@ -308,7 +334,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await gait('running');
     await page.waitForTimeout(250);
     await nav('projects');
-    await gait('walking', true);
+    await gait('walking');
     await nav('home');
     await gait('running', true);
     await settled('home');

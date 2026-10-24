@@ -34,6 +34,7 @@ tools/export-props.py  skyline, banco da lavoro e arredo urbano
 tools/export-interactions.py  sprite registrati tramite keypoint, proiettore e terminali
 tools/export-elevator.py  parti del kit elevatore e stato acceso del proiettore
 tools/check-stations.cjs  regressioni browser sulla scena Viaggio
+tools/check-journey.cjs   frame intermedi, ancoraggi, visibilità e interruzioni
 tools/check-about.cjs     layout About, accessibilità e indipendenza dalla scena
 tools/check-bubbles.cjs   dieci bolle, ricambio casuale simultaneo e accessibilità
 tools/export-skills.py   esportazione delle sfere fornite
@@ -92,8 +93,8 @@ per le regressioni nelle sezioni e nella scena condivisa.
 
 About usa tre colonne aperte: biografia, competenze e formazione. Sotto i
 1001 px diventano una colonna nello stesso ordine. Il titolo riprende font,
-peso e scala della Home. In Viaggio il testo resta fermo e consultabile durante
-il trasferimento della scrivania; su schermi bassi il contenuto scorre sopra
+peso e scala della Home. In Viaggio la composizione segue la camera insieme alla propria area del mondo,
+indipendentemente dal trasferimento della scrivania; su schermi bassi il contenuto scorre sopra
 la fascia della scena. In Lettura la postazione esistente segue il contenuto.
 
 Le sfere fornite in `assets/skill/` sono esportate da
@@ -196,30 +197,44 @@ trasferimento Frank e la gatta camminano fra sezioni adiacenti (anche dalla
 navbar) e corrono quando si saltano più sezioni. La prima riga dell'atlante
 contiene la camminata, la seconda la corsa. Velocità del ponte e cadenza sono
 sincronizzate da `STAGE.walkSpeed` / `walkStride` e `runSpeed` / `runStride`.
-Ogni sezione saltata corrisponde a un modulo del ponte: due sezioni richiedono
-circa 2–2,5 secondi di corsa, tre circa 3,5 secondi, oltre all'uscita e all'arrivo
-(il punto di partenza e di appoggio nella postazione influisce sulla durata).
-Il ciclo di corsa dura 429 ms (otto pose a circa 19 fps), con scala dello sprite fissa.
-La parallasse dipende dall'indice dell'area
-(spostamenti limitati, mai cumulativi) e, a scena ferma, il ponte viene
-rinormalizzato di un multiplo del modulo senza salti visibili.
+Le quattro aree hanno ancoraggi permanenti su moduli consecutivi del ponte
+(`STATION_BAYS`, 330 su), senza vani vuoti intermedi. Le slide sono consecutive,
+separate da un piccolo margine (minimo 40 px, `SLIDE_GAP`, oppure il margine
+laterale della pagina per tenere le vicine fuori schermo a riposo), e conservano
+la larghezza responsive.
+La camera determina la posizione della striscia di slide interpolando fra gli
+ancoraggi delle postazioni: testi e ponte condividono il progresso del viaggio,
+con distanze diverse. La navigazione usa 168 su/s fra aree adiacenti e 280 su/s
+nei salti: circa 2 secondi fra tab vicine, 2,3 o 3,6 secondi per due o tre aree.
+La cadenza dello sprite resta naturale e sincronizzata ai piedi sul ponte.
+Le brevi inversioni della camera
+durano almeno 120 ms. Una richiesta durante il tragitto percorre solo la distanza
+residua dalla posizione effettiva; se serve solo riallineare la camera, il
+personaggio resta fermo nel mondo. La direzione dipende dalla destinazione
+nel mondo, non dal segno del cambio di voce nel menu.
 
-Sequenza (`TIMING`, durata variabile secondo l'andatura): al clic si esce
-dall'interazione e si spengono i contenuti; discesa della postazione attuale,
-salita della destinazione e trasferimento partono insieme. I pannelli testuali
-iniziano a comparire appena parte la salita della loro postazione, insieme a
-emettitori, fasci e collegamenti: la composizione si completa durante il tragitto.
-About e Contact fanno eccezione: la composizione appare subito e non dipende
-dall'elevatore, non scorre con la camera e non ha collegamenti alle postazioni.
-All'arrivo parte l'interazione di Frank. Fasci e cavi restano agganciati ai pannelli
-e agli oggetti anche durante la salita. Titoli e pannelli seguono lo
-scorrimento del ponte alla stessa velocità delle postazioni, entrando dal lato
-della destinazione e fermandosi nella posizione di lettura. Il movimento segue
-la camera effettiva anche nelle inversioni e nei cambi rapidi. Solo un vano ancora occupato attende
-la discesa prima di cambiare allestimento. Ogni richiesta sostituisce la precedente: timer annullati,
-animazioni riprese dal valore corrente, nessuna coda. Un ritorno rapido rialza
-la stessa postazione dallo stesso vano. Resize, documento nascosto e movimento
-ridotto portano subito alla composizione stabile.
+Home, About, Projects e Contact traslano come gruppi usando la camera renderizzata
+del ponte. Titoli, testi, CTA, competenze e contatti mantengono le loro coordinate
+interne; sfere e satelliti conservano animazioni locali su livelli figli.
+La parallasse lontana campiona la stessa camera a velocità ridotta. All'arrivo,
+`normalize()` sottrae lo stesso multiplo del modulo a camera, ancoraggi testuali
+e vani, compensando la texture: non cambia la posizione sullo schermo.
+
+Lo stato attivo governa navigazione, `inert` e focus, non la visibilità. Una
+sezione inattiva resta visibile finché il suo riquadro attraversa il viewport;
+le sezioni vengono posizionate prima di rimuovere `hidden`. Non ci sono
+animazioni di comparsa/scomparsa né timer di uscita per i contenuti. Nei salti
+si vedono anche i contenuti delle aree intermedie, senza renderli interattivi.
+Lo scorrimento verticale resta disponibile dentro ogni pagina.
+
+La regia meccanica resta indipendente: al clic si esce dall'interazione,
+la postazione precedente scende e quella di destinazione sale durante il viaggio.
+Proiettori, fasci e collegamenti mantengono accensione e misure sui pannelli reali.
+I testi non dipendono dall'accensione o dall'altezza degli elevatori. Ogni nuova
+richiesta annulla i timer della precedente e riparte dalle trasformazioni
+renderizzate, conservando gli ancoraggi anche nelle inversioni. Il resize
+prosegue il tragitto dalla camera corrente; cambio modalità, documento nascosto
+e movimento ridotto presentano direttamente una composizione stabile.
 
 About e Contact usano i fogli con soli Frank e gatta, registrati sui keypoint di
 piedi e mani: scrivania e parabola sono oggetti statici sul piano mobile e
@@ -260,3 +275,12 @@ tastiera, rotella e hash, documento nascosto, resize, viewport 1366 × 768,
 1440 × 900 e 1920 × 1080 senza pannelli tagliati, movimento ridotto, Lettura,
 focus, mobile e tempi della parabola. Screenshot di verifica in
 `/tmp/stations-*-verified.png` (o in `SCREENSHOT_DIR`).
+
+`node tools/check-journey.cjs` aggiunge verifiche dei frame intermedi in Chromium:
+Home ↔ About, About ↔ Contact, Home → Contact e passaggi attraverso Projects.
+Campiona le vere transizioni CSS della camera, controllando visibilità, opacità,
+assenza di sovrapposizioni, spostamenti dei gruppi e allineamenti interni.
+Verifica inoltre inversioni, click rapidi, normalizzazione, resize in transito,
+passaggio fra modalità, movimento ridotto, focus e viewport equivalente al 200%
+di zoom. Usa le stesse variabili ambiente degli altri controlli e salva i frame
+`journey-*-mid.png` in `SCREENSHOT_DIR` (predefinito `/tmp`) per revisione visiva.

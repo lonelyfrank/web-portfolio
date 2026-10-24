@@ -14,7 +14,7 @@
     sync();
   });
   visuals.forEach(node => observer.observe(node));
-  // Inactive journey pages can still be present during their outgoing fade.
+  // Inactive journey pages remain visible while their station crosses the viewport.
   new MutationObserver(sync).observe(section, { attributes: true, attributeFilter: ['hidden', 'inert'] });
   document.addEventListener('visibilitychange', sync);
 })();

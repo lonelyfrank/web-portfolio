@@ -24,8 +24,8 @@ const WHEEL_COOLDOWN_MS = 800;
 const STAGE = {
   bay: 330,        // passo fra due vani elevatori
   drop: 106,       // corsa del piano: copre l'allestimento più alto (parabola, 102 su)
-  bays: 8,         // vani generati su ciascun lato del centro
-  runSpeed: 280,   // su/s: 2–3 moduli danno tempo di leggere la distanza percorsa
+  bays: 8,        // vani generati su ciascun lato del centro
+  runSpeed: 280,  // su/s nei salti fra sezioni
   runStride: 120,  // avanzamento della corsa per ciclo di 8 fotogrammi (due passi)
   walkSpeed: 168,  // su/s fra sezioni adiacenti
   walkStride: 96, // avanzamento della camminata per ciclo di 8 fotogrammi
@@ -34,10 +34,10 @@ const STAGE = {
 // Sequenza della transizione (ms). Le fasi compatibili si sovrappongono:
 // discesa, salita della destinazione e spostamento partono dalla richiesta.
 const TIMING = {
-  contentOut: 180, // dissolvenza dei contenuti scenici
   lower: 360,      // discesa completa del piano
   rise: 420,       // salita completa del piano
   activate: 240,   // accensione di schermi e proiezioni
+  minTravel: 120,  // mantiene leggibili anche brevi inversioni/riallineamenti
 };
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
@@ -136,8 +136,6 @@ function setMode(mode, { save = false } = {}) {
   const journey = mode === 'journey';
   director.cancel();
   cancelStation();
-  // A pending Journey fade must not hide sections after entering Reading.
-  clearTimeout(leaveTimer);
   root.classList.toggle('journey', journey);
   placeStations(journey);
   setViews(journey);
@@ -156,7 +154,7 @@ function setMode(mode, { save = false } = {}) {
     pages.forEach(page => {
       page.hidden = false;
       page.inert = false;
-      page.classList.remove('active', 'leaving');
+      page.classList.remove('active');
       delete page.dataset.stage;
     });
     $$('.scenic').forEach(node => { node.inert = false; });
@@ -189,6 +187,11 @@ function unit() { return avatar.offsetWidth / 128; }
 // Camera position (su) that places bay k under the area's composition.
 const restCam = (k, index) => k * STAGE.bay + STATIONS[index].focus - STATIONS[index].bay;
 const restActor = index => STATIONS[index].stop[0] - STATIONS[index].focus;
+// Consecutive stations occupy neighbouring bridge modules. Text slides have
+// their own responsive pitch, projected from this same camera.
+const STATION_BAYS = 1;
+const SLIDE_GAP = 40; // minimum px between panels; preserve the viewport gutter at rest
+const stationBays = new Map();
 
 function translateOf(node, axis) {
   const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
@@ -199,6 +202,7 @@ function translateOf(node, axis) {
 // cylinders. An area's equipment ("set") is mounted on one bay's plate at a time.
 const bays = [];
 function buildBays() {
+  track.style.setProperty('--bay-radius', STAGE.bays + 1);
   for (let k = -STAGE.bays; k <= STAGE.bays; k++) {
     const el = document.createElement('div');
     el.className = 'bay';
@@ -278,20 +282,45 @@ function setCam(cam, duration = 0) {
   track.style.setProperty('--cam', cam);
   if (!duration) void track.offsetWidth;
 }
-function currentCam() { return -translateOf(track, 'x') / unit(); }
+function currentCam() {
+  // At rest the authored value is exact. Serialising a large CSS matrix rounds
+  // its translation, which otherwise leaves subpixel drift after normalization.
+  return track.getAnimations().length ? -translateOf(track, 'x') / unit()
+    : Number(track.style.getPropertyValue('--cam'));
+}
 
-// Each page belongs to its station's world position. Sample the rendered camera
-// so interrupted transitions keep text and equipment moving together.
+// Station anchors map the rendered camera to one continuous strip of slides.
+// This keeps trips short at a natural gait without overlapping wide panels.
 const contentPositions = new Map();
 let contentFrame = 0;
+let renderedCam = 0;
+let journeyGait = 'walking';
+function contentProgress(cam) {
+  let index = 0;
+  while (index < pages.length - 2 && cam > contentPositions.get(index + 1)) index++;
+  const start = contentPositions.get(index);
+  const end = contentPositions.get(index + 1);
+  return index + (cam - start) / (end - start);
+}
 function positionContent() {
+  if (!isJourney() || !contentPositions.size) return;
   const cam = currentCam();
-  const su = unit();
+  renderedCam = cam;
+  const progress = contentProgress(cam);
+  const main = $('main');
+  const gutter = parseFloat(getComputedStyle(main).paddingLeft);
+  const width = main.clientWidth - 2 * gutter;
+  const pitch = width + Math.max(SLIDE_GAP, gutter);
+  const left = main.getBoundingClientRect().left + gutter;
   pages.forEach((page, index) => {
-    if (page.hidden || ['about', 'contact'].includes(page.id)) return;
-    const anchor = contentPositions.get(index) ?? cam;
-    page.style.setProperty('--content-x', `${(anchor - cam) * su}px`);
+    const x = (index - progress) * pitch;
+    // Position before revealing: even an inactive section is rendered whenever
+    // its scrollport intersects the main viewport. Navigation owns only inert.
+    page.style.setProperty('--content-x', `${x}px`);
+    page.hidden = index !== current && (left + x + width <= 0 || left + x >= innerWidth);
   });
+  // Distant scenery samples this same camera, at its existing slower ratios.
+  setParallax((cam - contentPositions.get(0)) / (STATION_BAYS * STAGE.bay));
 }
 function followContent() {
   cancelAnimationFrame(contentFrame);
@@ -318,7 +347,8 @@ function setParallax(index, duration = 0) {
 // Bridge texture shifts with normalisation so the periodic modules never jump.
 let textureOffset = 0;
 function normalize() {
-  const shift = Math.round(currentCam() / STAGE.bay);
+  const cam = currentCam();
+  const shift = Math.round(cam / STAGE.bay);
   if (!shift || bays.some(bay => bay.lift.getAnimations().length)) return;
   const span = 2 * STAGE.bays + 1;
   bays.forEach(bay => {
@@ -331,10 +361,11 @@ function normalize() {
     }
     setBayIndex(bay, k);
   });
-  textureOffset = (textureOffset + shift * STAGE.bay) % 1000000;
+  textureOffset += shift * STAGE.bay;
   track.style.setProperty('--texture-x', textureOffset);
   contentPositions.forEach((anchor, index) => contentPositions.set(index, anchor - shift * STAGE.bay));
-  setCam(currentCam() - shift * STAGE.bay);
+  stationBays.forEach((k, index) => stationBays.set(index, k - shift));
+  setCam(cam - shift * STAGE.bay);
   positionContent();
 }
 
@@ -348,6 +379,13 @@ const director = {
   timers: new Set(),
   requested: current,
   cancel() {
+    // Commit the rendered values before removing a transition. In particular,
+    // CSS reversal shortening must not change the selected ground speed.
+    if (isJourney()) {
+      setCam(currentCam());
+      setActor(currentActor());
+      void avatar.offsetWidth;
+    }
     this.run++;
     cancelAnimationFrame(contentFrame);
     contentFrame = 0;
@@ -362,21 +400,7 @@ const director = {
   },
 };
 
-function chooseBay(target, from, interrupted) {
-  const cam = currentCam();
-  const here = cam / STAGE.bay;
-  const dir = Math.sign(target - from) || 1;
-  const own = bayOfSet(target);
-  // A quick return finds its equipment still in the nearby shaft.
-  if (interrupted && own && Math.abs(own.k - here) <= 1.6 && ((own.k - here) * dir > -.75 || own.k === Math.round(here))) return own.k;
-  // Every skipped section occupies a full bridge module, even on a return visit.
-  const distance = Math.max(1, Math.abs(target - from));
-  const k = dir > 0 ? Math.floor(here + .5) + distance : Math.ceil(here - .5) - distance;
-  return Math.max(-STAGE.bays + 1, Math.min(STAGE.bays - 1, k));
-}
-
-async function stageTo(target, { instant = false } = {}) {
-  const interrupted = ['leaving', 'approaching', 'arriving'].includes(phase);
+async function stageTo(target, { instant = false, resume = false } = {}) {
   director.cancel();
   const run = director.run;
   const alive = () => run === director.run && isJourney();
@@ -390,12 +414,11 @@ async function stageTo(target, { instant = false } = {}) {
 
   if (instant || reduced || document.hidden) { settle(target); return; }
 
-  // 1–3. Exit the interaction, fade out, lower every other set.
+  // Exit the interaction and lower equipment independently of the text.
   setPhase('leaving');
   scheduleRadio();
-  const k = chooseBay(target, from, interrupted);
+  const k = stationBays.get(target);
   const destination = bayAt(k);
-  contentPositions.set(target, restCam(k, target));
   positionContent();
   const own = bayOfSet(target);
   const lowering = new Map();
@@ -420,21 +443,26 @@ async function stageTo(target, { instant = false } = {}) {
 
   // 4. Adjacent sections use the walking row; jumps use the running row.
   // Use the previous request so rapid changes immediately select the new gait.
-  const gait = Math.abs(target - from) > 1 ? 'running' : 'walking';
+  const gait = resume ? journeyGait : Math.abs(target - from) > 1 ? 'running' : 'walking';
+  journeyGait = gait;
   const speed = gait === 'running' ? STAGE.runSpeed : STAGE.walkSpeed;
   const camFrom = currentCam();
   const camTo = restCam(k, target);
   // Ground speed under the feet = bridge motion relative to the character,
   // so the stop offset he covers on screen is part of the synchronised gait.
   const ground = (camTo + restActor(target)) - (camFrom + currentActor());
-  const travel = Math.abs(camTo - camFrom) > .5 ? Math.round(Math.abs(ground) / speed * 1000) : 0;
+  const travel = Math.abs(camTo - camFrom) > .5
+    ? Math.max(TIMING.minTravel, Math.round(Math.max(Math.abs(ground), Math.abs(camTo - camFrom)) / speed * 1000)) : 0;
   let walk = 0;
   if (travel) {
     setPhase('approaching');
-    moveAvatar(gait, ground, speed);
+    // Near a reversal the actor can already be at the target world coordinate
+    // while the camera still needs to reframe it. Keep that camera move smooth,
+    // and synchronise the stride to the actual (possibly zero) ground speed.
+    if (Math.abs(ground) > .5) moveAvatar(gait, ground, Math.abs(ground) / travel * 1000);
+    else stopAvatar();
     setCam(camTo, travel);
     setActor(restActor(target), travel);
-    setParallax(target, travel);
   } else {
     // Same shaft (a quick return): only a short local walk to the stop.
     const offset = restActor(target) - currentActor();
@@ -443,17 +471,18 @@ async function stageTo(target, { instant = false } = {}) {
     }
     walk = Math.abs(offset) / STAGE.alignSpeed * 1000;
     setActor(restActor(target), walk);
-    setParallax(target, 400);
   }
 
   followContent();
   // Wait for the journey while both sets are already moving on their lifts.
   if (travel || walk) {
-    await director.wait(travel || walk);
+    const motion = (travel ? track : avatar).getAnimations()[0];
+    // Wait for the actual CSS endpoint, rather than a wall-clock timer that
+    // can precede the last rendered frame. Cancellation releases this await.
+    await (motion ? motion.finished.catch(() => {}) : director.wait(travel || walk));
     if (!alive()) return;
   }
-  // Commit the destination before recycling bridge modules (CSS may be one
-  // display frame behind the timer); text must settle at an exact zero offset.
+  // Commit the exact endpoint before recycling bridge modules.
   setCam(camTo);
   setActor(restActor(target));
   avatar.classList.remove('running', 'walking');
@@ -470,10 +499,10 @@ async function stageTo(target, { instant = false } = {}) {
   arrive();
 }
 
-// Stable, complete composition without travel (load, resize, reduced motion).
+// Stable, complete composition without travel (load, mode switch, reduced motion).
 function settle(target) {
   director.requested = target;
-  showPage(target, true);
+  showPage(target);
   bays.forEach(bay => {
     bay.lift.getAnimations().forEach(animation => animation.cancel());
     unmountSet(bay);
@@ -487,17 +516,21 @@ function settle(target) {
     setBayIndex(bay, k);
     moveLift(bay, STAGE.drop, 0);
   });
-  textureOffset = (textureOffset + shift * STAGE.bay) % 1000000;
+  textureOffset += shift * STAGE.bay;
   track.style.setProperty('--texture-x', textureOffset);
   const centre = bayAt(0);
   mountSet(centre, target);
   moveLift(centre, 0, 0);
   setCam(restCam(0, target));
   contentPositions.clear();
-  contentPositions.set(target, restCam(0, target));
-  pages.forEach(page => page.style.removeProperty('--content-x'));
+  stationBays.clear();
+  pages.forEach((page, index) => {
+    const k = (index - target) * STATION_BAYS;
+    stationBays.set(index, k);
+    contentPositions.set(index, restCam(k, index));
+  });
+  positionContent();
   setActor(restActor(target));
-  setParallax(target, 0);
   avatar.classList.remove('running', 'walking');
   setStageContent(target, true);
   powerUp(target, { instant: true });
@@ -506,31 +539,21 @@ function settle(target) {
 
 /* ---------- Contenuti scenici, schermi e proiezioni ---------- */
 
-let leaveTimer;
 function setStageContent(index, on) {
-  const page = pages[index];
-  // About and Contact stay readable independently of their scene equipment.
-  if (['about', 'contact'].includes(page.id)) on = true;
-  page.dataset.stage = on ? 'on' : 'off';
-  $$('.scenic', page).forEach(node => { node.inert = !on; });
+  // Mechanical state is useful to the director, but never gates semantic text.
+  pages[index].dataset.stage = on ? 'on' : 'off';
 }
 
-// Old page fades out while the new heading is already focusable.
-function showPage(index, instant) {
-  clearTimeout(leaveTimer);
-  pages.forEach((page, i) => {
-    const active = i === index;
-    const leaving = !active && !instant && !page.hidden && page.classList.contains('active');
-    page.classList.toggle('active', active);
-    page.classList.toggle('leaving', leaving);
-    page.inert = !active;
-    page.hidden = !active && !leaving;
-  });
-  if (!instant) {
-    leaveTimer = setTimeout(() => pages.forEach((page, i) => {
-      if (i !== index) { page.hidden = true; page.classList.remove('leaving'); }
-    }), TIMING.contentOut);
+function showPage(index) {
+  const focusedPage = document.activeElement.closest('.page');
+  if (focusedPage && focusedPage !== pages[index]) {
+    navLinks[index].focus({ preventScroll: true });
   }
+  pages.forEach((page, i) => {
+    page.classList.toggle('active', i === index);
+    page.inert = i !== index;
+  });
+  positionContent();
 }
 
 const links = Object.fromEntries($$('.scene-link').map(node => [node.dataset.link, node]));
@@ -706,17 +729,21 @@ document.addEventListener('visibilitychange', () => {
 
 let resizeFrame;
 window.addEventListener('resize', () => {
+  const cam = renderedCam;
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
     if (!isJourney()) return;
     if (['waiting', 'interacting', 'aligning'].includes(phase)) {
       // Pixel values depend on the scene unit: re-apply them, keep the pose.
       bays.forEach(bay => moveLift(bay, bay.level, 0));
+      positionContent();
       placeLinks(current);
     } else {
-      director.cancel();
-      cancelStation();
-      settle(current);
+      // A scale/layout change reflows the world around its last rendered camera,
+      // then resumes the same request. Never jump to the destination on resize.
+      setCam(cam);
+      positionContent();
+      stageTo(current, { resume: true });
     }
   });
 });
@@ -725,7 +752,7 @@ function show(index, { instant = false } = {}) {
   index = Math.max(0, Math.min(SECTIONS.length - 1, index));
   current = index;
 
-  showPage(index, instant || reduced);
+  showPage(index);
   setActiveNav(index);
   stageTo(index, { instant });
 

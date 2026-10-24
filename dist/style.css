@@ -189,7 +189,7 @@ p { line-height: 1.65; }
   border-bottom: 1px solid #77b3ff1c;
 }
 
-.logo { font-family: var(--font-display); font-size: 28px; font-weight: 700; }
+.logo { font-family: var(--font-display); font-size: 28px; font-weight: 700; white-space: nowrap; }
 .logo span { color: var(--cyan); font-size: 18px; margin-left: 4px; }
 
 .site-nav {
@@ -803,28 +803,34 @@ dialog p { color: var(--body); }
 .journey .ship-scout { display: none; }
 .journey .read-progress, .journey .site-footer { display: none; }
 
-.journey main { height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h)); overflow: clip; }
+/* Clip at the viewport edges without creating a horizontal scroll container.
+   The pages retain the original centred 1600px layout at rest. */
+.journey main {
+  --page-inset: max(var(--gutter), calc((100vw - 1600px) / 2 + var(--gutter)));
+  max-width: none;
+  padding-inline: var(--page-inset);
+  height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h));
+  overflow: clip;
+}
 /* Titolo in alto, contenuti scenici in basso, vicini alla postazione che li alimenta.
-   Le pagine si sovrappongono per la dissolvenza; se il contenuto non entra, la pagina scorre. */
+   Ogni pagina occupa la propria area del mondo; il contenuto lungo scorre in verticale. */
 .journey .page {
   position: absolute;
-  inset: 0 var(--gutter);
+  inset: 0 var(--page-inset);
   display: flex;
   flex-direction: column;
   overflow: auto;
   padding: 20px 4px 12px;
   border: 0;
   scrollbar-width: thin;
-  /* La traslazione segue la camera reale; la comparsa resta indipendente. */
+  /* Livello esterno solidale alla camera, separato dalle animazioni locali. */
   translate: var(--content-x, 0px) 0;
 }
 .journey .page > * { flex-shrink: 0; }
-.journey .page.active { animation: appear .3s var(--ease); }
-.journey .page.leaving { opacity: 0; transition: opacity .18s; pointer-events: none; }
-.journey .scenic { margin-top: auto; transition: opacity .28s var(--ease), transform .28s var(--ease); }
-.journey .page[data-stage='off'] .scenic { opacity: 0; transform: translateY(10px); transition-duration: .12s; }
+.journey .page[inert] { pointer-events: none; }
+.journey .scenic { margin-top: auto; }
 
-.journey #home { flex-direction: row; flex-wrap: nowrap; align-items: center; min-height: 0; }
+.journey #home { flex-direction: row; flex-wrap: nowrap; align-items: safe center; min-height: 0; }
 /* Il nome resta protagonista anche sui desktop bassi: la misura segue anche l'altezza. */
 .journey h1 { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
 .journey .section-heading { margin: 0 0 14px; }
@@ -833,8 +839,8 @@ dialog p { color: var(--body); }
 .journey .section-heading > p:last-child { margin-top: 10px; }
 .journey .district-services { display: none; }
 
-/* About resta fermo e leggibile mentre la scena arriva nella fascia inferiore. */
-.journey #about { translate: none; padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
+/* Il layout a riposo resta indipendente dalla regia della scrivania. */
+.journey #about { padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
 .journey #about-title { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
 
 /* Le schede restano soltanto nei progetti. */
@@ -913,17 +919,13 @@ dialog p { color: var(--body); }
 .journey .when-journey { display: inline; }
 
 /* Contact resta consultabile anche mentre la parabola raggiunge la postazione. */
-.journey #contact { translate: none; padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
+.journey #contact { padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
 .journey #contact-title { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
 
 .journey .journey-controls { display: flex; }
 
 /* ---------- Animazioni ---------- */
 
-@keyframes appear {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 @keyframes sprite-frames {
   /* Una cella intera per posa, indipendentemente dalla scala dello sprite.
      Con background-size: 800%, 100% allinea l'ottavo e ultimo frame. */
@@ -979,6 +981,14 @@ dialog p { color: var(--body); }
   .journey .project h3 { font-size: 16px; }
 }
 
+/* Navbar compatta per il nickname completo sui tablet. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .site-header { gap: 16px; }
+  .logo { font-size: 22px; }
+  .site-nav { gap: 12px; }
+  .site-nav a { font-size: 12px; }
+}
+
 /* Schermi desktop bassi: città più compatta */
 @media (min-width: 761px) and (max-height: 820px) {
   :root { --u: 1.75; --road-h: 42px; --strip-h: 108px; --header-h: 64px; }
@@ -1026,7 +1036,7 @@ dialog p { color: var(--body); }
     gap: 0 12px;
     padding: 0 16px;
   }
-  .logo { height: 52px; display: flex; align-items: center; font-size: 25px; }
+  .logo { height: 52px; display: flex; align-items: center; font-size: clamp(18px, 5.5vw, 25px); }
   .header-tools { margin-left: auto; }
   .site-nav {
     order: 3;
@@ -1037,7 +1047,7 @@ dialog p { color: var(--body); }
     justify-content: space-between;
   }
   .site-nav a { font-size: 12px; letter-spacing: .5px; gap: 4px; }
-  .mode-switch button { padding: 7px 10px; font-size: 11px; }
+  .mode-switch button { padding: 7px 6px; font-size: 11px; }
 
   #home { min-height: calc(100svh - var(--header-h)); flex-direction: column; align-items: stretch; justify-content: center; }
   h1 { font-size: clamp(48px, 13vw, 85px); letter-spacing: -2px; }
@@ -1057,7 +1067,7 @@ dialog p { color: var(--body); }
 
   /* Viaggio su mobile: tappe a carosello, solo l'etichetta del luogo attivo */
   .journey main { padding-top: 16px; }
-  .journey #home { flex-direction: column; align-items: stretch; }
+  .journey #home { flex-direction: column; align-items: stretch; justify-content: safe center; }
   .journey .welcome-stand { margin: 28px auto 0; }
   .journey .welcome-stand .dock { --pillar: 40px; }
   /* Viaggio forzato su mobile: stessa scena, contenuti in colonna. */
@@ -1234,8 +1244,8 @@ dialog p { color: var(--body); }
 .track-walkway {
   position: absolute;
   z-index: 6;
-  left: calc(var(--bay) * -9 * var(--scene-unit));
-  width: calc(var(--bay) * 18 * var(--scene-unit));
+  left: calc(var(--bay) * var(--bay-radius, 9) * -1 * var(--scene-unit));
+  width: calc(var(--bay) * var(--bay-radius, 9) * 2 * var(--scene-unit));
   top: var(--stage-above);
   height: calc(48 * var(--scene-unit));
   background: url('assets/ui/walkway.webp') repeat-x;

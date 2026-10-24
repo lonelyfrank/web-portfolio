@@ -22,6 +22,9 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       for (const mode of ['read', 'journey']) {
         await page.locator(`[data-mode="${mode}"]`).click();
         await page.locator('.site-nav a[href="#contact"]').click();
+        if (mode === 'journey') await page.waitForFunction(id =>
+          document.querySelector('.page.active')?.id === id
+          && ['waiting', 'interacting'].includes(document.querySelector('.journey-strip').dataset.phase), 'contact', { timeout: 30000 });
         const section = page.locator('#contact');
         await section.waitFor({ state: 'visible' });
         await page.waitForTimeout(350);
@@ -60,7 +63,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
           assert.ok(layout.items[1].bottom < layout.items[2].y);
         } else layout.items.slice(1).forEach((r, i) => assert.ok(r.y > layout.items[i].bottom));
         if (mode === 'journey') {
-          assert.equal(layout.translate, 'none');
+          assert.equal(parseFloat(layout.translate), 0);
           if (width >= 900) {
             assert.ok(layout.fitsHeight, `${width}×${height}: desktop Contact must fit without vertical scrolling`);
             assert.ok(layout.intro.bottom <= layout.frame.bottom, 'Entire message fits above the scene');
@@ -144,7 +147,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     assert.equal(await link.evaluate(n => !!n.closest('[inert]')), false, 'Contact works during the journey');
     await page.locator('#contact').evaluate(n => { n.dataset.stage = 'off'; });
     assert.equal(await page.locator('.contact-layout').evaluate(n => getComputedStyle(n).opacity), '1');
-    assert.equal(await page.locator('#contact').evaluate(n => getComputedStyle(n).translate), 'none');
+    assert.ok(Number.isFinite(await page.locator('#contact').evaluate(n => parseFloat(getComputedStyle(n).translate))));
     await page.locator('[data-mode="read"]').click();
     await page.locator('.site-nav a[href="#home"]').click();
     await page.waitForFunction(() => [...document.querySelectorAll('.contact-visual')].every(n => getComputedStyle(n).animationPlayState === 'paused'));

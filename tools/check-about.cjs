@@ -17,6 +17,9 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       for (const mode of ['read', 'journey']) {
         await page.locator(`[data-mode="${mode}"]`).click();
         await page.locator('.site-nav a[href="#about"]').click();
+        if (mode === 'journey') await page.waitForFunction(id =>
+          document.querySelector('.page.active')?.id === id
+          && ['waiting', 'interacting'].includes(document.querySelector('.journey-strip').dataset.phase), 'about', { timeout: 30000 });
         const about = page.locator('#about');
         await about.waitFor({ state: 'visible' });
         await page.waitForTimeout(350);
@@ -51,7 +54,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
         }));
         assert.equal(hiddenNames, true, 'Names stay available to screen readers without visible subtitles');
         if (mode === 'journey') {
-          assert.equal(layout.translate, 'none');
+          assert.equal(parseFloat(layout.translate), 0);
           assert.equal(layout.overflowY, 'auto');
           // Even a compact viewport must let the last education bullet scroll into view,
           // above the animated scene, without switching to the next section.
