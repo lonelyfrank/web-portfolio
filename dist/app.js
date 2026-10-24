@@ -1,19 +1,283 @@
-const ids=['home','about','projects','contact'];
-const projects=[{name:'BT Darts Score Board',icon:'◎',tag:'COMPANION / FRECCETTE',description:'Un companion per organizzare giocatori, tornei e risultati attorno al totem Pub Time Darts. Il totem continua a gestire autonomamente giochi e punteggi.',url:'https://github.com/lonelyfrank/BT-score-board',demo:'https://bt-score-board.vercel.app/'},{name:'Sensei Learning',icon:'▥',tag:'PROGETTO PERSONALE',description:'Un progetto personale dedicato a un’interfaccia desktop moderna e semplice. In questo prototipo il terminale è una rappresentazione illustrativa: apri la repository per esplorare il progetto.',url:'https://github.com/lonelyfrank/sensei-learning'},{name:'Nano Crop News',icon:'✳',tag:'PROGETTO PERSONALE',description:'Uno dei progetti del mio percorso di sviluppo. Questa anteprima è illustrativa; contenuti, stack e schermate della scheda definitiva saranno verificati sulla repository.',url:'https://github.com/lonelyfrank/nano-crop-news'},{name:'good-game',icon:'✚',tag:'PROGETTO PERSONALE',description:'Terminale dimostrativo dedicato a good-game. La scheda completa, gli screenshot e il collegamento alla repository saranno aggiunti dopo la verifica dei materiali.'}];
-const skillText={'HTML / CSS':'Struttura, layout e interfacce responsive: parte della formazione full stack.','JavaScript':'Interazioni e logica frontend nel percorso di sviluppo web.','Vue':'Framework frontend affrontato durante la formazione Boolean.','PHP / Laravel':'Sviluppo backend nel percorso di formazione full stack.','AEM':'Gestione di contenuti web nell’esperienza in agenzia.','WordPress':'Gestione di siti e contenuti digitali nell’esperienza lavorativa.'};
-let current=0,timer,wheelAmount=0,lastWheel=0;const dialog=document.querySelector('#detail');const avatar=document.querySelector('#avatar');const reduceQuery=matchMedia('(prefers-reduced-motion: reduce)');let reduced=reduceQuery.matches;
-const grid=document.querySelector('#projects-grid');grid.innerHTML=projects.map((p,i)=>`<button class="terminal" data-project="${i}" aria-label="Apri ${p.name}"><span class="micro">0${i+1} / ${p.tag}</span><h3>${p.name}</h3><div class="art" aria-hidden="true">${p.icon}</div><span class="caption">ANTEPRIMA ILLUSTRATIVA</span><span class="open">Esplora progetto <span>↗</span></span></button>`).join('');
-document.querySelector('.progress').innerHTML=ids.map((id,i)=>`<a href="#${id}" aria-label="Vai a ${id}"></a>`).join('');
-function show(index,initial=false){index=Math.max(0,Math.min(3,index));const old=current;current=index;document.documentElement.style.setProperty('--step',index);document.querySelectorAll('.page').forEach((p,i)=>{p.hidden=i!==index;p.classList.toggle('active',i===index)});document.querySelectorAll('nav a,.progress a').forEach(a=>{const active=a.hash==='#'+ids[index];a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});avatar.classList.toggle('back',index<old);avatar.style.left=[20,39,60,79][index]+'%';clearTimeout(timer);avatar.classList.toggle('walking',!initial&&!reduced&&index!==old);timer=setTimeout(()=>avatar.classList.remove('walking'),1050);document.querySelector('#counter').textContent=`0${index+1} / 04`;document.querySelector('#prev').disabled=index===0;document.querySelector('#next').disabled=index===3;document.title=`${ids[index][0].toUpperCase()+ids[index].slice(1)} — Francesco Spina`;}
-function go(i){if(i>=0&&i<4&&i!==current)location.hash=ids[i]}
-window.addEventListener('hashchange',()=>{const n=ids.indexOf(location.hash.slice(1));show(n<0?0:n)});show(Math.max(0,ids.indexOf(location.hash.slice(1))),true);
-document.querySelector('#prev').onclick=()=>go(current-1);document.querySelector('#next').onclick=()=>go(current+1);
-function setReduced(v){reduced=v;document.body.classList.toggle('reduced',v);document.querySelector('#motion').setAttribute('aria-pressed',String(v));document.querySelector('#motion').title=v?'Riattiva movimento':'Riduci movimento';if(v)avatar.classList.remove('walking')};setReduced(reduced);document.querySelector('#motion').onclick=()=>setReduced(!reduced);reduceQuery.addEventListener('change',e=>setReduced(e.matches));
-window.addEventListener('keydown',e=>{if(dialog.open||e.target.closest('button,input,textarea,select'))return;if(e.key==='ArrowRight'){e.preventDefault();go(current+1)}if(e.key==='ArrowLeft'){e.preventDefault();go(current-1)}});
-window.addEventListener('wheel',e=>{if(dialog.open||e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;const page=document.querySelector('.page.active');const direction=Math.sign(e.deltaY);if((direction>0&&page.scrollTop+page.clientHeight<page.scrollHeight-3)||(direction<0&&page.scrollTop>3))return;const now=Date.now();if(now-lastWheel<1000)return;e.preventDefault();if(Math.sign(wheelAmount)!==direction)wheelAmount=0;wheelAmount+=e.deltaY;if(Math.abs(wheelAmount)>85){go(current+direction);lastWheel=now;wheelAmount=0}},{passive:false});
-let touchX,touchY;document.querySelector('main').addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;touchY=e.touches[0].clientY},{passive:true});document.querySelector('main').addEventListener('touchend',e=>{if(dialog.open||e.target.closest('.projects-grid'))return;const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5)go(current+(dx<0?1:-1))},{passive:true});
-function openDetail(html){document.querySelector('#detail-content').innerHTML=html;dialog.showModal()}
-grid.addEventListener('click',e=>{const b=e.target.closest('[data-project]');if(!b)return;const p=projects[+b.dataset.project];openDetail(`<span class="eyebrow">PROJECT TERMINAL</span><h2>${p.name}</h2><p>${p.description}</p><div class="actions">${p.url?`<a class="button primary" href="${p.url}" target="_blank" rel="noopener">Repository GitHub ↗</a>`:''}${p.demo?`<a class="button" href="${p.demo}" target="_blank" rel="noopener">Apri demo ↗</a>`:''}</div>`)});
-document.querySelector('.close').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
-document.querySelectorAll('[data-skill]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-skill]').forEach(x=>x.classList.toggle('selected',x===b));document.querySelector('#skill-info').textContent=skillText[b.dataset.skill]});document.querySelectorAll('[data-placeholder]').forEach(b=>b.onclick=()=>openDetail(`<span class="eyebrow">PROTOTIPO VISIVO</span><h2>${b.dataset.placeholder}</h2><p>Questo collegamento sarà configurato con i dati professionali verificati prima della pubblicazione del portfolio definitivo.</p>`));
-document.querySelector('#project-prev').onclick=()=>grid.scrollBy({left:-grid.clientWidth*.9,behavior:reduced?'instant':'smooth'});document.querySelector('#project-next').onclick=()=>grid.scrollBy({left:grid.clientWidth*.9,behavior:reduced?'instant':'smooth'});
+// Francesco Spina — Space Journey
+// Due modalità: "read" (pagina che scorre, default su mobile e senza JS)
+// e "journey" (tappe a schermo intero, l'omino cammina lungo la strada).
+
+const SECTIONS = ['home', 'about', 'projects', 'contact'];
+const STOPS = [20, 39, 60, 79]; // posizione dell'omino sulla strada per ogni tappa, in %
+const MODE_KEY = 'fs-mode';
+const WALK_MS = 1050;
+const WHEEL_COOLDOWN_MS = 800;
+
+const SKILLS = {
+  'HTML / CSS': 'Struttura, layout e interfacce responsive: parte della formazione full stack.',
+  'JavaScript': 'Interazioni e logica frontend nel percorso di sviluppo web.',
+  'Vue': 'Framework frontend affrontato durante la formazione Boolean.',
+  'PHP / Laravel': 'Sviluppo backend nel percorso di formazione full stack.',
+  'AEM': 'Gestione di contenuti web nell’esperienza in agenzia.',
+  'WordPress': 'Gestione di siti e contenuti digitali nell’esperienza lavorativa.',
+};
+
+const $ = (selector, scope = document) => scope.querySelector(selector);
+const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+
+const root = document.documentElement;
+const pages = $$('.page');
+const navLinks = $$('.site-nav a');
+const avatar = $('#avatar');
+const dialog = $('#detail');
+const grid = $('#projects-grid');
+const journeyQuery = matchMedia('(min-width: 900px) and (min-height: 640px)');
+const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
+
+let current = Math.max(0, SECTIONS.indexOf(location.hash.slice(1)));
+let reduced = reduceQuery.matches;
+let walkTimer;
+
+const pad = n => String(n).padStart(2, '0');
+const isJourney = () => root.classList.contains('journey');
+
+$('.progress').innerHTML = SECTIONS
+  .map(id => `<a href="#${id}" aria-label="Vai a ${id}"></a>`)
+  .join('');
+const progressDots = $$('.progress a');
+
+function setActiveNav(index) {
+  [...navLinks, ...progressDots].forEach(link => {
+    const active = link.hash === `#${SECTIONS[index]}`;
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+}
+
+/* ---------- Modalità ---------- */
+
+function savedMode() {
+  try { return localStorage.getItem(MODE_KEY); } catch { return null; }
+}
+
+function setMode(mode, { save = false } = {}) {
+  if (save) {
+    try { localStorage.setItem(MODE_KEY, mode); } catch { /* storage non disponibile */ }
+  }
+  const journey = mode === 'journey';
+  root.classList.toggle('journey', journey);
+  $$('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+
+  if (journey) {
+    show(current, { instant: true });
+    // il salto all'ancora del caricamento può aver spostato il documento
+    window.scrollTo(0, 0);
+  } else {
+    pages.forEach(page => { page.hidden = false; page.classList.remove('active'); });
+    root.style.setProperty('--step', 0);
+    document.title = 'Francesco Spina — Space Journey';
+    setActiveNav(current);
+    if (save) pages[current].scrollIntoView({ block: 'start', behavior: 'instant' });
+    updateReadProgress();
+  }
+}
+
+$$('[data-mode]').forEach(button => {
+  button.addEventListener('click', () => setMode(button.dataset.mode, { save: true }));
+});
+
+journeyQuery.addEventListener('change', e => {
+  if (!savedMode()) setMode(e.matches ? 'journey' : 'read');
+});
+
+/* ---------- Viaggio: tappe e omino ---------- */
+
+function moveAvatar(index, previous, instant) {
+  avatar.style.transition = instant ? 'none' : '';
+  avatar.style.left = `${STOPS[index]}%`;
+  if (index !== previous) avatar.classList.toggle('back', index < previous);
+
+  clearTimeout(walkTimer);
+  const walking = !instant && !reduced && index !== previous;
+  avatar.classList.toggle('walking', walking);
+  if (walking) walkTimer = setTimeout(() => avatar.classList.remove('walking'), WALK_MS);
+}
+
+function show(index, { instant = false } = {}) {
+  index = Math.max(0, Math.min(SECTIONS.length - 1, index));
+  const previous = current;
+  current = index;
+
+  root.style.setProperty('--step', index);
+  root.style.setProperty('--origin-x', `${STOPS[index]}%`);
+  pages.forEach((page, i) => {
+    page.hidden = i !== index;
+    page.classList.toggle('active', i === index);
+  });
+  setActiveNav(index);
+  moveAvatar(index, previous, instant);
+
+  $('#counter').textContent = `${pad(index + 1)} / ${pad(SECTIONS.length)}`;
+  $('#prev').disabled = index === 0;
+  $('#next').disabled = index === SECTIONS.length - 1;
+  const name = SECTIONS[index];
+  document.title = `${name[0].toUpperCase() + name.slice(1)} — Francesco Spina`;
+}
+
+function go(index) {
+  if (index >= 0 && index < SECTIONS.length && index !== current) location.hash = SECTIONS[index];
+}
+
+window.addEventListener('hashchange', () => {
+  if (!isJourney()) return;
+  const index = SECTIONS.indexOf(location.hash.slice(1));
+  show(index < 0 ? 0 : index);
+  $('h1, h2', pages[current]).focus({ preventScroll: true });
+});
+
+$('#prev').addEventListener('click', () => go(current - 1));
+$('#next').addEventListener('click', () => go(current + 1));
+
+window.addEventListener('keydown', e => {
+  if (!isJourney() || dialog.open || e.target.closest('button, input, textarea, select')) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); go(current + 1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
+});
+
+// La rotella cambia tappa solo quando la pagina corrente è già a fine corsa.
+let wheelAmount = 0;
+let lastWheel = 0;
+window.addEventListener('wheel', e => {
+  if (!isJourney() || dialog.open || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  const page = pages[current];
+  const direction = Math.sign(e.deltaY);
+  const canScrollDown = page.scrollTop + page.clientHeight < page.scrollHeight - 3;
+  const canScrollUp = page.scrollTop > 3;
+  if ((direction > 0 && canScrollDown) || (direction < 0 && canScrollUp)) return;
+
+  e.preventDefault();
+  const now = Date.now();
+  if (now - lastWheel < WHEEL_COOLDOWN_MS) return;
+  if (Math.sign(wheelAmount) !== direction) wheelAmount = 0;
+  wheelAmount += e.deltaY;
+  if (Math.abs(wheelAmount) > 85) {
+    go(current + direction);
+    lastWheel = now;
+    wheelAmount = 0;
+  }
+}, { passive: false });
+
+let touchX, touchY;
+$('main').addEventListener('touchstart', e => {
+  touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
+}, { passive: true });
+$('main').addEventListener('touchend', e => {
+  if (!isJourney() || dialog.open || e.target.closest('.projects-grid')) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  const dy = e.changedTouches[0].clientY - touchY;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(current + (dx < 0 ? 1 : -1));
+}, { passive: true });
+
+/* ---------- Lettura: sezione attiva e progresso ---------- */
+
+const sectionObserver = new IntersectionObserver(entries => {
+  if (isJourney()) return;
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    current = pages.indexOf(entry.target);
+    setActiveNav(current);
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+pages.forEach(page => sectionObserver.observe(page));
+
+let progressFrame;
+function updateReadProgress() {
+  if (isJourney()) return;
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const progress = max > 0 ? Math.min(1, scrollY / max) : 0;
+  root.style.setProperty('--progress', progress);
+  // Lo sfondo scorre lentamente insieme alla pagina, come in Viaggio
+  if (!reduced) root.style.setProperty('--step', progress * (SECTIONS.length - 1));
+}
+window.addEventListener('scroll', () => {
+  cancelAnimationFrame(progressFrame);
+  progressFrame = requestAnimationFrame(updateReadProgress);
+}, { passive: true });
+
+/* ---------- Movimento ridotto ---------- */
+
+function setReduced(value) {
+  reduced = value;
+  document.body.classList.toggle('reduced', value);
+  const button = $('#motion');
+  button.setAttribute('aria-pressed', String(value));
+  button.title = value ? 'Riattiva movimento' : 'Riduci movimento';
+  if (value) avatar.classList.remove('walking');
+}
+$('#motion').addEventListener('click', () => setReduced(!reduced));
+reduceQuery.addEventListener('change', e => setReduced(e.matches));
+
+/* ---------- Dialog e interazioni ---------- */
+
+function openDetail(...nodes) {
+  $('#detail-content').replaceChildren(...nodes);
+  dialog.showModal();
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text) node.textContent = text;
+  return node;
+}
+
+// In Viaggio la scheda progetto apre il caso di studio nel dialog;
+// in Lettura il <details> si espande sul posto.
+grid.addEventListener('click', e => {
+  const project = e.target.closest('.project');
+  if (!isJourney() || !project || e.target.closest('a')) return;
+  e.preventDefault();
+  const title = el('h2', '', $('h3', project).textContent);
+  title.id = 'detail-title';
+  openDetail(
+    el('p', 'eyebrow', 'Caso di studio'),
+    title,
+    $('.project-media', project).cloneNode(true),
+    $('.summary', project).cloneNode(true),
+    $('.stack', project).cloneNode(true),
+    ...[...$('.case-body', project).children].map(node => node.cloneNode(true)),
+  );
+});
+
+$$('[data-placeholder]').forEach(button => {
+  button.addEventListener('click', () => {
+    const title = el('h2', '', button.dataset.placeholder);
+    title.id = 'detail-title';
+    openDetail(
+      el('p', 'eyebrow', 'Prototipo visivo'),
+      title,
+      el('p', '', 'Questo collegamento sarà configurato con i dati professionali verificati prima della pubblicazione del portfolio definitivo.'),
+    );
+  });
+});
+
+$('.close').addEventListener('click', () => dialog.close());
+dialog.addEventListener('click', e => {
+  if (e.target !== dialog) return;
+  const r = dialog.getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close();
+});
+
+$$('[data-skill]').forEach(button => {
+  button.addEventListener('click', () => {
+    $$('[data-skill]').forEach(b => b.classList.toggle('selected', b === button));
+    $('#skill-info').textContent = SKILLS[button.dataset.skill];
+  });
+});
+
+$('#project-prev').addEventListener('click', () => grid.scrollBy({ left: -grid.clientWidth * .9, behavior: reduced ? 'instant' : 'smooth' }));
+$('#project-next').addEventListener('click', () => grid.scrollBy({ left: grid.clientWidth * .9, behavior: reduced ? 'instant' : 'smooth' }));
+
+$('#year').textContent = new Date().getFullYear();
+
+/* ---------- Avvio ---------- */
+
+setReduced(reduced);
+setMode(isJourney() ? 'journey' : 'read');
