@@ -1,5 +1,5 @@
 // Float only visible artwork; links and labels remain stationary.
-(() => {
+export function initContact() {
   const section = document.querySelector('#contact');
   const visuals = [...section.querySelectorAll('.contact-visual')];
   const visible = new Set();
@@ -17,4 +17,4 @@
   // Inactive journey pages remain visible while their station crosses the viewport.
   new MutationObserver(sync).observe(section, { attributes: true, attributeFilter: ['hidden', 'inert'] });
   document.addEventListener('visibilitychange', sync);
-})();
+}

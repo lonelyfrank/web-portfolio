@@ -1,6 +1,6 @@
 // About layout, accessibility and scene independence. Same environment as check-stations.cjs.
 const assert = require('node:assert/strict');
-const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 
 (async () => {
   const browser = await chromium.launch(browserOptions);
@@ -8,8 +8,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
   try {
     for (const [width, height] of [[1920, 1080], [1440, 900], [1366, 768], [1280, 600], [1024, 768], [820, 900], [390, 844], [320, 568]]) {
       const page = await browser.newPage({ viewport: { width, height } });
-      page.on('pageerror', e => errors.push(e.message));
-      page.on('response', r => { if (r.url().startsWith(url) && r.status() >= 400) errors.push(r.url()); });
+      trackErrors(page, errors);
       await page.goto(`${url}/#about`);
       await page.evaluate(() => document.fonts.ready);
       for (const mode of ['read', 'journey']) {
@@ -79,7 +78,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
       console.log(`About OK: ${width}×${height}, Lettura / Viaggio`);
     }
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    page.on('pageerror', e => errors.push(e.message));
+    trackErrors(page, errors);
     await page.goto(url);
     await page.locator('[data-mode="journey"]').click();
     await page.locator('.site-nav a[href="#about"]').click();

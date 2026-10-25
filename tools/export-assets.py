@@ -6,19 +6,10 @@ Ogni immagine viene ritagliata sul contenuto opaco e ridimensionata a circa 2x l
 a cui è mostrata nel sito. Per le cornici stampa i valori di border-image-slice da usare
 nel CSS; per strada e ringhiera ritaglia un modulo ripetibile in orizzontale.
 """
-from asset_paths import ROOT, source_path, output_path
+from assetlib import ROOT, alpha_bbox, load, output_path
 import runpy
 
 from PIL import Image
-
-
-def load(name):
-    return Image.open(source_path(name)).convert('RGBA')
-
-
-def solid_bbox(im, threshold=16):
-    """Riquadro del contenuto ignorando i bagliori quasi trasparenti."""
-    return im.getchannel('A').point(lambda v: 255 if v > threshold else 0).getbbox()
 
 
 def save(im, name, width=None, height=None):
@@ -32,20 +23,20 @@ def save(im, name, width=None, height=None):
 
 def sprite(src, name, **size):
     im = load(src)
-    return save(im.crop(solid_bbox(im)), name, **size)
+    return save(im.crop(alpha_bbox(im, 16)), name, **size)
 
 
 def tile(src, name, x0, x1, height, pad_top=0, pad_bottom=0):
     """Modulo orizzontale ripetibile tra le colonne x0 e x1 (scelte su un giunto scuro)."""
     im = load(src)
-    box = solid_bbox(im)
+    box = alpha_bbox(im, 16)
     return save(im.crop((x0, box[1] - pad_top, x1, box[3] + pad_bottom)), name, height=height)
 
 
 def frame(src, name, width):
     """Cornice per border-image: stampa lo slice (top right bottom left) nel WebP esportato."""
     im = load(src)
-    box = solid_bbox(im)
+    box = alpha_bbox(im, 16)
     im = im.crop(box)
     alpha = im.getchannel('A')
     cx, cy = im.width // 2, im.height // 2
@@ -83,6 +74,6 @@ if __name__ == '__main__':
     sprite('Navetta pixel art con bagliori magenta-2.png', 'ship-shuttle.webp', width=440)
     sprite('Scout spaziale compatto in pixel art-1.png', 'ship-scout.webp', width=300)
 
-    # Sfondo panoramico e personaggio con posa ferma, camminata e corsa.
+    # Sfondo panoramico e personaggio con posa ferma, camminata e teletrasporto.
     for exporter in ['scene', 'props', 'interactions', 'elevator', 'skills', 'contact', 'projects']:
         runpy.run_path(str(ROOT / 'tools' / f'export-{exporter}.py'), run_name='__main__')

@@ -1,0 +1,343 @@
+/* ---------- Personaggio: riposo, carezza, camminata e teletrasporto ---------- */
+
+.avatar {
+  position: absolute;
+  bottom: calc(var(--road-h) - 4px);
+  left: 0;
+  z-index: 2;
+  width: calc(64 * var(--u) * 1px);
+  height: calc(56 * var(--u) * 1px);
+  margin-left: calc(-32 * var(--u) * 1px);
+  filter: drop-shadow(0 0 5px #3cd4ff33);
+  transition: left var(--travel-ms, 1050ms) linear;
+}
+.avatar-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: url('../assets/sprite/character-idle.webp') 0 0 / 800% 100% no-repeat;
+  image-rendering: pixelated;
+  /* La gatta gira intorno al ragazzo mentre lui riposa. */
+  animation: idle-frames 3.2s steps(8) infinite;
+}
+.avatar.back .avatar-sprite { transform: scaleX(-1); }
+.avatar.petting .avatar-sprite {
+  background-image: url('../assets/sprite/character-pet.webp');
+  animation: pet-frames 3.2s steps(8) infinite;
+}
+.avatar.walking .avatar-sprite {
+  /* Celle di movimento 160 × 112: stesso centro e scala delle pose 128 × 112. */
+  width: 125%;
+  margin-left: -12.5%;
+  background-image: url('../assets/sprite/character-motion.webp');
+  background-size: 800% 100%;
+  animation: sprite-frames var(--cycle-ms) step-end infinite;
+}
+/* Otto pose: js/stage/actor.js sincronizza il ciclo con lo scorrimento. */
+.avatar.walking { --cycle-ms: 571ms; }
+.avatar.walking .avatar-sprite { background-position-y: 0%; }
+.avatar.teleporting .avatar-sprite {
+  /* Canvas 160 × 144, floor y=132 aligned with y=108 in the idle canvas. */
+  position: relative;
+  top: calc(-24 * var(--scene-unit));
+  width: 125%;
+  height: calc(144 / 112 * 100%);
+  margin-left: -12.5%;
+  background-image: url('../assets/sprite/character-teleport.webp');
+  background-size: 1200% 100%;
+  background-position: calc(var(--teleport-frame, 0) * 100% / 11) 0;
+  animation: none;
+}
+
+@keyframes sprite-frames {
+  /* Una cella intera per posa, indipendentemente dalla scala dello sprite.
+     Con background-size: 800%, 100% allinea l'ottavo e ultimo frame. */
+  0% { background-position-x: 0%; }
+  12.5% { background-position-x: calc(100% / 7); }
+  25% { background-position-x: calc(200% / 7); }
+  37.5% { background-position-x: calc(300% / 7); }
+  50% { background-position-x: calc(400% / 7); }
+  62.5% { background-position-x: calc(500% / 7); }
+  75% { background-position-x: calc(600% / 7); }
+  87.5%, 100% { background-position-x: 100%; }
+}
+@keyframes idle-frames {
+  to { background-position-x: calc(-512 * var(--u) * 1px); }
+}
+@keyframes pet-frames {
+  to { background-position-x: calc(-512 * var(--u) * 1px); }
+}
+
+/* Postazioni: una sola scala per personaggi, attrezzature e ponte.
+   Coordinate locali in pixel dell'atlante 144 × 136, appoggio y=132. */
+.station {
+  position: absolute;
+  width: calc(144 * var(--scene-unit));
+  height: calc(136 * var(--scene-unit));
+  --frame: 0;
+  --floor-y: 132;
+}
+.station-deck {
+  position: absolute;
+  left: calc(-18 * var(--scene-unit));
+  /* The four-pixel top surface is behind the feet; the fascia starts below. */
+  top: calc((var(--floor-y) - 4) * var(--scene-unit));
+  width: calc(180 * var(--scene-unit));
+  aspect-ratio: 720 / 78;
+  background: url('../assets/bridge/dock-deck.webp') center top / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.station-contact .station-deck {
+  aspect-ratio: 720 / 172;
+  background-image: url('../assets/bridge/dock-supported.webp');
+}
+.station-equipment, .station-actors, .station-lamp, .projector { position: absolute; image-rendering: pixelated; }
+.station-about .station-equipment {
+  width: calc(140 * var(--scene-unit));
+  left: calc((var(--equipment-x) - 70) * var(--scene-unit));
+  bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
+}
+.station-contact .station-equipment {
+  --radio-size: calc(102 * var(--scene-unit));
+  width: var(--radio-size);
+  height: var(--radio-size);
+  left: calc((var(--equipment-x) - 51) * var(--scene-unit));
+  bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
+  /* A single scan is scheduled by JS, then the angled pose is held. */
+  background: url('../assets/stations/radio.webp') calc(var(--radio-frame, 1) * -1 * var(--radio-size)) 0 / 800% 100% no-repeat;
+}
+.station-actors {
+  display: none;
+  inset: 0;
+  background-size: 800% 100%;
+  background-position: calc(var(--frame) * -144 * var(--scene-unit)) 0;
+  background-repeat: no-repeat;
+}
+.station-about .station-actors { background-image: url('../assets/sprite/interaction-about.webp'); }
+.station-contact .station-actors { background-image: url('../assets/sprite/interaction-contact.webp'); }
+/* Lamps light their own area and travel with it on the lift (100 su, taller than Frank). */
+.station-lamp { z-index: 0; height: calc(100 * var(--scene-unit)); bottom: calc(6 * var(--scene-unit)); }
+.station-about .station-lamp { left: calc(-35 * var(--scene-unit)); }
+.station-contact .station-lamp { left: calc(162 * var(--scene-unit)); }
+.lamp-out-left { left: calc(-84 * var(--scene-unit)); transform: scaleX(-1); }
+.lamp-out-right { left: calc(127 * var(--scene-unit)); }
+.station-equipment { z-index: 1; }
+.station-actors { z-index: 2; }
+/* One central emitter, using the existing registered off/on frames. */
+.projector {
+  width: calc(100 * var(--scene-unit));
+  height: calc(46.25 * var(--scene-unit));
+  bottom: calc(6 * var(--scene-unit));
+}
+.projector[data-emitter='feature'] { left: calc(22 * var(--scene-unit)); }
+.projector img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.projector-on { opacity: 0; transition: opacity .18s steps(3); }
+.station-projects[data-power='on'] .projector-on { opacity: 1; }
+.station.interaction-active .station-actors { display: block; }
+
+.journey-strip { display: none; }
+/* ---------- Scena Viaggio: un'area alla volta ----------
+   Livelli, dal fondo: cielo e città (.world, parallasse) → ringhiera e staffe →
+   vano → superficie della piazzola → piano mobile con l'allestimento → cilindri →
+   passerella → fascia della piazzola e bordo frontale → personaggio → HTML. */
+.journey {
+  --stage-above: calc(112 * var(--scene-unit));
+  --stage-below: calc(126 * var(--scene-unit));
+  --strip-h: calc(var(--stage-above) + var(--stage-below));
+  --bay: 330;
+}
+.journey .journey-strip {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--controls-h);
+  z-index: 3;
+  height: var(--strip-h);
+  pointer-events: none;
+  /* Bottom and sides are clipped: the shafts continue below the frame. Lamps may rise above. */
+  clip-path: inset(-200px 0 0 0);
+  background: linear-gradient(to top, #050918 0, #050918d9 calc(var(--stage-below) * .45), #05091800 var(--stage-below));
+}
+.set-storage { display: none; }
+
+.bridge-track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  transform: translateX(calc(var(--cam, 0) * -1 * var(--scene-unit)));
+  will-change: transform;
+}
+.track-walkway {
+  position: absolute;
+  z-index: 6;
+  left: calc(var(--bay) * var(--bay-radius, 9) * -1 * var(--scene-unit));
+  width: calc(var(--bay) * var(--bay-radius, 9) * 2 * var(--scene-unit));
+  top: var(--stage-above);
+  height: calc(48 * var(--scene-unit));
+  background: url('../assets/bridge/walkway.webp') repeat-x;
+  background-size: auto calc(52 * var(--scene-unit));
+  background-position: calc(var(--texture-x, 0) * -1 * var(--scene-unit)) calc(-4 * var(--scene-unit));
+}
+/* The walkway's top surface stays behind the feet and the lifted equipment. */
+.track-walkway-top {
+  z-index: 3;
+  top: calc(var(--stage-above) - 4 * var(--scene-unit));
+  height: calc(4 * var(--scene-unit));
+  background-position-y: 0;
+}
+
+.bay { position: absolute; left: calc(var(--k) * var(--bay) * var(--scene-unit)); top: var(--stage-above); width: 0; height: 0; }
+.bay > * { position: absolute; image-rendering: pixelated; }
+.bay-rail {
+  z-index: 1;
+  left: calc(90 * var(--scene-unit));
+  width: calc((var(--bay) - 180) * var(--scene-unit));
+  top: calc(-36 * var(--scene-unit));
+  height: calc(36 * var(--scene-unit));
+  background: url('../assets/bridge/railing.webp') center bottom / auto 100% repeat-x;
+}
+.bay-rail::before, .bay-rail::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: calc(18 * var(--scene-unit));
+  height: calc(35 * var(--scene-unit));
+  background: url('../assets/bridge/rail-end-left.webp') left bottom / auto 100% no-repeat;
+}
+.bay-rail::before { left: 0; }
+.bay-rail::after { right: 0; background-image: url('../assets/bridge/rail-end-right.webp'); background-position: right bottom; }
+.bay-bracket {
+  z-index: 2;
+  left: calc((var(--bay) / 2 - 55) * var(--scene-unit));
+  top: calc(48 * var(--scene-unit));
+  width: calc(110 * var(--scene-unit));
+  height: calc(62 * var(--scene-unit));
+  background: url('../assets/bridge/bracket.webp') center top / 100% auto no-repeat;
+  -webkit-mask-image: linear-gradient(#000 45%, transparent);
+  mask-image: linear-gradient(#000 45%, transparent);
+}
+.bay-shaft {
+  z-index: 2;
+  left: calc(-107 * var(--scene-unit));
+  top: calc(60 * var(--scene-unit));
+  width: calc(214 * var(--scene-unit));
+  height: calc(66 * var(--scene-unit));
+  background: url('../assets/elevator/lift-shaft.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-shaft::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 100%, #00daff2e, transparent 70%);
+  opacity: 0;
+  transition: opacity .4s;
+}
+.bay.raised .bay-shaft::after { opacity: 1; }
+.bay-pad {
+  left: calc(-90 * var(--scene-unit));
+  width: calc(180 * var(--scene-unit));
+  background: url('../assets/bridge/dock-deck.webp') 0 0 / calc(180 * var(--scene-unit)) calc(19 * var(--scene-unit)) no-repeat;
+}
+.bay-pad-top { z-index: 3; top: calc(-4 * var(--scene-unit)); height: calc(4 * var(--scene-unit)); }
+.bay-pad-front { z-index: 7; top: 0; height: calc(15 * var(--scene-unit)); background-position: 0 calc(-4 * var(--scene-unit)); }
+/* Plate, rods and equipment move together (transform only). */
+.bay-lift {
+  z-index: 4;
+  left: calc(-88 * var(--scene-unit));
+  top: calc(-4 * var(--scene-unit));
+  width: calc(176 * var(--scene-unit));
+  height: 0;
+  transform: translateY(calc(106 * var(--scene-unit)));
+  will-change: transform;
+}
+.bay-lift > * { position: absolute; }
+.bay-plate {
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(11 * var(--scene-unit));
+  background: url('../assets/elevator/lift-plate.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-rod {
+  top: calc(7 * var(--scene-unit));
+  width: calc(17 * var(--scene-unit));
+  height: calc(124 * var(--scene-unit));
+  background: url('../assets/elevator/lift-rod.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-rod-left { left: calc(12.5 * var(--scene-unit)); }
+.bay-rod-right { left: calc(151.5 * var(--scene-unit)); }
+.bay-mount { z-index: 2; left: 0; top: 0; }
+.bay-mount .station { left: calc((88 - var(--bay-x)) * var(--scene-unit)); top: calc(-128 * var(--scene-unit)); }
+.bay-mount .station-deck { display: none; }
+/* Cylinders stay anchored at the bottom of the shaft; the rods slide inside them. */
+.bay-cylinder {
+  z-index: 5;
+  top: calc(113 * var(--scene-unit));
+  width: calc(26 * var(--scene-unit));
+  height: calc(47.5 * var(--scene-unit));
+  background: url('../assets/elevator/lift-cylinder.webp') 0 0 / 100% 100% no-repeat;
+}
+.bay-cylinder-left { left: calc(-80 * var(--scene-unit)); }
+.bay-cylinder-right { left: calc(59 * var(--scene-unit)); }
+.bay-edge {
+  z-index: 7;
+  left: calc(-107 * var(--scene-unit));
+  top: calc(48 * var(--scene-unit));
+  width: calc(214 * var(--scene-unit));
+  height: calc(15.5 * var(--scene-unit));
+  background: url('../assets/elevator/lift-edge.webp') 0 0 / 100% 100% no-repeat;
+}
+
+.journey-strip .avatar {
+  left: 50%;
+  bottom: calc(var(--stage-below) - 4 * var(--scene-unit));
+  z-index: 2;
+  transform: translateX(calc(var(--actor-x, 0) * var(--scene-unit)));
+}
+.journey-strip .avatar.station-owned { visibility: hidden; }
+/* During a transfer js/stage/actor.js sets --cycle-ms from the selected stride / speed. */
+
+/* Collegamenti fra postazioni e schermi */
+.scene-links { display: none; }
+.journey .scene-links { display: block; position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.scene-link {
+  position: fixed;
+  width: 2px;
+  margin-left: -1px;
+  opacity: 0;
+  background: repeating-linear-gradient(to bottom, var(--cyan) 0 6px, transparent 6px 10px);
+  box-shadow: 0 0 8px #00daff80;
+  transition: opacity .3s;
+}
+.scene-link.on { opacity: .75; }
+.scene-link.beam {
+  width: auto;
+  margin-left: 0;
+  box-shadow: none;
+  background:
+    repeating-linear-gradient(to bottom, #00daff14 0 1px, transparent 1px 4px),
+    linear-gradient(to top, #00daff45, #00daff18 55%, #00daff06);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform .26s cubic-bezier(.2, .8, .3, 1), opacity .26s;
+}
+.scene-link.beam.on { transform: none; opacity: .85; }
+/* Switch off before the camera moves: no stretched beam on departure. */
+.journey .scene-link.beam:not(.on) { visibility: hidden; transition: none; }
+
+/* In Reading, the same station nodes sit beside their section, as static poses. */
+.page .station {
+  --scene-unit: 1.5px;
+  position: relative;
+  left: auto;
+  bottom: auto;
+  margin: 12px auto 48px;
+  flex: none;
+}
+.page .station-contact { margin-bottom: 72px; }
+.page .station-projects { display: none; }
+.page .station-lamp { display: none; }

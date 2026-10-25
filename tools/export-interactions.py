@@ -4,7 +4,7 @@ A fixed scale preserves Frank's standing height (96px). Equipment is rendered
 separately and never replaced. Source keypoints are measured in each grid cell.
 Run: python3 tools/export-interactions.py (Pillow).
 """
-from asset_paths import source_path, output_path
+from assetlib import load, output_path
 from PIL import Image
 
 CELL = (144, 136)
@@ -16,7 +16,7 @@ CONTACT_TARGETS = [None, (87, 111), (87, 111), (123, 103), (123, 103), (87, 105)
 
 
 def actors(source, name, scale, rows, ground, origins):
-    sheet = Image.open(source_path(source)).convert('RGBA')
+    sheet = load(source)
     atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1]))
     for index in range(8):
         row, column = divmod(index, 4)
@@ -45,11 +45,11 @@ def export_interactions():
             assert abs(FLOOR - (floor - hand[1]) * scale - target[1]) <= 4
     actors('Frank e il gatto calico, otto pose.png', 'contact', scale,
            (0, 470), (460, 396), origins)
-    sheet = Image.open(source_path('Banchine industriali modulari in pixel art.png')).convert('RGBA')
+    sheet = load('Banchine industriali modulari in pixel art.png')
     for name, box in [('left', (48, 810, 383, 960)), ('right', (1152, 810, 1492, 960))]:
         sheet.crop(box).save(output_path(f'rail-end-{name}.webp'), lossless=True, method=6)
     # Existing projector asset, base only. No invented character interaction.
-    projector = Image.open(source_path('Proiettore olografico cyberpunk in pixel art.png')).convert('RGBA')
+    projector = load('Proiettore olografico cyberpunk in pixel art.png')
     projector.crop((25, 648, 746, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
         output_path('projector.webp'), lossless=True, method=6)
 

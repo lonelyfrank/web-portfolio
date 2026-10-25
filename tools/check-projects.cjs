@@ -1,14 +1,13 @@
 // Browser regression coverage for the holographic carousel and its scene lifecycle.
 const assert = require('node:assert/strict');
-const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 
 (async () => {
   const browser = await chromium.launch(browserOptions);
   const errors = [];
   const open = async options => {
     const page = await browser.newPage(options);
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('response', response => { if (response.url().startsWith(url) && response.status() >= 400) errors.push(response.url()); });
+    trackErrors(page, errors);
     return page;
   };
   try {
@@ -26,7 +25,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
         const section = document.querySelector('#projects');
         if (section.dataset.projectPower !== 'on') return;
         window.projectIgnitions.push({
-          moving: document.querySelector('#avatar').matches('.walking, .running'),
+          moving: document.querySelector('#avatar').matches('.walking, .teleporting'),
           cameraMoving: document.querySelector('.bridge-track').getAnimations().some(a => a.playState === 'running'),
           liftMoving: [...document.querySelectorAll('.bay-lift')].some(n => n.getAnimations().length),
         });

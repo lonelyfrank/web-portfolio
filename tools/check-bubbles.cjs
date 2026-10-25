@@ -1,14 +1,13 @@
 // Full random cycles: ten visible bubbles, atomic swaps and organic gap filling.
 const assert = require('node:assert/strict');
-const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 (async () => {
   const browser = await chromium.launch(browserOptions);
   try {
     for (const width of [1440, 1024, 390, 320]) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
       const errors = [];
-      page.on('pageerror', e => errors.push(e.message));
-      page.on('response', r => { if (r.url().startsWith(url) && r.status() >= 400) errors.push(r.url()); });
+      trackErrors(page, errors);
       // Different reproducible random schedules exercise both single and double births.
       await page.addInitScript(seed => {
         Math.random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };

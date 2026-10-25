@@ -10,26 +10,34 @@ creatività e progetti. Sito statico senza build o dipendenze runtime:
 python3 -m http.server 8082 --bind 127.0.0.1 --directory dist
 ```
 
-Aprire `http://127.0.0.1:8082`. La configurazione Sites esistente è in
+Aprire `http://127.0.0.1:8082`. Gli script sono moduli ES e richiedono un
+server HTTP: aprendo `index.html` direttamente da file non vengono eseguiti.
+
+I moduli non hanno dipendenze cicliche: `main.js` importa le funzionalità,
+che dipendono da `stage/` e da `config`/`dom`/`state`. Lo stato condiviso è
+solo in `state.js`; ogni altro stato appartiene al modulo che lo gestisce.
+Aggiungendo o rinominando un modulo, aggiornare i `modulepreload` di
+`index.html` (lo verifica `check-assets.py`). La configurazione Sites esistente è in
 `.openai/hosting.json`; modificare i file locali non pubblica automaticamente il sito.
 
 ## Struttura
 
 | Percorso | Responsabilità |
 | --- | --- |
-| `dist/index.html` | Contenuti semantici, navigazione, modalità iniziale, catalogo progetti |
-| `dist/app.js` | Regia del viaggio, input, camera, elevatori, personaggi, dialog e movimento ridotto |
-| `dist/style.css` | Layout condiviso, responsive, scena, About e Contact |
-| `dist/projects.js`, `dist/projects.css` | Stato e presentazione del carosello |
-| `dist/skills.js` | Dieci bolle, ricambio e risposta al puntatore |
-| `dist/contact.js` | Visibilità e pausa dei satelliti |
+| `dist/index.html` | Contenuti semantici, navigazione, modalità iniziale, cataloghi generati |
+| `dist/js/main.js` | Unico punto d'ingresso (modulo ES): registra i listener e compone la scena |
+| `dist/js/config.js`, `dom.js`, `state.js` | Costanti di scena e regia, nodi condivisi, stato comune (sezione, fase, movimento) |
+| `dist/js/navigation.js`, `mode.js`, `reading.js`, `motion.js`, `lifecycle.js`, `detail.js` | Tappe e input, Viaggio/Lettura, avanzamento, movimento ridotto, visibilità/resize, dialog |
+| `dist/js/stage/` | Viaggio: `director` (regia), `camera`, `bays` (elevatori), `actor` (Frank e la gatta), `stations`, `projector`, `radio`, `rest`, `phase` |
+| `dist/js/sections/` | Carosello dei progetti, bolle delle competenze, satelliti di Contact |
+| `dist/css/` | `base`, `world`, `layout`, `home`, `about`, `projects`, `contact`, `stage`: caricati in quest'ordine di cascata |
 | `dist/assets/` | Immagini WebP effettivamente usate dal sito |
 | `assets/` | Originali PNG, conservati senza alterazioni |
 | `design/assets.json` | Catalogo dei percorsi originali, esportazioni e riferimenti |
-| `design/projects.json` | Unica sorgente dei contenuti dei progetti |
+| `design/projects.json`, `design/skills.json` | Uniche sorgenti di progetti e competenze (testi, ordine, originali delle immagini) |
 | `design/stations.md` | Coordinate, keypoint e vincoli degli sprite e delle postazioni |
-| `design/audit.md` | Esiti, interventi e limiti della revisione del progetto |
-| `tools/` | Esportatori e controlli locali; non sono distribuiti al browser |
+| `design/audit.md` | Esiti, interventi e limiti delle revisioni del progetto |
+| `tools/` | Esportatori, renderer e controlli locali; non sono distribuiti al browser |
 
 ## Modalità e navigazione
 
@@ -51,8 +59,13 @@ modificatori non provocano cambi di sezione.
 
 Una nuova destinazione interrompe le attese precedenti e riparte dalle
 coordinate renderizzate. Le sezioni adiacenti usano la camminata a 168 unità
-di scena/s; i salti usano la corsa a 280 unità/s. Cadenza e spostamento dei
-piedi sono sincronizzati. La camera conserva velocità lineare durante il
+di scena/s, con cadenza sincronizzata allo spostamento dei piedi. Nei salti
+fra tab distanti Frank e la gatta si teletrasportano: scompaiono sul punto di
+partenza e ricompaiono su quello di arrivo, mentre la camera continua a
+scorrere a 280 unità/s. Gli 11 keyframe caricati si ripercorrono al contrario
+per la comparsa; una cella trasparente copre lo spostamento fra i due punti.
+Clic durante l’effetto conservano la posa corrente e il resize ne riprende
+l’avanzamento. La camera conserva velocità lineare durante il
 tragitto; le misure del contenitore vengono aggiornate al cambio modalità
 e al resize, senza ricalcolarle a ogni fotogramma.
 
@@ -102,10 +115,11 @@ movimento ridotto e documento nascosto annullano il cambio. Dopo 10 secondi
 una decodifica bloccata libera i controlli, conserva il progetto corrente e
 annuncia la possibilità di riprovare. Con movimento ridotto il cambio è immediato.
 
-Per aggiornare i contenuti, modificare `design/projects.json` ed eseguire:
+Per aggiornare i contenuti, modificare `design/projects.json` (o
+`design/skills.json` per le competenze) ed eseguire:
 
 ```sh
-python3 tools/render-projects.py
+python3 tools/render-content.py
 ```
 
 Le immagini mantengono canvas 1056 × 704, uguale larghezza utile e base
@@ -137,7 +151,7 @@ Gli originali e i WebP condividono categorie funzionali:
 | `stations/` | Scrivania, radio e proiettore |
 | `props/` | Lampioni, dissuasori, cavi e moduli decorativi |
 | `ships/` | Navi dello sfondo |
-| `sprite/` | Personaggi, camminata, corsa e interazioni |
+| `sprite/` | Personaggi, camminata, teletrasporto e interazioni |
 | `skills/`, `projects/`, `contact/` | Asset delle rispettive sezioni |
 | `ui/` | Cornici ancora utilizzate, insegne e terminale Home |
 
@@ -147,7 +161,8 @@ precedente resta in `design/universe.png`. Questi riferimenti non vengono
 esportati nel sito. Nessun PNG originale è stato eliminato o ricampionato.
 
 Pillow è richiesto soltanto per gli strumenti Python. Tutti gli esportatori
-risolvono i percorsi tramite `tools/asset_paths.py` e `design/assets.json`.
+condividono `tools/assetlib.py` (percorsi da `design/assets.json`, apertura
+degli originali e riquadro alfa).
 Per rigenerare **tutti** i 77 WebP:
 
 ```sh
@@ -169,7 +184,7 @@ python3 -B tools/check-assets.py
 python3 -B tools/check-exports.py
 ```
 
-Il primo verifica percorsi HTML/CSS, immagini, ID, ancore, catalogo progetti,
+Il primo verifica percorsi HTML/CSS, immagini, ID, ancore, cataloghi generati, moduli precaricati,
 inventario degli originali ed esportazioni e configurazione di hosting.
 Il secondo rigenera l’intero insieme in una cartella temporanea e confronta
 dimensioni e pixel con i file presenti in `dist/`, senza modificarli.
@@ -180,22 +195,28 @@ Con il server locale attivo, Playwright e Chromium disponibili:
 node tools/check-all.cjs
 ```
 
-La suite esegue controlli statici e di sintassi, poi sette gruppi browser in
-sequenza: `lifecycle`, `journey`, `projects`, `stations`, `about`, `contact` e
+La suite esegue controlli statici e di sintassi, poi otto gruppi browser in
+sequenza: `lifecycle`, `teleport`, `journey`, `projects`, `stations`, `about`, `contact` e
 `bubbles`. È possibile selezionarne alcuni, ad esempio:
 
 ```sh
 node tools/check-all.cjs lifecycle journey
 ```
 
-Per confrontare anche l’aspetto con una copia originale servita separatamente:
+Prima di un refactor, servire una copia della versione corrente (per esempio
+sulla porta 8087) e confrontarla con quella modificata:
 
 ```sh
-PORTFOLIO_BASELINE_URL=http://127.0.0.1:8087 node tools/check-all.cjs appearance
+PORTFOLIO_BASELINE_URL=http://127.0.0.1:8087 node tools/check-all.cjs styles appearance
 ```
 
-Il confronto acquisisce 12 coppie di screenshot con movimento ridotto e
-verifica l’identità dei pixel, in Viaggio desktop e Lettura desktop/mobile.
+`styles` confronta, proprietà per proprietà, gli stili calcolati di ogni
+elemento e pseudo-elemento in 57 stati: Lettura da 320 a 2560 px, ogni sezione
+del Viaggio da 390 a 2560 px, assenza di JavaScript, pose forzate dello sprite,
+dialog e `details` aperti; con movimento completo confronta animazioni e
+transizioni. `appearance` acquisisce 12 coppie di screenshot con movimento
+ridotto e verifica l’identità dei pixel, in Viaggio desktop e Lettura
+desktop/mobile.
 
 Gli script `check-*.cjs` restano eseguibili anche singolarmente. Per usare
 installazioni esterne al progetto:

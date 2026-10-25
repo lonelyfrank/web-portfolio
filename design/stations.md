@@ -7,7 +7,7 @@ sono divisi per funzione in `assets/`; i derivati usati dal sito in `dist/assets
 
 | Postazione | Originale | Rendering |
 | --- | --- | --- |
-| Home | Riposo, carezza, camminata/corsa in `assets/sprite/` | Nessuna attrezzatura sulla zona di sosta |
+| Home | Riposo, carezza, camminata/teletrasporto in `assets/sprite/` | Nessuna attrezzatura sulla zona di sosta |
 | About | `Frank e il gatto calico animato.png` (1774 × 887) | Solo Frank e gatta, sopra la scrivania statica |
 | Contact | `Frank e il gatto calico, otto pose.png` (1774 × 887) | Solo Frank e gatta, sopra il modulo radio persistente |
 | Projects | `Proiettore olografico cyberpunk in pixel art.png` | Un emettitore centrale, 100 × 46,25 su; stato spento e acceso registrati fra loro (−7 px) |
@@ -49,7 +49,7 @@ manuali `CONTACT_HANDS` e `CONTACT_TARGETS` registrano il personaggio sul pannel
 o sulla manopola. Cambia soltanto la traslazione orizzontale dei personaggi;
 scala e pavimento restano costanti, anche nelle pose accovacciate. Non vengono
 calcolati centri o scale dal bounding box della sagoma animata. Gli appoggi di
-uscita di Frank, inclusi quelli vicino alla manopola, sono in `STATIONS.actorX`.
+uscita di Frank, inclusi quelli vicino alla manopola, sono in `STATIONS.actorX` (`dist/js/config.js`).
 Frank e la gatta restano una coppia nello stesso asset: le sovrapposizioni fra
 zampe e gambe sono quelle disegnate nel foglio.
 
@@ -85,7 +85,14 @@ piedi di Frank.
    si spegne immediatamente alla partenza, prima del movimento della camera.
 4. Trasferimento di un modulo per sezione: fra sezioni adiacenti si cammina a 168 su/s,
    con 8 fotogrammi in 571 ms (falcata 96 su); i salti di più sezioni usano
-   la corsa a 280 su/s, con 16 fotogrammi in 429 ms (falcata 120 su).
+   il teletrasporto, mentre la camera continua a scorrere a 280 su/s.
+   La scomparsa percorre 11 pose da 55 ms più una cella vuota; la comparsa
+   ripercorre la sequenza al contrario negli ultimi 660 ms del tragitto.
+   Frank resta ancorato al punto di partenza e poi a quello di arrivo:
+   cambia coordinate soltanto nella cella vuota, senza attraversare le tab.
+   I clic durante l’effetto completano la smaterializzazione dalla posa corrente;
+   il resize mantiene la corrispondenza fra camera e keyframe. I tragitti
+   interrotti durano almeno quanto le pose ancora necessarie, senza accelerarle.
    Due sezioni percorrono circa 660 su in 2,4 s, tre circa 990 su in 3,5 s;
    i piccoli spostamenti verso la postazione modificano leggermente la durata.
    La stessa regola vale per navbar, frecce, rotella, swipe e hash.
@@ -147,3 +154,16 @@ documento nascosto, resize, 1366/1440/1920 senza pannelli tagliati, movimento
 ridotto, Lettura, focus, mobile e tempi del radar (orologio del browser).
 I keyframe Contact e la registrazione delle mani sono stati controllati anche
 con screenshot ravvicinati.
+
+## Atlante del teletrasporto
+
+`assets/sprite/Teletrasporto cyberpunk di ragazzo e gatto.png` contiene una griglia
+4 × 3 con 11 pose e l’ultima cella vuota. `tools/export-scene.py` esporta
+`dist/assets/sprite/character-teleport.webp` in 12 celle da 160 × 144 px.
+Scala unica 96/340, asse corporeo sorgente x=134, pavimenti delle righe
+y=402/793/1191; il piano esportato a y=132 coincide con y=108 del riposo.
+Il margine aggiuntivo conserva le particelle sotto le scarpe. Nessuna posa
+viene ridimensionata o ricentrata in base al proprio ingombro.
+
+La corsa precedente è conservata come originale in `assets/reference/`;
+non viene più esportata né caricata dal sito.

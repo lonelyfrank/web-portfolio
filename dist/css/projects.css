@@ -1,3 +1,84 @@
+/* Projects: catalogo semantico in Lettura, proiezione olografica in Viaggio. */
+.projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; padding: 8px 4px; }
+.district-services {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 620px);
+  height: 70px;
+  margin: 20px auto 0;
+  opacity: .8;
+  pointer-events: none;
+}
+.district-services img { object-fit: contain; width: auto; height: 100%; min-width: 0; }
+.district-services .service-cable { width: 32%; height: auto; }
+.district-services .service-elbow { height: 80%; }
+
+/* Project details are shared with the dialog. */
+.project-media {
+  aspect-ratio: 3 / 2;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin: 0;
+}
+.project-media img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+
+.project h3 { margin: 0; font-size: 20px; line-height: 1.3; }
+.summary { margin: 0; font-size: 15px; color: var(--body); }
+
+.stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.stack li {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.case { margin-top: auto; border-top: 1px solid var(--line); padding-top: 12px; }
+.case summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--cyan);
+}
+.case summary::-webkit-details-marker { display: none; }
+.case summary > span:last-child { transition: transform .2s; }
+.case[open] summary > span:last-child { transform: rotate(90deg); }
+
+.case-body dl { margin: 8px 0 20px; }
+.case-body dt,
+#detail-content dt {
+  margin-top: 14px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.case-body dd,
+#detail-content dd { margin: 4px 0 0; font-size: 15px; color: var(--body); }
+.case-links { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.journey .district-services { display: none; }
+.journey .project[hidden] { display: none !important; }
+.journey .case { margin-top: 6px; border-top-color: #00daff30; }
+.journey .case summary { width: fit-content; gap: 14px; }
+.journey .case-body { display: none; }
+@media (max-width: 900px) {
+  .projects-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .district-services { height: 48px; gap: 6px; }
+  .district-services .service-elbow { display: none; }
+}
+
 /* PNGs already contain their HUD: no second monitor frame. */
 .project-carousel { display: none; }
 .project { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 20px; }
@@ -25,8 +106,6 @@
   transition: transform .3s ease-in-out, opacity .3s ease-in-out, visibility 0s .3s;
 }
 .holo-projection[data-power='on'] { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
-/* Switch off before the camera moves: no stretched beam on departure. */
-.journey .scene-link.beam:not(.on) { visibility: hidden; transition: none; }
 /* Same endpoints, duration and symmetric easing for arrival and departure. */
 .journey #projects :is(.projects-grid, .project-controls) {
   opacity: 0; transform: translateY(10px); visibility: hidden;

@@ -1,6 +1,6 @@
 // The generated semantic catalogue is the presentation model in both modes.
 // Selection and transition state live here; the Journey director owns travel.
-class ProjectCarousel {
+export class ProjectCarousel {
   constructor({ canNavigate, reduced, onChange }) {
     this.canNavigate = canNavigate;
     this.reduced = reduced;

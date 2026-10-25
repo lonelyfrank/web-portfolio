@@ -113,3 +113,30 @@ Restano da fornire email, profilo LinkedIn, PDF del CV e dominio definitivo
 per `og:image`. Queste mancanze erano già esplicitate nel sito e non sono
 state sostituite con dati inventati. I font esterni esistenti restano in uso;
 sono mantenuti i fallback di sistema.
+
+## Refactor strutturale — 25 ottobre 2026
+
+Riorganizzazione del codice senza cambiare contenuti, comportamento o aspetto.
+
+| Prima | Dopo |
+| --- | --- |
+| `dist/app.js` (1028 righe, ~40 variabili globali) | 20 moduli ES in `dist/js/`: `main.js` come unico ingresso; `config`, `dom`, `state`; `navigation`, `mode`, `reading`, `motion`, `lifecycle`, `detail`; regia e scena in `stage/` |
+| `dist/projects.js`, `skills.js`, `contact.js` (script globali) | `dist/js/sections/` (`carousel`, `skills`, `contact`); le bolle ricevono il cambio di movimento da `motion.js` invece di osservare `body.reduced` |
+| `dist/style.css` + `dist/projects.css` | Otto file in `dist/css/`, uno per componente, in ordine di cascata; regole di ogni componente e relative `@media` riunite; due blocchi `dialog` uniti |
+| Competenze scritte a mano in HTML e in `export-skills.py` | `design/skills.json`, letto da `tools/render-content.py` ed `export-skills.py`; gli originali delle card stanno in `design/projects.json` |
+| `tools/render-projects.py`, `tools/asset_paths.py` | `tools/render-content.py`, `tools/assetlib.py` (con apertura degli originali e riquadro alfa condivisi) |
+
+Altri interventi: indici magici sostituiti da `SECTION.*`; costanti di riposo,
+interazioni, radio e rotella raggruppate in `config.js`; il fascio del
+proiettore non passa più da un ciclo generico su un solo collegamento;
+la ricollocazione dei vani è condivisa da `settle` e `normalize`; rimosse le
+regole morte `.journey .scenic` (sempre sovrascritta da `.journey .holo-deck`)
+e `.journey .when-read` e la classe inutilizzata `scroll-area`. Le suite
+browser condividono la raccolta degli errori; `check-journey` e
+`check-lifecycle` importano dalla pagina i moduli di cui ispezionano lo stato.
+
+Verifiche: rigenerazione pixel-identica dei 77 asset; le otto suite browser;
+nuovo `tools/check-styles.cjs`, che confronta con la versione precedente gli
+stili calcolati di ogni elemento in 57 stati (controprova: un colore
+modificato viene rilevato in 208 elementi); confronto di 12 screenshot.
+I moduli ES richiedono un server HTTP anche in locale.

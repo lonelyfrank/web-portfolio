@@ -1,15 +1,14 @@
 """Ritaglia i nuovi elementi di scena dai fogli originali (richiede Pillow)."""
-from asset_paths import source_path, output_path
+from assetlib import alpha_bbox, load, output_path
 
 from PIL import Image
 
 
 def export(source, name, box=None, width=None, height=None):
-    image = Image.open(source_path(source)).convert('RGBA')
+    image = load(source)
     if box:
         image = image.crop(box)
-    bounds = image.getchannel('A').point(lambda value: 255 if value > 16 else 0).getbbox()
-    image = image.crop(bounds)
+    image = image.crop(alpha_bbox(image, 16))
     scale = width / image.width if width else height / image.height
     image = image.resize((round(image.width * scale), round(image.height * scale)), Image.Resampling.LANCZOS)
     image.save(output_path(name), quality=88, method=6)
@@ -46,14 +45,13 @@ def export_props():
         export('Tre skyline cyberpunk in pixel art-1.png', f'{name}.webp', box, width=1536)
 
     # La base della parabola resta ferma mentre disco e segnale si animano.
-    sheet = Image.open(source_path('Modulo radio cyberpunk in otto fotogrammi.png')).convert('RGBA')
+    sheet = load('Modulo radio cyberpunk in otto fotogrammi.png')
     frames = []
     for row in range(2):
         for column in range(4):
             frame = sheet.crop((column * sheet.width // 4, row * sheet.height // 2,
                                 (column + 1) * sheet.width // 4, (row + 1) * sheet.height // 2))
-            bounds = frame.getchannel('A').point(lambda a: 255 if a > 16 else 0).getbbox()
-            frames.append(frame.crop(bounds))
+            frames.append(frame.crop(alpha_bbox(frame, 16)))
     scale = min(248 / max(f.width for f in frames), 248 / max(f.height for f in frames))
     atlas = Image.new('RGBA', (256 * 8, 256))
     for i, frame in enumerate(frames):

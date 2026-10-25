@@ -4,7 +4,7 @@ Ignora solo il rumore alpha quasi invisibile per misurare l'ingombro;
 16 px di margine sorgente proteggono antenne, pannelli e aloni.
 Gli originali restano intatti. Nessun asset viene ridisegnato.
 """
-from asset_paths import source_path, output_path
+from assetlib import alpha_bbox, source_path, output_path
 from PIL import Image
 
 SATELLITES = {
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     for name, source, canvas_size, artwork_size in assets:
         with Image.open(source_path(source)) as original:
             image = original.convert('RGBA')
-            bounds = image.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox()
+            bounds = alpha_bbox(image, 8)
             left, top, right, bottom = bounds
             image = image.crop((max(0, left - 16), max(0, top - 16),
                                 min(image.width, right + 16), min(image.height, bottom + 16)))

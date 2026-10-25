@@ -1,16 +1,13 @@
 // Regression cases found during the full-project audit.
 const assert = require('node:assert/strict');
-const { chromium, url, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 
 (async () => {
   const browser = await chromium.launch(browserOptions);
   const errors = [];
   const open = async options => {
     const page = await browser.newPage(options);
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('response', response => {
-      if (response.url().startsWith(url) && response.status() >= 400) errors.push(response.url());
-    });
+    trackErrors(page, errors);
     return page;
   };
   try {
@@ -19,6 +16,7 @@ const { chromium, url, browserOptions, setSystemMotion } = require('./browser-se
     await page.goto(url);
     assert.equal(await page.locator('html').evaluate(n => n.classList.contains('journey')), true, 'Invalid stored mode falls back to viewport');
     const cancelled = await page.evaluate(async () => {
+      const { director } = await import('./js/stage/director.js');
       const waiting = director.wait(10000).then(() => true);
       director.cancel();
       return Promise.race([waiting, new Promise(resolve => setTimeout(() => resolve(false), 100))]);
@@ -38,6 +36,8 @@ const { chromium, url, browserOptions, setSystemMotion } = require('./browser-se
     assert.notEqual(await page.locator('.ship-cargo').evaluate(n => getComputedStyle(n).animationName), 'none', 'Explicit motion preference updates CSS and JS together');
     await page.locator('#motion').click();
     await page.locator('.site-nav [href="#about"]').click();
+    // hashchange is asynchronous and moves focus to the section title.
+    await page.waitForFunction(() => document.querySelector('.page.active').id === 'about');
     await page.locator('.skip').focus();
     await page.locator('.skip').click();
     assert.equal(await page.locator('.page.active').getAttribute('id'), 'about', 'Skip link does not change section');

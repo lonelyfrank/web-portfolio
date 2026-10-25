@@ -3,21 +3,17 @@
 Only transparent padding is trimmed. Originals are retained. Every HUD has
 the same visible width and centre; differing artwork ratios remain intact.
 """
-from asset_paths import source_path, output_path
+import json
+
+from assetlib import ROOT, alpha_bbox, source_path, output_path
 from PIL import Image
 
-CARDS = {
-    'bt-darts': 'Bite_Trouble__Bersaglio_Neon_Retro-removebg-preview.png',
-    'sensei': 'Banner_HUD_olografico_SENSEI_Learning-removebg-preview.png',
-    'casaurea': 'Casaurea_ Interfaccia e Trullo Futuristico.png',
-    'cops-robbers': 'Cops___Robbers__Inseguimento_Neon-removebg-preview.png',
-    'good-game': 'Good_Game__Dadi_e_Mappe_Cyberpunk-removebg-preview.png',
-}
+CARDS = {project['id']: project['artwork']
+         for project in json.loads((ROOT / 'design/projects.json').read_text(encoding='utf-8'))}
 
 def export(image, target, size, artwork_width):
     # Ignore near-invisible alpha noise when measuring the supplied Casaurea PNG.
-    bounds = image.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox()
-    l, t, r, b = bounds
+    l, t, r, b = alpha_bbox(image, 8)
     bounds = (max(0, l - 6), max(0, t - 6), min(image.width, r + 6), min(image.height, b + 6))
     image = image.crop(bounds)
     image = image.resize((artwork_width, round(image.height * artwork_width / image.width)), Image.Resampling.NEAREST)

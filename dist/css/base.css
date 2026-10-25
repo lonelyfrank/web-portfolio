@@ -1,0 +1,141 @@
+/* ==========================================================================
+   Francesco Spina — Space Journey
+   Base = modalità Lettura (pagina che scorre, funziona anche senza JS).
+   html.journey = modalità Viaggio (tappe a schermo intero + città in basso).
+   File in ordine di cascata: base, world, layout, sezioni, stage.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  --navy: #050918;
+  --navy-2: #071326;
+  --line: #2b4a6e;
+  --line-strong: #397da6;
+  --cyan: #00daff;
+  --pink: #ff2e91;
+  --yellow: #ffd34e;
+  --text: #f4f7ff;
+  --body: #c2cde1;
+  --muted: #a3b4d0;
+  --dim: #8aa0bd;
+
+  --font-display: 'Chakra Petch', ui-monospace, monospace;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --ease: cubic-bezier(.22, .7, .2, 1);
+
+  --gutter: clamp(16px, 5vw, 72px);
+  --header-h: 72px;
+  --controls-h: 48px;
+  --road-h: 48px;
+  --strip-h: 124px;
+  --u: 2;            /* dimensione di un "pixel" della pixel art, in px */
+  --step: 0;         /* tappa corrente, guida il parallasse dello sfondo */
+  /* Una sola scala per personaggi, attrezzature e ponte (unità di scena "su"). */
+  --scene-unit: calc(var(--u) * .5px);
+}
+
+/* Schermi desktop bassi: città più compatta */
+@media (min-width: 761px) and (max-height: 820px) {
+  :root { --u: 1.75; --road-h: 42px; --strip-h: 108px; --header-h: 64px; }
+}
+/* Desktop alti e larghi: scena più grande, con la stessa composizione. */
+@media (min-width: 1600px) and (min-height: 1000px) {
+  :root { --u: 2.5; --road-h: 60px; }
+}
+@media (max-width: 760px) {
+  :root {
+    --header-h: 96px;
+    --controls-h: 44px;
+    --road-h: 36px;
+    --strip-h: 90px;
+    --u: 1.5;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--header-h);
+}
+
+body {
+  margin: 0;
+  background: var(--navy);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.65;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 1px solid var(--line); }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--yellow); outline-offset: 4px; }
+h1:focus, h2:focus, main:focus, .page:focus { outline: none; }
+
+h1, h2, h3, h4, .role, .micro, .eyebrow, .button, .site-nav, .journey-controls {
+  font-family: var(--font-display);
+}
+
+p { line-height: 1.65; }
+
+.skip {
+  position: fixed;
+  top: -100px;
+  left: 10px;
+  z-index: 30;
+  background: var(--navy-2);
+  padding: 15px;
+}
+.skip:focus { top: 10px; }
+
+.eyebrow { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--pink); margin: 0 0 18px; }
+.micro { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+.dot { color: var(--pink); }
+
+h3 { font-size: 20px; margin: 12px 0 22px; }
+/* Names remain accessible without visible subtitles. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.text-link { display: block; margin-top: 22px; font-size: 13px; color: var(--cyan); }
+
+/*
+  Cornici in pixel art (assets/ui, generate da tools/export-assets.py).
+  Sono border-image a 9 sezioni: gli angoli restano intatti, i lati si allungano.
+  Lo sfondo resta dentro la cornice (padding-box) per non uscire dagli angoli smussati.
+*/
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 24px;
+  padding: 4px 14px;
+  border: solid transparent;
+  border-width: 14px 13px 15px;
+  border-image: url('../assets/ui/sign.webp') 34 31 36 31 / 14px 13px 15px stretch;
+  background: #071326d9 padding-box;
+  font-size: 14px;
+  transition: filter .2s, transform .2s;
+}
+.button:hover { filter: brightness(1.25) drop-shadow(0 0 10px #00daff55); transform: translateY(-3px); }
+.button.primary {
+  padding-right: 6px;
+  border-width: 10px 18px 18px;
+  border-image: url('../assets/ui/sign-arrow.webp') 24 42 44 42 / 10px 18px 18px stretch;
+  color: #ff6aae;
+}
+.button.primary:hover { filter: brightness(1.25) drop-shadow(0 0 10px #ff2e9155); }
+@media (max-width: 760px) {
+  .button { font-size: 13px; padding: 2px 10px; gap: 15px; }
+}
+
+/* ---------- Movimento ---------- */
+
+.motion-reduced *, .motion-reduced *::before, .motion-reduced *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  /* With JavaScript, the explicit motion control owns the same state as the
+     director. Without it, respect the system preference directly. */
+  html:not(.js) { scroll-behavior: auto; }
+  html:not(.js) *, html:not(.js) *::before, html:not(.js) *::after { animation: none !important; transition: none !important; }
+}
+html.motion-reduced { scroll-behavior: auto; }
+.document-hidden *, .document-hidden *::before, .document-hidden *::after { animation-play-state: paused !important; }

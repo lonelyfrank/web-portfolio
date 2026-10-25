@@ -1,5 +1,8 @@
 // Ten compact soap bubbles. Atomic replacements keep the visible population constant.
-(() => {
+// Returns the update to call whenever the motion preference changes.
+import { state } from '../state.js';
+
+export function initSkills() {
   const field = document.querySelector('.skill-orbits');
   const items = [...field.children];
   const COUNT = 10, REFLOW = 1.25;
@@ -175,7 +178,7 @@
     schedule(); paint();
   }
   function motion() {
-    const next = !document.body.classList.contains('reduced');
+    const next = !state.reduced;
     if (next === enabled) return;
     enabled = next;
     field.classList.toggle('is-floating', enabled);
@@ -208,7 +211,7 @@
     }
     paint(); run();
   }).observe(field);
-  new MutationObserver(motion).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   document.addEventListener('visibilitychange', run);
   motion();
-})();
+  return motion;
+}

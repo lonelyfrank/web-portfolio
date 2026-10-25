@@ -1,0 +1,108 @@
+/* ---------- Sfondo ---------- */
+
+.world {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 80% 65%, #182650, transparent 65%);
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 18%, white 50%, transparent),
+    radial-gradient(1px 1px at 70% 30%, var(--cyan) 50%, transparent);
+  background-size: 190px 170px, 290px 270px;
+}
+
+.scenery {
+  position: absolute;
+  inset: 0;
+  width: 160%;
+  background: url('../assets/backgrounds/universe.webp') center bottom / cover no-repeat;
+  opacity: .8;
+  transform: translateX(calc(var(--step) * -12%));
+}
+
+/* Tre piani urbani scorrono a velocità diverse, dietro a tutti i contenuti. */
+.skyline {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 150%;
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  pointer-events: none;
+  mask-image: linear-gradient(transparent, #000 18%);
+}
+.skyline-far {
+  height: clamp(100px, 22vh, 220px);
+  background-image: url('../assets/backgrounds/skyline-far.webp');
+  opacity: .35;
+  transform: translateX(calc(var(--step) * -2%));
+}
+.skyline-mid {
+  height: clamp(60px, 12vh, 120px);
+  background-image: url('../assets/backgrounds/skyline-mid.webp');
+  opacity: .6;
+  transform: translateX(calc(var(--step) * -5%));
+}
+.skyline-near {
+  height: clamp(70px, 15vh, 150px);
+  background-image: url('../assets/backgrounds/skyline-near.webp');
+  background-position-x: 35%;
+  opacity: .7;
+  transform: translateX(calc(var(--step) * -8%));
+}
+/* In Viaggio la parallasse dipende dall'indice dell'area (0–3): spostamenti limitati,
+   mai cumulativi, sempre più lenti del ponte (che avanza di un modulo per tappa). */
+.journey .skyline { bottom: var(--controls-h); transition: transform var(--travel-ms, 0ms) linear; }
+.journey .skyline-far { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.1)); }
+.journey .skyline-mid { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.2)); }
+.journey .skyline-near { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.32)); }
+
+/* Navi che attraversano il cielo. Senza animazione restano ferme nella loro posizione. */
+.ship {
+  position: absolute;
+  height: auto;
+  animation: fly linear infinite;
+}
+.ship-cargo { top: 11%; left: 58%; width: 220px; opacity: .35; animation-duration: 160s; animation-delay: -50s; }
+.ship-shuttle { top: 34%; left: 14%; width: 190px; opacity: .75; animation-duration: 95s; animation-delay: -20s; }
+.ship-scout { top: 7%; left: 80%; width: 120px; opacity: .85; animation-duration: 60s; animation-delay: -45s; }
+@keyframes fly {
+  from { transform: translateX(-110vw); }
+  to { transform: translateX(110vw); }
+}
+
+/* In Lettura il testo scorre sopra l'immagine: velo più scuro a sinistra */
+.world::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #050918eb 0%, #050918c2 55%, #05091866 100%);
+}
+
+.journey .world::after {
+  /* velo leggero a sinistra, dove sta il testo, per staccarlo dai pianeti luminosi */
+  background:
+    linear-gradient(90deg, #050918b3 0%, #05091859 40%, transparent 65%),
+    linear-gradient(180deg, #05091830, #05091800 65%);
+}
+.journey .scenery {
+  transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.05));
+  transition: transform var(--travel-ms, 0ms) linear;
+}
+.journey .stars { transform: translateX(calc(var(--step) * var(--bay) * var(--scene-unit) * -.02)); transition: transform var(--travel-ms, 0ms) linear; }
+/* Navi solo come traffico lontano sopra la città, dietro alle postazioni. */
+.journey .ship { top: auto; }
+.journey .ship-cargo { bottom: calc(var(--controls-h) + var(--strip-h) + 4px); width: 150px; opacity: .22; }
+.journey .ship-shuttle { bottom: calc(var(--controls-h) + var(--stage-below) + 70 * var(--scene-unit)); width: 110px; opacity: .3; }
+.journey .ship-scout { display: none; }
+@media (max-width: 760px) {
+  .scenery { width: 260%; background-position: bottom; opacity: .65; }
+}

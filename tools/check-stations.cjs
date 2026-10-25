@@ -1,24 +1,21 @@
 // Browser regression checks for the Journey stage. Supply PLAYWRIGHT_MODULE /
 // BROWSER_EXECUTABLE when Playwright is installed outside this buildless project.
 const assert = require('node:assert/strict');
-const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 
 (async () => {
   const browser = await chromium.launch(browserOptions);
   const errors = [];
   const open = async (viewport, options = {}) => {
     const page = await browser.newPage({ viewport, ...options });
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('response', response => {
-      if (response.url().startsWith(url) && response.status() >= 400) errors.push(response.url());
-    });
+    trackErrors(page, errors);
     return page;
   };
   try {
     // Render the authored poses side by side at the same scene scale for review.
     const preview = await open({ width: 1440, height: 800 });
     const pose = (state, frame, label) => `<figure><figcaption>${label}</figcaption><div class="avatar ${state}" data-frame="${frame}"><span class="avatar-sprite"></span></div></figure>`;
-    await preview.setContent(`<link rel="stylesheet" href="${url}/style.css">
+    await preview.setContent(`<link rel="stylesheet" href="${url}/css/base.css"><link rel="stylesheet" href="${url}/css/stage.css">
       <style>body{padding:24px;background:#101827;color:#fff;font:14px sans-serif}
       .poses{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:16px 0}
       figure{margin:0;height:150px;background:#182439;border-bottom:1px solid #59809b}
@@ -26,15 +23,19 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
       .avatar-sprite{filter:none}</style>
       <div class="poses">${pose('', 0, 'Riposo')}${pose('petting', 0, 'Inizio carezza')}</div>
       <div class="poses">${Array.from({ length: 8 }, (_, i) => pose('walking', i, `Camminata ${i + 1}`)).join('')}</div>
-      <div class="poses">${Array.from({ length: 16 }, (_, i) => pose('running', i, `Corsa ${i + 1}`)).join('')}</div>`);
+      <div class="poses">${Array.from({ length: 12 }, (_, i) => pose('teleporting', i, `Teletrasporto ${i + 1}`)).join('')}</div>`);
     await preview.evaluate(async () => {
       for (const sprite of document.querySelectorAll('.avatar-sprite')) {
         const image = new Image();
         image.src = getComputedStyle(sprite).backgroundImage.slice(5, -2);
         await image.decode();
+        if (sprite.parentElement.classList.contains('teleporting')) {
+          sprite.parentElement.style.setProperty('--teleport-frame', sprite.parentElement.dataset.frame);
+          continue;
+        }
         const animation = sprite.getAnimations()[0];
         animation.pause();
-        const count = sprite.parentElement.classList.contains('running') ? 16 : 8;
+        const count = 8;
         animation.currentTime = (Number(sprite.parentElement.dataset.frame) + .5) * animation.effect.getTiming().duration / count;
       }
     });
@@ -118,12 +119,19 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
       const movement = await page.locator('#avatar').evaluate(n => {
         const sprite = getComputedStyle(n.querySelector('.avatar-sprite'));
         return {
-          walking: n.classList.contains('walking'), running: n.classList.contains('running'),
+          walking: n.classList.contains('walking'), teleporting: n.classList.contains('teleporting'),
           backwards: n.classList.contains('back'), row: sprite.backgroundPositionY,
           image: sprite.backgroundImage.split('/').at(-1).replace(/["')]/g, ''),
           cycle: parseFloat(sprite.animationDuration),
         };
       });
+      if (expected === 'teleporting') {
+        assert.equal(movement.teleporting, true);
+        assert.equal(movement.walking, false);
+        assert.equal(movement.image, 'character-teleport.webp');
+        assert.equal(movement.cycle, 0);
+        return; // Frame order and physical anchors are checked in check-teleport.
+      }
       // Derive ground speed from the rendered camera/actor animation paths;
       // reframing can slow the feet slightly without changing the camera speed.
       const cycle = await page.evaluate(expected => {
@@ -135,15 +143,15 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
         };
         const su = document.querySelector('#avatar').offsetWidth / 128;
         const speed = Math.abs(-delta(camera) + delta(actor)) / su / (camera.effect.getTiming().duration / 1000);
-        return (expected === 'walking' ? 96 : 120) / speed;
+        return 96 / speed;
       }, expected);
       assert.ok(Math.abs(movement.cycle - cycle) < .002, 'Stride follows the actual ground speed');
-      assert.ok(movement.cycle >= (expected === 'walking' ? .57 : .428), 'Sprite keeps a natural gait');
+      assert.ok(movement.cycle >= .57, 'Sprite keeps a natural gait');
       delete movement.cycle;
       assert.deepEqual(movement, {
-        walking: expected === 'walking', running: expected === 'running', backwards,
+        walking: true, teleporting: false, backwards,
         row: '0%',
-        image: expected === 'walking' ? 'character-motion.webp' : 'character-run.webp',
+        image: 'character-motion.webp',
       });
       // Every held pose must show exactly one full atlas cell, including wraparound.
       // Sampling inside each step catches a strip advancing by the old cell width.
@@ -165,7 +173,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
         animation.currentTime = time;
         animation.play();
         return failures;
-      }, expected === 'walking' ? 8 : 16);
+      }, 8);
       assert.deepEqual(misaligned, [], 'Sprite must hold complete frames without horizontal drift');
     };
     // Settled = requested area active, content switched on, no lift moving.
@@ -294,47 +302,47 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
     await settled('about');
     await stage('about');
 
-    // Navbar jumps use the running frames in both directions.
-    const runOrigin = await page.locator('.bridge-track').evaluate(n => -new DOMMatrixReadOnly(getComputedStyle(n).transform).m41);
+    // Navbar jumps teleport in both directions while the camera keeps scrolling.
+    const jumpOrigin = await page.locator('.bridge-track').evaluate(n => -new DOMMatrixReadOnly(getComputedStyle(n).transform).m41);
     await nav('contact');
     await overlappingLifts('about', 'contact');
-    await gait('running');
-    const twoSectionRun = await page.locator('.bridge-track').evaluate((n, origin) => {
+    await gait('teleporting');
+    const twoSectionJump = await page.locator('.bridge-track').evaluate((n, origin) => {
       const unit = document.querySelector('#avatar').offsetWidth / 128;
       return { distance: Math.abs(Number(n.style.getPropertyValue('--cam')) - origin / unit),
         seconds: parseFloat(getComputedStyle(n).transitionDuration) };
-    }, runOrigin);
-    assert.ok(twoSectionRun.distance > 600 && twoSectionRun.distance < 720, JSON.stringify(twoSectionRun));
+    }, jumpOrigin);
+    assert.ok(twoSectionJump.distance > 600 && twoSectionJump.distance < 720, JSON.stringify(twoSectionJump));
     // The character also covers the offset between each station's standing point.
-    assert.ok(twoSectionRun.seconds > 2 && twoSectionRun.seconds < 2.7, JSON.stringify(twoSectionRun));
+    assert.ok(twoSectionJump.seconds > 2 && twoSectionJump.seconds < 2.7, JSON.stringify(twoSectionJump));
     await page.waitForTimeout(1200);
-    assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('running')), true);
+    assert.equal(await page.locator('#avatar').evaluate(n => n.classList.contains('teleporting')), true);
     assert.equal(await page.locator('[data-station="contact"]').evaluate(n => {
       const bay = n.closest('.bay');
       return bay?.classList.contains('raised') && bay.querySelector('.bay-lift').getAnimations().length === 0;
-    }), true, 'Destination is ready before the run ends');
+    }), true, 'Destination is ready before the teleport ends');
     assert.equal(await page.locator('.station-contact').evaluate(n => n.classList.contains('interaction-active')), false);
     await settled('contact');
     const reverseOrigin = await page.locator('.bridge-track').evaluate(n => -new DOMMatrixReadOnly(getComputedStyle(n).transform).m41);
     await nav('home');
-    await gait('running', true);
-    const threeSectionRun = await page.locator('.bridge-track').evaluate((n, origin) => {
+    await gait('teleporting', true);
+    const threeSectionJump = await page.locator('.bridge-track').evaluate((n, origin) => {
       const unit = document.querySelector('#avatar').offsetWidth / 128;
       return { distance: Math.abs(Number(n.style.getPropertyValue('--cam')) - origin / unit),
         seconds: parseFloat(getComputedStyle(n).transitionDuration) };
     }, reverseOrigin);
-    assert.ok(threeSectionRun.distance > 900 && threeSectionRun.distance < 1080, JSON.stringify(threeSectionRun));
-    assert.ok(threeSectionRun.seconds > twoSectionRun.seconds + .8 && threeSectionRun.seconds < 4, JSON.stringify(threeSectionRun));
+    assert.ok(threeSectionJump.distance > 900 && threeSectionJump.distance < 1080, JSON.stringify(threeSectionJump));
+    assert.ok(threeSectionJump.seconds > twoSectionJump.seconds + .8 && threeSectionJump.seconds < 4, JSON.stringify(threeSectionJump));
     await settled('home');
 
-    // Retarget during a run, then during a walk: never retain the old gait/row.
+    // Retarget mid-teleport: continue the effect without flashing the normal sprite.
     await nav('contact');
-    await gait('running');
+    await gait('teleporting');
     await page.waitForTimeout(250);
     await nav('projects');
-    await gait('walking');
+    await gait('teleporting');
     await nav('home');
-    await gait('running', true);
+    await gait('teleporting', true);
     await settled('home');
     await page.locator('#next').click();
     await gait('walking');

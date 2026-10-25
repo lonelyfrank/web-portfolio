@@ -16,14 +16,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
   <link rel="preload" href="assets/sprite/character-motion.webp" as="image">
-  <link rel="preload" href="assets/sprite/character-run.webp" as="image">
+  <link rel="preload" href="assets/sprite/character-teleport.webp" as="image">
   <link rel="preload" href="assets/sprite/character-pet.webp" as="image">
   <link rel="preload" href="assets/elevator/lift-shaft.webp" as="image">
   <link rel="preload" href="assets/elevator/lift-plate.webp" as="image">
   <link rel="preload" href="assets/elevator/lift-rod.webp" as="image">
   <link rel="preload" href="assets/stations/projector-on.webp" as="image">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="projects.css">
+  <!-- Ordine di cascata: base, sfondo, impaginazione, sezioni, scena del Viaggio. -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/world.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/about.css">
+  <link rel="stylesheet" href="css/projects.css">
+  <link rel="stylesheet" href="css/contact.css">
+  <link rel="stylesheet" href="css/stage.css">
   <script>
     // Sceglie la modalità prima del primo paint, così non c'è sfarfallio di layout.
     (function () {
@@ -35,6 +42,29 @@
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('motion-reduced');
     })();
   </script>
+  <script type="module" src="js/main.js"></script>
+  <!-- Moduli importati da main.js: scaricati in parallelo, senza cascata di richieste. -->
+  <link rel="modulepreload" href="js/config.js">
+  <link rel="modulepreload" href="js/detail.js">
+  <link rel="modulepreload" href="js/dom.js">
+  <link rel="modulepreload" href="js/lifecycle.js">
+  <link rel="modulepreload" href="js/mode.js">
+  <link rel="modulepreload" href="js/motion.js">
+  <link rel="modulepreload" href="js/navigation.js">
+  <link rel="modulepreload" href="js/reading.js">
+  <link rel="modulepreload" href="js/sections/carousel.js">
+  <link rel="modulepreload" href="js/sections/contact.js">
+  <link rel="modulepreload" href="js/sections/skills.js">
+  <link rel="modulepreload" href="js/stage/actor.js">
+  <link rel="modulepreload" href="js/stage/bays.js">
+  <link rel="modulepreload" href="js/stage/camera.js">
+  <link rel="modulepreload" href="js/stage/director.js">
+  <link rel="modulepreload" href="js/stage/phase.js">
+  <link rel="modulepreload" href="js/stage/projector.js">
+  <link rel="modulepreload" href="js/stage/radio.js">
+  <link rel="modulepreload" href="js/stage/rest.js">
+  <link rel="modulepreload" href="js/stage/stations.js">
+  <link rel="modulepreload" href="js/state.js">
 </head>
 <body>
   <a class="skip" href="#content">Salta ai contenuti</a>
@@ -105,9 +135,10 @@
         </div>
         <section class="about-skills" aria-labelledby="skills-title">
           <h3 id="skills-title">Competenze</h3>
-          <!-- Tutti i 18 asset richiesti, incluse due varianti Windows.
-               La lista resta completa per lettori di schermo, senza annunci live. -->
+          <!-- Generata da design/skills.json (tools/render-content.py), incluse due varianti
+               Windows. La lista resta completa per lettori di schermo, senza annunci live. -->
           <ul class="skill-orbits" aria-label="Tecnologie e strumenti">
+            <!-- SKILL CATALOGUE -->
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/html.webp" alt="" width="256" height="256">
@@ -216,6 +247,7 @@
               </span>
               <span class="skill-name sr-only">Shopify</span>
             </li>
+            <!-- /SKILL CATALOGUE -->
           </ul>
         </section>
         <section class="about-education" aria-labelledby="education-title">
@@ -250,7 +282,8 @@
           </div>
           <p class="sr-only" id="project-status" role="status" aria-live="polite" aria-atomic="true"></p>
         </div>
-        <div class="projects-grid scroll-area" id="projects-grid">
+        <div class="projects-grid" id="projects-grid">
+      <!-- Generato da design/projects.json (tools/render-content.py). -->
       <!-- PROJECT CATALOGUE -->
         <article class="project" id="project-1" aria-labelledby="project-title-1">
           <div class="project-media"><img src="assets/projects/bt-darts.webp" alt="Schermata olografica di BT Darts Score Board" width="1056" height="704" loading="lazy" decoding="async"></div>
@@ -408,7 +441,7 @@
   </footer>
 
   <!-- Modalità Viaggio: ponte modulare, vani elevatori e personaggio.
-       I vani sono generati da app.js; gli allestimenti delle aree salgono dal vano centrale. -->
+       I vani sono generati da js/stage/bays.js; gli allestimenti delle aree salgono dal vano centrale. -->
   <div class="journey-strip" aria-hidden="true">
     <div class="bridge-track">
       <div class="track-walkway track-walkway-top"></div>
@@ -456,9 +489,5 @@
     <div id="detail-content"></div>
   </dialog>
 
-  <script src="projects.js"></script>
-  <script src="app.js"></script>
-  <script src="skills.js"></script>
-  <script src="contact.js"></script>
 </body>
 </html>

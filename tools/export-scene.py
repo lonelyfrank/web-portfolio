@@ -1,10 +1,10 @@
 """Esporta sfondo e personaggio caricati in assets/, senza modificare gli originali.
 
 Uso: python3 tools/export-scene.py (richiede Pillow).
-Camminata e corsa provengono da due fogli distinti. Scala, centro e pavimento
+Camminata e teletrasporto provengono da due fogli distinti. Scala, centro e pavimento
 sono registrati per ogni foglio, senza ridimensionamenti per fotogramma.
 """
-from asset_paths import source_path, output_path
+from assetlib import alpha_bbox, load, output_path
 
 from PIL import Image, ImageChops, ImageFilter
 
@@ -53,7 +53,7 @@ def components(image):
 def seam(alpha, expected, radius=36):
     """Trova lo spazio trasparente tra due coppie ragazzo/gatta.
 
-    Le pose di corsa adiacenti si toccano: una divisione in celle rettangolari
+    Alcune pose adiacenti si toccano: una divisione in celle rettangolari
     taglierebbe code e scarpe. Il percorso segue i pixel meno opachi.
     """
     left, right = max(1, expected - radius), min(alpha.width - 1, expected + radius)
@@ -76,13 +76,8 @@ def seam(alpha, expected, radius=36):
     return result[::-1]
 
 
-def export_motion(sheet, running):
-    """Strisce separate: otto pose di camminata e sedici di corsa.
-
-    Le prime due righe del foglio 1254 × 1254 mantengono la camminata attuale.
-    La corsa usa il nuovo foglio dedicato 1254 × 1254. Ogni sequenza conserva
-    una sola scala e riferimenti fissi, senza ricentrare la testa di ogni posa.
-    """
+def export_motion(sheet):
+    """Otto pose di camminata dalle prime due righe, con scala e ancore fisse."""
     if sheet.size != (1254, 1254):
         raise ValueError('Il foglio di movimento atteso misura 1254 × 1254 px.')
     cell = (160, 112)
@@ -112,59 +107,50 @@ def export_motion(sheet, running):
                                    Image.Resampling.NEAREST)
             x = cell[0] // 2 + round((left - round(column * sheet.width / 4) - actor_x) * scale)
             y = cell[1] - 4 + round((row_edges[row] - floors[row]) * scale)
-            bounds = figure.getchannel('A').point(lambda a: 255 if a > 16 else 0).getbbox()
+            bounds = alpha_bbox(figure, 16)
             if bounds is None or x + bounds[0] < 0 or x + bounds[2] > cell[0] or y + bounds[1] < 0 or y + bounds[3] > cell[1] - 4:
                 raise ValueError(f'Fotogramma vuoto o fuori cella: riga {row}, colonna {column}')
             frame = Image.new('RGBA', cell)
             frame.paste(figure, (x, y))
             atlas.paste(frame, (((row % 2) * 4 + column) * cell[0], row // 2 * cell[1]))
     atlas.save(output_path('character-motion.webp'), lossless=True, method=6)
-    running_strip(running).save(output_path('character-run.webp'), lossless=True, method=6)
 
 
-def running_strip(sheet):
-    """Registra tutte le sedici pose sulla stessa base 160 × 112 della camminata."""
+def export_teleport(sheet):
+    """Undici pose di scomparsa e una cella vuota; la comparsa le ripercorre.
+
+    Le tre righe usano la stessa scala e asse corporeo. Le particelle conservano
+    la posizione del foglio: i loro ingombri non ridimensionano il personaggio.
+    Il pavimento a y=132 lascia spazio anche agli effetti sotto le scarpe.
+    """
     if sheet.size != (1254, 1254):
-        raise ValueError('Il foglio di corsa atteso misura 1254 × 1254 px.')
-    cell = (160, 112)
-    scale = CHARACTER_HEIGHT / 300  # stessa scala del foglio di camminata
-    row_edges = (0, 330, 635, 945, 1254)
-    floors = (319, 628, 937, 1234)
-    actor_x = 134                  # asse locale fisso nella griglia a quattro colonne
-    strip = Image.new('RGBA', (cell[0] * 16, cell[1]))
-    for row in range(4):
+        raise ValueError('Il foglio di teletrasporto atteso misura 1254 × 1254 px.')
+    cell = (160, 144)
+    scale = CHARACTER_HEIGHT / 340
+    row_edges = (0, 435, 830, 1254)
+    floors = (402, 793, 1191)
+    actor_x = 134
+    atlas = Image.new('RGBA', (cell[0] * 12, cell[1]))
+    for index in range(11):
+        row, column = divmod(index, 4)
+        left, right = (round(c * sheet.width / 4) for c in (column, column + 1))
         top, bottom = row_edges[row:row + 2]
-        band = sheet.crop((0, top, sheet.width, bottom))
-        alpha = band.getchannel('A')
-        boundaries = [[0] * band.height]
-        boundaries += [seam(alpha, round(column * sheet.width / 4), radius=24)
-                       for column in range(1, 4)]
-        boundaries += [[sheet.width] * band.height]
-        for column in range(4):
-            # Segue il vuoto fra le pose senza tagliare le code sporgenti.
-            mask = bytearray(band.width * band.height)
-            for y in range(band.height):
-                start, end = boundaries[column][y], boundaries[column + 1][y]
-                mask[y * band.width + start:y * band.width + end] = b'\xff' * (end - start)
-            figure = band.copy()
-            figure.putalpha(ImageChops.multiply(alpha, Image.frombytes('L', band.size, bytes(mask))))
-            left, right = min(boundaries[column]), max(boundaries[column + 1])
-            figure = figure.crop((left, 0, right, band.height))
-            figure = figure.resize((round(figure.width * scale), round(figure.height * scale)),
-                                   Image.Resampling.NEAREST)
-            x = cell[0] // 2 + round((left - round(column * sheet.width / 4) - actor_x) * scale)
-            y = cell[1] - 4 - round((floors[row] - top) * figure.height / band.height)
-            bounds = figure.getchannel('A').point(lambda a: 255 if a > 16 else 0).getbbox()
-            if bounds is None or x + bounds[0] < 0 or x + bounds[2] > cell[0] or y + bounds[1] < 0 or y + bounds[3] > cell[1] - 4:
-                raise ValueError(f'Fotogramma corsa vuoto o fuori cella: riga {row}, colonna {column}, origine {(x, y)}, ingombro {bounds}')
-            frame = Image.new('RGBA', cell)
-            frame.paste(figure, (x, y))
-            strip.paste(frame, ((row * 4 + column) * cell[0], 0))
-    return strip
+        figure = sheet.crop((left, top, right, bottom))
+        figure = figure.resize((round(figure.width * scale), round(figure.height * scale)),
+                               Image.Resampling.NEAREST)
+        x = cell[0] // 2 - round(actor_x * scale)
+        y = 132 + round((top - floors[row]) * scale)
+        bounds = alpha_bbox(figure, 16)
+        if bounds is None or x + bounds[0] < 0 or x + bounds[2] > cell[0] or y + bounds[1] < 0 or y + bounds[3] > cell[1]:
+            raise ValueError(f'Fotogramma teletrasporto vuoto o fuori cella: {index}')
+        frame = Image.new('RGBA', cell)
+        frame.paste(figure, (x, y))
+        atlas.paste(frame, (index * cell[0], 0))
+    atlas.save(output_path('character-teleport.webp'), lossless=True, method=6)
 
 
 def rest_frames(name):
-    sheet = Image.open(source_path(name)).convert('RGBA')
+    sheet = load(name)
     figures = components(sheet)
     rows = [sorted((item for item in figures if ((item[0][1] + item[0][3]) / 2 < sheet.height / 2) == (row == 0)),
                    key=lambda item: item[0][0]) for row in range(2)]
@@ -195,16 +181,16 @@ def export_atlas(rows, name, airborne=False, cell=CELL):
 
 
 def export_character():
-    sheet = Image.open(source_path('Frank e il gatto calico in movimento(1).png')).convert('RGBA')
-    running = Image.open(source_path('Corsa pixel_ ragazzo e gatto.png')).convert('RGBA')
-    export_motion(sheet, running)
+    sheet = load('Frank e il gatto calico in movimento(1).png')
+    export_motion(sheet)
+    export_teleport(load('Teletrasporto cyberpunk di ragazzo e gatto.png'))
     export_atlas([rest_frames('Otto fotogrammi_ gatta calico tra le gambe.png')], 'character-idle.webp')
     export_atlas([rest_frames('Animazione pixel_ ragazzo accarezza la gatta.png')], 'character-pet.webp')
 
 
 if __name__ == '__main__':
-    background = Image.open(source_path('Metropoli cyberpunk tra pianeti lontani.png')).convert('RGB')
+    background = load('Metropoli cyberpunk tra pianeti lontani.png').convert('RGB')
     background.save(output_path('universe.webp'), quality=88, method=6)
     export_character()
-    for name in ['universe.webp', 'character-motion.webp', 'character-run.webp', 'character-idle.webp', 'character-pet.webp']:
+    for name in ['universe.webp', 'character-motion.webp', 'character-teleport.webp', 'character-idle.webp', 'character-pet.webp']:
         print(f'{name}: {output_path(name).stat().st_size // 1024} KB')

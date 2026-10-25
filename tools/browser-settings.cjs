@@ -11,4 +11,12 @@ async function setSystemMotion(page, reducedMotion) {
   // control to acknowledge it before inspecting animations or clicking it.
   await page.waitForFunction(expected => document.querySelector('#motion').getAttribute('aria-pressed') === String(expected), reducedMotion === 'reduce');
 }
-module.exports = { chromium, url, shots, browserOptions, setSystemMotion };
+// Collect uncaught page errors and failed requests to the site in `errors`.
+function trackErrors(page, errors) {
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('response', response => {
+    if (response.url().startsWith(url) && response.status() >= 400) errors.push(response.url());
+  });
+  return page;
+}
+module.exports = { chromium, url, shots, browserOptions, setSystemMotion, trackErrors };

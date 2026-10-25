@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from PIL import Image
-from asset_paths import ROOT, CATALOGUE
+from assetlib import ROOT, CATALOGUE
 from importlib.util import module_from_spec, spec_from_file_location
 
 
@@ -17,6 +17,7 @@ class Document(HTMLParser):
     def __init__(self):
         super().__init__()
         self.ids, self.references, self.fragments, self.labels = [], [], [], []
+        self.modules, self.preloads = [], []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -34,6 +35,10 @@ class Document(HTMLParser):
             elif parsed.fragment:
                 self.fragments.append(parsed.fragment)
         self.labels.extend(attrs.get('aria-labelledby', '').split())
+        if tag == 'script' and attrs.get('type') == 'module':
+            self.modules.append(attrs['src'])
+        if tag == 'link' and attrs.get('rel') == 'modulepreload':
+            self.preloads.append(attrs['href'])
         if tag == 'img':
             assert 'alt' in attrs, f'Image missing alt: {attrs}'
 
@@ -49,10 +54,19 @@ def check():
     assert set(document.labels) - set(document.ids) == {'detail-title'}
     assert not set(document.fragments) - set(document.ids), 'Broken local fragment'
     references = set(document.references)
-    for css in dist.glob('*.css'):
-        references.update(re.findall(r'url\([\'"]?([^\'"\)]+)', css.read_text(encoding='utf-8')))
+    # Stylesheet URLs are relative to their file; normalise them to dist/.
+    for css in dist.rglob('*.css'):
+        for url in re.findall(r'url\([\'"]?([^\'"\)]+)', css.read_text(encoding='utf-8')):
+            references.add((css.parent / url).resolve().relative_to(dist.resolve()).as_posix())
+    stylesheets = {p.relative_to(dist).as_posix() for p in dist.rglob('*.css')}
+    assert stylesheets <= references, f'Unlinked stylesheet: {stylesheets - references}'
     for reference in references:
         assert (dist / reference).is_file(), f'Missing local resource: {reference}'
+
+    # Every module imported from the entry point is preloaded, and nothing else.
+    modules = {p.relative_to(dist).as_posix() for p in (dist / 'js').rglob('*.js')}
+    assert document.modules == ['js/main.js'], 'One module entry point'
+    assert sorted(document.preloads) == sorted(modules - {'js/main.js'}), 'Update the modulepreload links in index.html'
 
     outputs = set(CATALOGUE['outputs'].values())
     assert outputs == {p.relative_to(dist / 'assets').as_posix() for p in (dist / 'assets').rglob('*.webp')}
@@ -67,10 +81,10 @@ def check():
 
     for script in (ROOT / 'tools').glob('*.py'):
         ast.parse(script.read_text(encoding='utf-8'), filename=str(script))
-    spec = spec_from_file_location('render_projects', ROOT / 'tools/render-projects.py')
+    spec = spec_from_file_location('render_content', ROOT / 'tools/render-content.py')
     renderer = module_from_spec(spec)
     spec.loader.exec_module(renderer)
-    assert html == renderer.rendered_html(), 'Run python3 tools/render-projects.py to update the project catalogue'
+    assert html == renderer.rendered_html(), 'Run python3 tools/render-content.py to update the catalogues'
     hosting = json.loads((ROOT / '.openai/hosting.json').read_text(encoding='utf-8'))
     assert hosting['static']['directory'] == 'dist'
     print(f'PASS: {len(originals)} originals, {len(outputs)} runtime assets, image integrity, local URLs, IDs, catalogue, Python syntax and hosting path.')

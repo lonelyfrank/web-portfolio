@@ -1,0 +1,319 @@
+/* ---------- Header ---------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 var(--gutter);
+  background: #050918d9;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #77b3ff1c;
+}
+
+.logo { font-family: var(--font-display); font-size: 28px; font-weight: 700; white-space: nowrap; }
+.logo span { color: var(--cyan); font-size: 18px; margin-left: 4px; }
+
+.site-nav {
+  display: flex;
+  gap: 32px;
+  height: 100%;
+  margin: 0 auto;
+  text-transform: uppercase;
+}
+.site-nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  transition: color .2s;
+}
+.site-nav a:hover { color: var(--text); }
+.site-nav b { font-weight: 500; color: var(--dim); }
+.site-nav a[aria-current] { color: var(--pink); }
+.site-nav a[aria-current] b { color: inherit; }
+.site-nav a[aria-current]::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--pink);
+  box-shadow: 0 0 15px #ff2e9180;
+}
+
+.header-tools { display: flex; align-items: center; gap: 12px; }
+
+.mode-switch { display: flex; height: 36px; border: 1px solid var(--line); }
+.mode-switch button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  padding: 0 12px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.mode-switch button:hover { color: var(--text); }
+.mode-switch button[aria-pressed='true'] { background: #12304d; color: var(--cyan); }
+html:not(.js) .mode-switch { display: none; }
+
+.github {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color .2s, border-color .2s;
+}
+.github:hover { color: var(--cyan); border-color: var(--line-strong); }
+
+.read-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--pink));
+  transform-origin: left;
+  transform: scaleX(var(--progress, 0));
+}
+@media (max-width: 1100px) {
+  .site-nav { gap: 20px; }
+  .github { display: none; }
+}
+
+/* Navbar compatta per il nickname completo sui tablet. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .site-header { gap: 16px; }
+  .logo { font-size: 22px; }
+  .site-nav { gap: 12px; }
+  .site-nav a { font-size: 12px; }
+}
+@media (max-width: 760px) {
+  .site-header {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0 12px;
+    padding: 0 16px;
+  }
+  .logo { height: 52px; display: flex; align-items: center; font-size: clamp(18px, 5.5vw, 25px); }
+  .header-tools { margin-left: auto; }
+  .site-nav {
+    order: 3;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    gap: 0;
+    justify-content: space-between;
+  }
+  .site-nav a { font-size: 12px; letter-spacing: .5px; gap: 4px; }
+  .mode-switch button { padding: 7px 6px; font-size: 11px; }
+}
+
+/* ---------- Layout delle sezioni (Lettura) ---------- */
+
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.page { padding: clamp(56px, 10vh, 112px) 0; }
+.page[hidden] { display: none !important; }
+.page + .page { border-top: 1px solid #77b3ff14; }
+
+.section-heading { margin: 0 0 32px; }
+.section-heading h2 { font-size: clamp(42px, 5vw, 66px); line-height: 1; letter-spacing: -2px; margin: 0; }
+.section-heading > p:last-child { color: var(--muted); font-size: 16px; margin: 15px 0 0; }
+
+/* ---------- Modalità Viaggio ---------- */
+
+.journey body { height: 100dvh; overflow: hidden; }
+.journey .read-progress, .journey .site-footer { display: none; }
+
+/* Clip at the viewport edges without creating a horizontal scroll container.
+   The pages retain the original centred 1600px layout at rest. */
+.journey main {
+  --page-inset: max(var(--gutter), calc((100vw - 1600px) / 2 + var(--gutter)));
+  max-width: none;
+  padding-inline: var(--page-inset);
+  height: calc(100dvh - var(--header-h) - var(--strip-h) - var(--controls-h));
+  overflow: clip;
+}
+/* Titolo in alto, contenuti scenici in basso, vicini alla postazione che li alimenta.
+   Ogni pagina occupa la propria area del mondo; il contenuto lungo scorre in verticale. */
+.journey .page {
+  position: absolute;
+  inset: 0 var(--page-inset);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 20px 4px 12px;
+  border: 0;
+  scrollbar-width: thin;
+  /* Livello esterno solidale alla camera, separato dalle animazioni locali. */
+  translate: var(--content-x, 0px) 0;
+}
+.journey .page > * { flex-shrink: 0; }
+.journey .page[inert] { pointer-events: none; }
+.journey .section-heading { margin: 0 0 14px; }
+.journey .section-heading h2 { font-size: clamp(40px, 4.4vw, 60px); }
+.journey .eyebrow { margin-bottom: 12px; }
+.journey .section-heading > p:last-child { margin-top: 10px; }
+@media (min-width: 761px) and (max-height: 820px) {
+  .journey main { padding-top: 12px; }
+  .journey .eyebrow { margin-bottom: 8px; }
+  .journey .section-heading { margin-bottom: 14px; }
+  .journey .section-heading h2 { font-size: clamp(36px, 3.6vw, 48px); }
+  .journey .section-heading > p:last-child { display: none; }
+  /* Prima si riducono decorazioni e spaziature, il testo resta leggibile. */
+  .journey .page { padding-top: 14px; }
+}
+@media (max-width: 760px) {
+  .section-heading h2 { font-size: 43px; }
+  .section-heading > p:last-child { font-size: 15px; }
+  /* Viaggio su mobile: tappe a carosello, solo l'etichetta del luogo attivo */
+  .journey main { padding-top: 16px; }
+}
+
+/* Footer (solo Lettura): il viaggio finisce su un ponte */
+.site-footer {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  color: var(--dim);
+}
+.footer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px var(--gutter) 32px;
+}
+
+.bridge { position: relative; height: 220px; margin-top: 40px; }
+.bridge .railing { bottom: 172px; }
+.bridge .walkway { position: absolute; left: 0; right: 0; bottom: 124px; }
+.bridge::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 124px;
+  background: url('../assets/bridge/bracket.webp') 0 0 / 220px auto space no-repeat;
+}
+.bridge .avatar { left: auto; right: 12%; bottom: 172px; transition: none; }
+.bridge .street-props { bottom: 172px; }
+/* Arredo urbano sullo stesso piano della passerella, dietro ai protagonisti. */
+.street-props { position: absolute; inset: 0 0 calc(var(--road-h) - 4px); pointer-events: none; overflow-x: clip; }
+.street-props img { position: absolute; bottom: 0; width: auto; }
+.street-lamp { height: calc(var(--strip-h) - var(--road-h) + 12px); }
+.lamp-left { left: 2%; }
+.lamp-right { right: 2%; }
+.street-bollard { height: calc(21 * var(--u) * 1px); opacity: .85; }
+.stop-home { left: 13%; }
+.stop-about { left: 33%; }
+.stop-projects { left: 54%; }
+.stop-contact { left: 85%; }
+/* Passerella e ringhiera: moduli ripetuti in orizzontale */
+.walkway {
+  height: var(--road-h);
+  background: url('../assets/bridge/walkway.webp') 0 100% / auto 100% repeat-x;
+}
+.railing {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(var(--road-h) * .83);
+  background: url('../assets/bridge/railing.webp') 0 100% / auto 100% repeat-x;
+}
+@media (max-width: 760px) {
+  .footer-row { padding: 20px 16px 28px; }
+  .bridge::after { background-size: 160px auto; }
+  .street-bollard { height: 27px; }
+  .lamp-left { left: -20px; }
+  .lamp-right { right: -20px; }
+}
+
+/* ---------- Dialog ---------- */
+
+/* Cornice in pixel art a 9 sezioni, come i pulsanti. */
+dialog {
+  max-width: 640px;
+  width: calc(100% - 32px);
+  max-height: calc(100dvh - 48px);
+  padding: 36px;
+  border: 12px solid transparent;
+  border-width: 12px 14px;
+  border-image: url('../assets/ui/frame-panel.webp') 24 27 24 27 / 12px 14px stretch;
+  background: linear-gradient(135deg, #0a1936f2, #061027f2) padding-box;
+  color: var(--text);
+  filter: drop-shadow(0 15px 30px #0005);
+}
+dialog::backdrop { background: #020612c9; backdrop-filter: blur(8px); }
+dialog h2 { font-size: 32px; margin: 10px 0 20px; }
+dialog p { color: var(--body); }
+#detail-content .stack { margin: 12px 0 4px; }
+.close { position: absolute; right: 12px; top: 8px; border: 0; font-size: 30px; }
+@media (max-width: 760px) {
+  dialog { padding: 35px 22px; }
+  dialog h2 { font-size: 26px; }
+}
+
+/* ---------- Comandi del Viaggio ---------- */
+
+.journey-controls { display: none; }
+.journey-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  height: var(--controls-h);
+  align-items: center;
+  gap: 24px;
+  padding: 0 var(--gutter);
+  background: #050b1beb;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.journey-controls button { height: 32px; min-width: 32px; border: 0; color: var(--body); transition: color .2s; }
+.journey-controls button:not(:disabled):hover { color: var(--cyan); }
+#prev, #next { font-size: 18px; }
+.journey-controls button:disabled { opacity: .25; cursor: default; }
+.progress { display: flex; gap: 14px; }
+.progress a { width: 10px; height: 10px; border: 1px solid var(--dim); border-radius: 50%; }
+.progress a.active { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 15px #ff2e9170; }
+#counter { color: var(--body); }
+.hint { margin-left: auto; color: var(--dim); text-transform: uppercase; }
+#motion { font-size: 11px; text-transform: uppercase; }
+.journey .journey-controls { display: flex; }
+@media (max-width: 760px) {
+  /* Viaggio forzato su mobile: stessa scena, contenuti in colonna. */
+  .journey-controls { gap: 16px; padding: 0 16px; }
+  .hint { display: none; }
+  #motion { margin-left: auto; }
+  #motion span { display: none; }
+  .progress { gap: 10px; }
+}

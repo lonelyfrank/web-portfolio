@@ -11,7 +11,7 @@ Misure in unità di scena (su): il personaggio in piedi è alto 96 su.
 Le immagini sono esportate a 2 px per su, come gli altri elementi di scena.
 Run: python3 tools/export-elevator.py
 """
-from asset_paths import source_path, output_path
+from assetlib import alpha_bbox, load, output_path
 
 from PIL import Image
 
@@ -26,7 +26,7 @@ PARTS = {
     'rod': (1020, 348, 1112, 612),
     'shaft': (68, 640, 976, 812),       # vano scuro
 }
-# Larghezze finali in su (vedi STAGE in dist/app.js e .bay in style.css).
+# Larghezze finali in su (vedi STAGE in dist/js/config.js e .bay in dist/css/stage.css).
 PLATE_W = 176
 SHAFT_W = 214
 SHAFT_H = 66      # dal fondo dell'architrave al fondo della scena
@@ -35,10 +35,9 @@ ROD_LENGTH = 124  # copre tutta la corsa (106 su) più l'innesto nel cilindro
 
 
 def part(name):
-    image = Image.open(source_path(ATLAS)).convert('RGBA')
+    image = load(ATLAS)
     image = image.crop(PARTS[name])
-    bounds = image.getchannel('A').point(lambda a: 255 if a > 40 else 0).getbbox()
-    return image.crop(bounds)
+    return image.crop(alpha_bbox(image, 40))
 
 
 def scaled(image, width_su):
@@ -90,7 +89,7 @@ def export_elevator():
 
     # Stato acceso del proiettore, registrato sul ritaglio spento esistente
     # (scostamento misurato: -7 px orizzontali, 0 verticali).
-    projector = Image.open(source_path('Proiettore olografico cyberpunk in pixel art.png')).convert('RGBA')
+    projector = load('Proiettore olografico cyberpunk in pixel art.png')
     projector.crop((793, 648, 1514, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
         output_path('projector-on.webp'), lossless=True, method=6)
     print('projector-on.webp: 160 × 74 px')

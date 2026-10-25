@@ -1,15 +1,14 @@
 // Contact layout, keyboard access, motion and scene independence.
 // Uses the same local browser environment as check-stations.cjs.
 const assert = require('node:assert/strict');
-const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 
 (async () => {
   const browser = await chromium.launch(browserOptions);
   const errors = [];
   const open = async options => {
     const page = await browser.newPage(options);
-    page.on('pageerror', e => errors.push(e.message));
-    page.on('response', r => { if (r.url().startsWith(url) && r.status() >= 400) errors.push(r.url()); });
+    trackErrors(page, errors);
     return page;
   };
   try {

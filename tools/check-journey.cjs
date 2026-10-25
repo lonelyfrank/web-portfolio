@@ -1,13 +1,13 @@
 // Rendered intermediate frames, fixed world anchors and interrupted navigation.
 // Same PLAYWRIGHT_MODULE / BROWSER_EXECUTABLE / PORTFOLIO_URL as check-stations.
 const assert = require('node:assert/strict');
-const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
+const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = require('./browser-settings.cjs');
 
 (async () => {
   const browser = await chromium.launch(browserOptions);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
+  trackErrors(page, errors);
   try {
     await page.clock.install();
     await page.goto(url);
@@ -139,7 +139,13 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
 
     // An interrupted interaction can leave the feet already at their target
     // world coordinate, with the camera still offset. Reframe without a snap.
-    const reframe = await page.evaluate(() => {
+    const reframe = await page.evaluate(async () => {
+      const { avatar, track } = await import('./js/dom.js');
+      const { director } = await import('./js/stage/director.js');
+      const { cancelStation } = await import('./js/stage/stations.js');
+      const { contentPositions, currentCam, positionContent, setCam } = await import('./js/stage/camera.js');
+      const { currentActor, restActor, setActor } = await import('./js/stage/actor.js');
+      const { show } = await import('./js/navigation.js');
       director.cancel();
       cancelStation();
       setCam(contentPositions.get(1) + 30);
@@ -152,12 +158,21 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
     });
     assert.ok(reframe.duration > .1, 'Zero ground distance still needs a smooth camera transition');
     await frame(.5);
-    assert.ok(Math.abs(await page.evaluate(() => currentCam() + currentActor()) - reframe.before) < .1,
+    assert.ok(Math.abs(await page.evaluate(async () => {
+      const { currentCam } = await import('./js/stage/camera.js');
+      const { currentActor } = await import('./js/stage/actor.js');
+      return currentCam() + currentActor();
+    }) - reframe.before) < .1,
       'Camera reframing does not slide stationary feet');
     await finish();
 
     // Normalisation is a coordinate change, including scenery and bridge texture.
-    const normalized = await page.evaluate(() => {
+    const normalized = await page.evaluate(async () => {
+      const { STAGE } = await import('./js/config.js');
+      const { pages, stationNodes } = await import('./js/dom.js');
+      const { director } = await import('./js/stage/director.js');
+      const camera = await import('./js/stage/camera.js');
+      const { currentCam, normalize, positionContent, setCam } = camera;
       director.cancel();
       setCam(currentCam() + STAGE.bay * 2);
       positionContent();
@@ -165,7 +180,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion } = require('./bro
         text: pages.map(n => n.style.getPropertyValue('--content-x')),
         scenery: getComputedStyle(document.querySelector('.skyline-near')).transform,
         station: stationNodes[1].getBoundingClientRect().left,
-        texture: -currentCam() - textureOffset,
+        texture: -currentCam() - camera.textureOffset,
       });
       const before = read();
       normalize();
