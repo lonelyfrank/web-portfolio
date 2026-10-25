@@ -18,7 +18,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
   };
   try {
     // Render the authored poses side by side at the same scene scale for review.
-    const preview = await open({ width: 1440, height: 650 });
+    const preview = await open({ width: 1440, height: 800 });
     const pose = (state, frame, label) => `<figure><figcaption>${label}</figcaption><div class="avatar ${state}" data-frame="${frame}"><span class="avatar-sprite"></span></div></figure>`;
     await preview.setContent(`<link rel="stylesheet" href="${url}/style.css">
       <style>body{padding:24px;background:#101827;color:#fff;font:14px sans-serif}
@@ -28,7 +28,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       .avatar-sprite{filter:none}</style>
       <div class="poses">${pose('', 0, 'Riposo')}${pose('petting', 0, 'Inizio carezza')}</div>
       <div class="poses">${Array.from({ length: 8 }, (_, i) => pose('walking', i, `Camminata ${i + 1}`)).join('')}</div>
-      <div class="poses">${Array.from({ length: 8 }, (_, i) => pose('running', i, `Corsa ${i + 1}`)).join('')}</div>`);
+      <div class="poses">${Array.from({ length: 16 }, (_, i) => pose('running', i, `Corsa ${i + 1}`)).join('')}</div>`);
     await preview.evaluate(async () => {
       for (const sprite of document.querySelectorAll('.avatar-sprite')) {
         const image = new Image();
@@ -36,7 +36,8 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
         await image.decode();
         const animation = sprite.getAnimations()[0];
         animation.pause();
-        animation.currentTime = (Number(sprite.parentElement.dataset.frame) + .5) * animation.effect.getTiming().duration / 8;
+        const count = sprite.parentElement.classList.contains('running') ? 16 : 8;
+        animation.currentTime = (Number(sprite.parentElement.dataset.frame) + .5) * animation.effect.getTiming().duration / count;
       }
     });
     await preview.screenshot({ path: `${shots}/stations-motion-frames-verified.png` });
@@ -121,6 +122,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
         return {
           walking: n.classList.contains('walking'), running: n.classList.contains('running'),
           backwards: n.classList.contains('back'), row: sprite.backgroundPositionY,
+          image: sprite.backgroundImage.split('/').at(-1).replace(/["')]/g, ''),
           cycle: parseFloat(sprite.animationDuration),
         };
       });
@@ -142,29 +144,30 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       delete movement.cycle;
       assert.deepEqual(movement, {
         walking: expected === 'walking', running: expected === 'running', backwards,
-        row: expected === 'walking' ? '0%' : '100%',
+        row: '0%',
+        image: expected === 'walking' ? 'character-motion.webp' : 'character-run.webp',
       });
       // Every held pose must show exactly one full atlas cell, including wraparound.
       // Sampling inside each step catches a strip advancing by the old cell width.
-      const misaligned = await page.locator('#avatar .avatar-sprite').evaluate(sprite => {
+      const misaligned = await page.locator('#avatar .avatar-sprite').evaluate((sprite, count) => {
         const animation = sprite.getAnimations()[0];
         const time = animation.currentTime;
         const duration = animation.effect.getTiming().duration;
         const width = sprite.getBoundingClientRect().width;
         const failures = [];
         animation.pause();
-        for (let step = 0; step < 16; step++) {
+        for (let step = 0; step < count * 2; step++) {
           for (const fraction of [.01, .5, .99]) {
-            animation.currentTime = (step + fraction) * duration / 8;
+            animation.currentTime = (step + fraction) * duration / count;
             const position = getComputedStyle(sprite).backgroundPositionX;
-            const x = position.endsWith('%') ? parseFloat(position) / 100 * -7 * width : parseFloat(position);
-            if (Math.abs(x + step % 8 * width) > .1) failures.push({ step, fraction, position, width });
+            const x = position.endsWith('%') ? parseFloat(position) / 100 * -(count - 1) * width : parseFloat(position);
+            if (Math.abs(x + step % count * width) > .1) failures.push({ step, fraction, position, width });
           }
         }
         animation.currentTime = time;
         animation.play();
         return failures;
-      });
+      }, expected === 'walking' ? 8 : 16);
       assert.deepEqual(misaligned, [], 'Sprite must hold complete frames without horizontal drift');
     };
     // Settled = requested area active, content switched on, no lift moving.

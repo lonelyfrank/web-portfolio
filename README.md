@@ -21,6 +21,7 @@ dist/                 sito pubblicato
   assets/universe.webp
   assets/character-idle.webp
   assets/character-motion.webp
+  assets/character-run.webp
   assets/character-pet.webp
   assets/interaction-about.webp
   assets/interaction-contact.webp
@@ -219,10 +220,10 @@ Per il kit dell'elevatore: `python3 tools/export-elevator.py`.
 Gli script richiedono Pillow. Gli originali PNG restano in `assets/`.
 
 I nuovi fogli includono ragazzo e gatta nella stessa animazione. Camminata e corsa
-usano 8 × 2 celle da 160 × 112 px. La camminata usa le prime due righe di
+usano strisce separate da 8 e 16 celle di 160 × 112 px. La camminata usa le prime due righe di
 `Frank e il gatto calico in movimento(1).png` (1254 × 1254); la corsa usa le
-otto pose di `Corsa pixel-art di ragazzo e gatto.png` (1774 × 887), in ordine
-da sinistra a destra, prima la riga superiore e poi quella inferiore.
+sedici pose di `Corsa pixel_ ragazzo e gatto.png` (1254 × 1254), in ordine
+da sinistra a destra e dall'alto verso il basso, esportate in `character-run.webp`.
 Riposo e carezza sono due strisce da 8 celle di 128 × 112 px.
 Ogni sequenza usa una sola scala, un asse corporeo fisso e un pavimento
 misurato per ciascuna riga, mantenendo la stessa scala in scena. Non
@@ -252,8 +253,8 @@ Ogni area ha un solo allestimento (`STATIONS` in `dist/app.js`): `bay` è la
 posizione del vano nel canvas 144 × 136 dell'area, `focus` il centro del gruppo
 personaggio + postazione che viene messo al centro della finestra. Durante il
 trasferimento Frank e la gatta camminano fra sezioni adiacenti (anche dalla
-navbar) e corrono quando si saltano più sezioni. La prima riga dell'atlante
-contiene la camminata, la seconda la corsa. Velocità del ponte e cadenza sono
+navbar) e corrono quando si saltano più sezioni. `character-motion.webp`
+contiene la camminata, `character-run.webp` la corsa. Velocità del ponte e cadenza sono
 sincronizzate da `STAGE.walkSpeed` / `walkStride` e `runSpeed` / `runStride`.
 Le quattro aree hanno ancoraggi permanenti su moduli consecutivi del ponte
 (`STATION_BAYS`, 330 su), senza vani vuoti intermedi. Le slide sono consecutive,

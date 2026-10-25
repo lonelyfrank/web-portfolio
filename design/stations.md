@@ -82,7 +82,7 @@ piedi di Frank.
    si spegne immediatamente alla partenza, prima del movimento della camera.
 4. Trasferimento di un modulo per sezione: fra sezioni adiacenti si cammina a 168 su/s,
    con 8 fotogrammi in 571 ms (falcata 96 su); i salti di più sezioni usano
-   la corsa a 280 su/s, con 8 fotogrammi in 429 ms (falcata 120 su).
+   la corsa a 280 su/s, con 16 fotogrammi in 429 ms (falcata 120 su).
    Due sezioni percorrono circa 660 su in 2,4 s, tre circa 990 su in 3,5 s;
    i piccoli spostamenti verso la postazione modificano leggermente la durata.
    La stessa regola vale per navbar, frecce, rotella, swipe e hash.

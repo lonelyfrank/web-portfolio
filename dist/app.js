@@ -26,7 +26,7 @@ const STAGE = {
   drop: 106,       // corsa del piano: copre l'allestimento più alto (parabola, 102 su)
   bays: 8,        // vani generati su ciascun lato del centro
   runSpeed: 280,  // su/s nei salti fra sezioni
-  runStride: 120,  // avanzamento della corsa per ciclo di 8 fotogrammi (due passi)
+  runStride: 120,  // avanzamento della corsa per ciclo di 16 fotogrammi
   walkSpeed: 168,  // su/s fra sezioni adiacenti
   walkStride: 96, // avanzamento della camminata per ciclo di 8 fotogrammi
   alignSpeed: 72, // su/s per i piccoli aggiustamenti all'arrivo

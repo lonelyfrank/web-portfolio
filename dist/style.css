@@ -702,14 +702,19 @@ dialog p { color: var(--body); }
   width: 125%;
   margin-left: -12.5%;
   background-image: url('assets/character-motion.webp');
-  background-size: 800% 200%;
+  background-size: 800% 100%;
   animation: sprite-frames var(--cycle-ms) step-end infinite;
 }
-/* 8 immagini per ciclo; app.js sincronizza la cadenza con lo scorrimento. */
+/* Camminata: 8 pose; corsa: 16. app.js sincronizza il ciclo con lo scorrimento. */
 .avatar.walking { --cycle-ms: 571ms; }
 .avatar.running { --cycle-ms: 429ms; }
 .avatar.walking .avatar-sprite { background-position-y: 0%; }
-.avatar.running .avatar-sprite { background-position-y: 100%; }
+.avatar.running .avatar-sprite {
+  background-image: url('assets/character-run.webp');
+  background-size: 1600% 100%;
+  background-position-y: 0%;
+  animation-name: running-frames;
+}
 
 /* Arredo urbano sullo stesso piano della passerella, dietro ai protagonisti. */
 .street-props { position: absolute; inset: 0 0 calc(var(--road-h) - 4px); pointer-events: none; overflow-x: clip; }
@@ -869,6 +874,24 @@ dialog p { color: var(--body); }
   62.5% { background-position-x: calc(500% / 7); }
   75% { background-position-x: calc(600% / 7); }
   87.5%, 100% { background-position-x: 100%; }
+}
+@keyframes running-frames {
+  0% { background-position-x: 0%; }
+  6.25% { background-position-x: calc(100% / 15); }
+  12.5% { background-position-x: calc(200% / 15); }
+  18.75% { background-position-x: calc(300% / 15); }
+  25% { background-position-x: calc(400% / 15); }
+  31.25% { background-position-x: calc(500% / 15); }
+  37.5% { background-position-x: calc(600% / 15); }
+  43.75% { background-position-x: calc(700% / 15); }
+  50% { background-position-x: calc(800% / 15); }
+  56.25% { background-position-x: calc(900% / 15); }
+  62.5% { background-position-x: calc(1000% / 15); }
+  68.75% { background-position-x: calc(1100% / 15); }
+  75% { background-position-x: calc(1200% / 15); }
+  81.25% { background-position-x: calc(1300% / 15); }
+  87.5% { background-position-x: calc(1400% / 15); }
+  93.75%, 100% { background-position-x: 100%; }
 }
 @keyframes idle-frames {
   to { background-position-x: calc(-512 * var(--u) * 1px); }
