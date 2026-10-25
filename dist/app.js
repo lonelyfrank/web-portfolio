@@ -12,7 +12,7 @@ const SECTIONS = ['home', 'about', 'projects', 'contact'];
 const STATIONS = [
   { id: 'home', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [28, 112, 92, 20], hands: null },
   { id: 'about', floor: 132, stop: [91, 132], bay: 53, focus: 56, equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91] },
-  { id: 'projects', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [8, 112, 64, 20], hands: null },
+  { id: 'projects', floor: 132, stop: [138, 132], bay: 72, focus: 72, equipment: null, companion: [74, 112, 64, 20], hands: null },
   { id: 'contact', floor: 132, stop: [61, 132], bay: 145, focus: 118, equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60] },
 ];
 const MODE_KEY = 'fs-mode';
@@ -53,7 +53,6 @@ const storage = $('.set-storage');
 const stationNodes = STATIONS.map(station => $(`[data-station="${station.id}"]`));
 const dialog = $('#detail');
 const grid = $('#projects-grid');
-const projects = $$('.project', grid);
 const journeyQuery = matchMedia('(min-width: 900px) and (min-height: 640px)');
 const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -180,6 +179,7 @@ journeyQuery.addEventListener('change', e => {
 function setPhase(next) {
   phase = next;
   strip.dataset.phase = next;
+  projectCarousel.controls();
 }
 
 function unit() { return avatar.offsetWidth / 128; }
@@ -435,9 +435,9 @@ async function stageTo(target, { instant = false, resume = false } = {}) {
     if (!alive()) return;
     mountSet(destination, target);
     const lift = moveLift(destination, 0, TIMING.rise, 'cubic-bezier(.2,.7,.25,1)');
-    // Complete the station's reveal during travel, including lamps and beams.
+    // Equipment rises during travel; Projects only projects once Frank arrives.
     setStageContent(target, true);
-    powerUp(target);
+    if (SECTIONS[target] !== 'projects') powerUp(target);
     await lift;
   })();
 
@@ -491,11 +491,12 @@ async function stageTo(target, { instant = false, resume = false } = {}) {
   await Promise.all([rising, ...lowering.values()]);
   if (!alive()) return;
 
-  // The station is already lit; preserve its effects and start the interaction.
+  // Coordinates and lifts are settled before enabling the Projects projection.
   normalize();
   positionContent();
   setStageContent(target, true);
-  placeLinks(target);
+  if (SECTIONS[target] === 'projects') powerUp(target);
+  else placeLinks(target);
   arrive();
 }
 
@@ -562,6 +563,7 @@ let poweredStation = null;
 function powerDown() {
   poweredStation = null;
   stationNodes[2].dataset.power = 'off';
+  projectCarousel.power(false);
   Object.values(links).forEach(node => {
     node.style.transitionDelay = '0ms';
     node.classList.remove('on');
@@ -571,9 +573,12 @@ function powerDown() {
 function powerUp(index, { instant = false } = {}) {
   if (!isJourney()) return;
   poweredStation = index;
-  if (SECTIONS[index] === 'projects') stationNodes[2].dataset.power = 'on';
+  if (SECTIONS[index] === 'projects') {
+    stationNodes[2].dataset.power = 'on';
+    projectCarousel.power(true);
+  }
   placeLinks(index);
-  const names = { projects: ['index', 'feature'] }[SECTIONS[index]] || [];
+  const names = { projects: ['feature'] }[SECTIONS[index]] || [];
   names.forEach(name => {
     links[name].style.transitionDelay = instant || reduced ? '0ms' : `${SECTIONS[index] === 'projects' ? TIMING.activate / 2 : 0}ms`;
     links[name].classList.add('on');
@@ -587,20 +592,25 @@ function placeLinks(index) {
   const node = stationNodes[index];
   const box = target => target.getBoundingClientRect();
   if (id === 'projects') {
-    [['index', $('.holo-index')], ['feature', $('.projects-grid')]].forEach(([name, panel]) => {
+    // Measure the stable canvas, not the child's power-on transform.
+    [['feature', $('.project-carousel')]].forEach(([name, panel]) => {
       const emitter = box($(`[data-emitter="${name}"]`, node));
       const target = box(panel);
+      const panelBottom = target.top + target.height * .82;
       const lensY = emitter.top + emitter.height * .22;
       const lensL = emitter.left + emitter.width * .3;
       const lensR = emitter.right - emitter.width * .3;
-      const left = Math.min(lensL, target.left + 8);
-      const right = Math.max(lensR, target.right - 8);
+      // Keep the light cone well inside the HUD (60% of the canvas width).
+      const screenL = target.left + target.width * .2;
+      const screenR = target.right - target.width * .2;
+      const left = Math.min(lensL, screenL);
+      const right = Math.max(lensR, screenR);
       const width = right - left;
-      const height = Math.max(1, lensY - target.bottom);
+      const height = Math.max(1, lensY - panelBottom);
       const pct = x => `${((x - left) / width * 100).toFixed(2)}%`;
       Object.assign(links[name].style, {
-        left: `${left}px`, top: `${target.bottom}px`, width: `${width}px`, height: `${height}px`,
-        clipPath: `polygon(${pct(target.left + 8)} 0, ${pct(target.right - 8)} 0, ${pct(lensR)} 100%, ${pct(lensL)} 100%)`,
+        left: `${left}px`, top: `${panelBottom}px`, width: `${width}px`, height: `${height}px`,
+        clipPath: `polygon(${pct(screenL)} 0, ${pct(screenR)} 0, ${pct(lensR)} 100%, ${pct(lensL)} 100%)`,
       });
     });
   }
@@ -778,7 +788,7 @@ $('#prev').addEventListener('click', () => go(current - 1));
 $('#next').addEventListener('click', () => go(current + 1));
 
 window.addEventListener('keydown', e => {
-  if (!isJourney() || dialog.open || e.target.closest('button, input, textarea, select, [role="tab"]')) return;
+  if (!isJourney() || dialog.open || e.defaultPrevented || e.target.closest('.project-carousel, button, input, textarea, select, [role="tab"]')) return;
   if (e.key === 'ArrowRight') { e.preventDefault(); go(current + 1); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
 });
@@ -814,7 +824,7 @@ $('main').addEventListener('touchstart', e => {
   touchY = e.touches[0].clientY;
 }, { passive: true });
 $('main').addEventListener('touchend', e => {
-  if (!isJourney() || dialog.open || e.target.closest('.projects-grid, .holo-index')) return;
+  if (!isJourney() || dialog.open || e.target.closest('.projects-grid, .project-carousel')) return;
   const dx = e.changedTouches[0].clientX - touchX;
   const dy = e.changedTouches[0].clientY - touchY;
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(current + (dx < 0 ? 1 : -1));
@@ -822,70 +832,15 @@ $('main').addEventListener('touchend', e => {
 
 /* ---------- Viste: progetto in evidenza (solo Viaggio) ---------- */
 
-// In Lettura tutti i pannelli restano visibili e le schede sono nascoste;
-// in Viaggio un solo pannello per volta, con il pattern ARIA delle schede.
-function tabs(list, buttons, panels, select) {
-  const activate = (index, focus) => {
-    buttons.forEach((button, i) => {
-      const selected = i === index;
-      button.setAttribute('aria-selected', String(selected));
-      button.tabIndex = selected ? 0 : -1;
-      if (isJourney()) panels[i].hidden = !selected;
-    });
-    if (focus) buttons[index].focus();
-    select?.(index);
-    if (isJourney() && phase !== 'leaving') placeLinks(current);
-  };
-  buttons.forEach((button, i) => button.addEventListener('click', () => activate(i, false)));
-  list.addEventListener('keydown', e => {
-    const i = buttons.indexOf(document.activeElement);
-    if (i < 0) return;
-    const next = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: buttons.length - 1 }[e.key];
-    if (next === undefined) return;
-    e.preventDefault();
-    activate((next + buttons.length) % buttons.length, true);
-  });
-  return {
-    selected: () => buttons.findIndex(b => b.getAttribute('aria-selected') === 'true'),
-    activate,
-    mode(journey) {
-      panels.forEach((panel, i) => {
-        if (journey) panel.setAttribute('role', 'tabpanel');
-        else panel.removeAttribute('role');
-        panel.hidden = journey && i !== Math.max(0, this.selected());
-      });
-    },
-  };
-}
-
-const projectList = $('#project-tabs');
-projects.forEach((project, i) => {
-  project.id = `project-${i + 1}`;
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.setAttribute('role', 'tab');
-  button.id = `project-tab-${i + 1}`;
-  button.setAttribute('aria-controls', project.id);
-  button.innerHTML = `<span class="holo-num">${pad(i + 1)}</span><span class="holo-name"></span>`;
-  $('.holo-name', button).textContent = $('h3', project).textContent;
-  projectList.append(button);
-});
-const projectTabs = tabs(projectList, $$('[role="tab"]', projectList), projects, () => {
-  // Retune the featured projection without leaving the area.
-  const feature = links.feature;
-  if (!feature.classList.contains('on')) return;
-  feature.classList.remove('flicker');
-  void feature.offsetWidth;
-  feature.classList.add('flicker');
+const projectCarousel = new ProjectCarousel({
+  canNavigate: () => isJourney() && current === 2 && phase === 'waiting'
+    && poweredStation === 2 && !dialog.open && !document.hidden,
+  reduced: () => reduced,
+  onChange: () => placeLinks(2),
 });
 
 function setViews(journey) {
-  if (projectTabs.selected() < 0) projectTabs.activate(0);
-  projectTabs.mode(journey);
-  projects.forEach((project, i) => {
-    if (journey) project.setAttribute('aria-labelledby', `project-tab-${i + 1}`);
-    else project.removeAttribute('aria-labelledby');
-  });
+  projectCarousel.mode(journey);
 }
 
 /* ---------- Lettura: sezione attiva e progresso ---------- */
@@ -918,6 +873,7 @@ window.addEventListener('scroll', () => {
 
 function setReduced(value) {
   reduced = value;
+  projectCarousel.cancel();
   document.body.classList.toggle('reduced', value);
   const button = $('#motion');
   button.setAttribute('aria-pressed', String(value));
@@ -975,8 +931,6 @@ dialog.addEventListener('click', e => {
   if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close();
 });
 
-$('#project-prev').addEventListener('click', () => grid.scrollBy({ left: -grid.clientWidth * .9, behavior: reduced ? 'instant' : 'smooth' }));
-$('#project-next').addEventListener('click', () => grid.scrollBy({ left: grid.clientWidth * .9, behavior: reduced ? 'instant' : 'smooth' }));
 
 $('#year').textContent = new Date().getFullYear();
 

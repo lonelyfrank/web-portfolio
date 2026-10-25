@@ -198,8 +198,9 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       assert.equal(await page.locator(`#${id}`).evaluate(n => parseFloat(getComputedStyle(n).translate)), 0);
       assert.equal(await page.locator('.bridge-track').evaluate(n => n.getAnimations().length), 0);
       if (id === 'projects') {
-        await page.locator('#project-tab-3').click();
-        await page.locator('#project-3 summary').click();
+        await page.locator('#project-next').click();
+        await page.waitForFunction(() => !document.querySelector('.project-carousel').hasAttribute('aria-busy'));
+        await page.locator('.project:not([hidden]) summary').click();
         assert.equal(await page.locator('#detail').evaluate(n => n.open), true);
         await page.locator('#detail .close').click();
         assert.equal(await page.locator('.station-projects').getAttribute('data-power'), 'on');

@@ -88,23 +88,23 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       assert.ok(lifts.to && lifts.to[0] > lifts.to.at(-1), `Destination must rise during departure: ${JSON.stringify(lifts)}`);
       assert.equal(await page.locator(`#${to}`).getAttribute('data-stage'), 'on', 'Text begins appearing with its lift');
       assert.equal(await page.locator(`#${to} .scenic, #${to} .about-layout, #${to} .contact-layout`).first().evaluate(n => n.inert), false);
-      const names = { projects: ['index', 'feature'] }[to] || [];
+      const names = [];
       assert.deepEqual(await page.locator('.scene-link.on').evaluateAll(nodes => nodes.map(n => n.dataset.link).sort()), names.sort(),
-        'Only the destination connections turn on as its lift rises');
+        'Connections stay off until arrival');
       assert.equal(await page.locator(`[data-station="${to}"]`).evaluate(n => n.classList.contains('interaction-active')), false,
         'Frank must reach the station before interacting');
     };
     const projectionFollows = async () => {
       const beams = await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => {
-        resolve(['index', 'feature'].map(name => {
+        resolve(['feature'].map(name => {
           const beam = document.querySelector(`[data-link="${name}"]`);
           const emitter = document.querySelector(`[data-emitter="${name}"]`).getBoundingClientRect();
-          const panel = document.querySelector(name === 'index' ? '.holo-index' : '.projects-grid').getBoundingClientRect();
+          const panel = document.querySelector('.project-carousel').getBoundingClientRect();
           return {
             top: parseFloat(beam.style.top), bottom: parseFloat(beam.style.top) + parseFloat(beam.style.height),
-            left: parseFloat(beam.style.left), panelBottom: panel.bottom,
+            left: parseFloat(beam.style.left), panelBottom: panel.top + panel.height * .82,
             lensY: emitter.top + emitter.height * .22,
-            expectedLeft: Math.min(emitter.left + emitter.width * .3, panel.left + 8),
+            expectedLeft: Math.min(emitter.left + emitter.width * .3, panel.left + panel.width * .2),
           };
         }));
       })));
@@ -254,17 +254,12 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await nav('projects');
     await overlappingLifts('about', 'projects');
     await gait('walking');
-    assert.equal(await page.locator('.station-projects').getAttribute('data-power'), 'on');
-    await projectionFollows();
+    assert.equal(await page.locator('.station-projects').getAttribute('data-power'), 'off');
     await contentFollows('projects');
-    await projectionFollows();
     await page.waitForTimeout(350);
-    await projectionFollows();
     assert.equal(await page.locator('.journey-strip').getAttribute('data-phase'), 'approaching');
-    assert.equal(await page.locator('[data-link="feature"]').evaluate(n => {
-      const style = getComputedStyle(n);
-      return Number(style.opacity) > .8 && (style.transform === 'none' || new DOMMatrixReadOnly(style.transform).m22 > .99);
-    }), true, 'Projection finishes appearing before Frank arrives');
+    assert.equal(await page.locator('[data-link="feature"]').evaluate(n => getComputedStyle(n).visibility), 'hidden',
+      'Projection stays off until Frank reaches Projects');
     await page.screenshot({ path: `${shots}/stations-projects-travel-verified.png` });
     // The world moves, the character stays put (only the small stop offset).
     const midway = await page.evaluate(() => ({
@@ -278,14 +273,16 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await stage('projects');
     assert.equal(await page.locator('.station-projects').getAttribute('data-power'), 'on');
     assert.equal(await page.locator('[data-link="feature"].on').count(), 1);
+    await projectionFollows();
     assert.ok(await fits());
     // Selecting a project retunes the projection without travelling.
-    await page.locator('#project-tab-3').click();
-    assert.equal(await page.locator('#project-3').isVisible(), true);
+    await page.locator('#project-next').click();
+    await page.waitForFunction(() => document.querySelector('.project-carousel').dataset.project === 'project-2' && !document.querySelector('.project-carousel').hasAttribute('aria-busy'));
     assert.equal(await page.locator('#project-1').isVisible(), false);
     assert.equal(await page.locator('.journey-strip').getAttribute('data-phase'), 'waiting');
     await page.keyboard.press('ArrowRight');
-    assert.equal(await page.locator('#project-4').isVisible(), true);
+    await page.waitForFunction(() => document.querySelector('.project-carousel').dataset.project === 'project-3' && !document.querySelector('.project-carousel').hasAttribute('aria-busy'));
+    assert.equal(await page.locator('#project-3').isVisible(), true);
     assert.equal(await page.evaluate(() => location.hash), '#projects');
     await page.screenshot({ path: `${shots}/stations-projects-verified.png` });
 
@@ -415,7 +412,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     assert.equal(await page.locator('#about > .station-about').count(), 1);
     assert.equal(await page.locator('#contact > .station-contact').count(), 1);
     assert.equal(await page.locator('.about-layout > :visible').count(), 3);
-    assert.equal(await page.locator('.project:visible').count(), 4);
+    assert.equal(await page.locator('.project:visible').count(), 5);
     assert.equal(await page.locator('#about [role="tab"], #about [role="tabpanel"]').count(), 0);
     assert.equal(await page.locator('.journey-strip').isVisible(), false);
     await page.locator('[data-mode="journey"]').click();

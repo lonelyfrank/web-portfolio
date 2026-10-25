@@ -516,7 +516,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   font-size: 56px;
   text-shadow: 0 0 25px currentColor;
 }
-.project-media img { width: 100%; height: 100%; object-fit: cover; }
+.project-media img { width: 100%; height: 100%; object-fit: contain; }
 
 .project h3 { margin: 0; font-size: 20px; line-height: 1.3; }
 .summary { margin: 0; font-size: 15px; color: var(--body); }
@@ -843,75 +843,7 @@ dialog p { color: var(--body); }
 .journey #about { padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
 .journey #about-title { font-size: clamp(56px, min(7.4vw, 11.5vh), 112px); }
 
-/* Le schede restano soltanto nei progetti. */
-.holo-index { display: none; }
 .journey .project[hidden] { display: none !important; }
-.journey [role='tab'] {
-  border: 0;
-  font-family: var(--font-display);
-  color: var(--muted);
-  transition: color .2s, background-color .2s, border-color .2s;
-}
-.journey [role='tab']:hover { color: var(--text); }
-
-/* Projects: ologrammi leggeri, ciascuno collegato al proprio emettitore. */
-.journey .holo-deck { display: flex; align-items: flex-end; justify-content: center; gap: clamp(32px, 6vw, 96px); }
-.journey :is(.holo-index, .projects-grid) {
-  position: relative;
-  background:
-    repeating-linear-gradient(to bottom, #00daff0b 0 1px, transparent 1px 3px),
-    linear-gradient(to bottom, #062a44e0, #041a2ee6);
-  border: 1px solid #00daff5c;
-  box-shadow: 0 0 0 1px #00daff12, 0 0 28px #00daff24, inset 0 0 36px #00daff12;
-}
-.journey .holo-index { display: flex; flex-direction: column; gap: 2px; width: 250px; padding: 14px 10px 10px; }
-.journey .holo-index::before {
-  content: 'Archivio progetti';
-  padding: 0 12px 8px;
-  font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--dim);
-}
-.journey .holo-index [role='tab'] {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 9px 12px;
-  border-left: 2px solid transparent;
-  text-align: left;
-  font-size: 14px;
-  color: var(--body);
-}
-.journey .holo-index [role='tab']:hover { background: #00daff0f; }
-.journey .holo-index [aria-selected='true'] { border-left-color: var(--cyan); background: #00daff1c; color: var(--text); }
-.holo-num { font-size: 11px; letter-spacing: 1.5px; color: var(--dim); }
-.journey .holo-index [aria-selected='true'] .holo-num { color: var(--cyan); }
-.journey .projects-grid { display: block; width: min(580px, 100%); padding: 0; }
-.journey .project {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  column-gap: 20px;
-  row-gap: 8px;
-  padding: 22px 26px 18px;
-  border: 0;
-  background: none;
-  cursor: default;
-}
-.journey .project > * { grid-column: 2; }
-.journey .project-media {
-  grid-column: 1;
-  grid-row: 1 / span 4;
-  width: 72px;
-  height: 72px;
-  aspect-ratio: 1;
-  margin: 0;
-  border: 1px solid #00daff40;
-  font-size: 34px;
-}
-.journey .project h3 { font-size: 22px; }
-.journey .summary { font-size: 15px; }
 .journey .case { margin-top: 6px; border-top-color: #00daff30; }
 .journey .case summary { width: fit-content; gap: 14px; }
 .journey .case-body { display: none; }
@@ -977,8 +909,6 @@ dialog p { color: var(--body); }
   .site-nav { gap: 20px; }
   .github { display: none; }
   .panel { padding: 20px; }
-  .journey .project { --pad-x: 12px; --pad-y: 12px; }
-  .journey .project h3 { font-size: 16px; }
 }
 
 /* Navbar compatta per il nickname completo sui tablet. */
@@ -1005,11 +935,6 @@ dialog p { color: var(--body); }
   .journey .actions { margin-top: 20px; }
   .journey .panel h3 { margin: 4px 0 10px; }
   .journey .panel > .micro { display: none; }
-  .journey .holo-index { padding-top: 10px; }
-  .journey .holo-index [role='tab'] { padding: 7px 12px; }
-  .journey .project { padding: 16px 22px 14px; row-gap: 6px; }
-  .journey .project-media { width: 56px; height: 56px; font-size: 26px; }
-  .journey .project { grid-template-columns: 56px minmax(0, 1fr); }
 }
 
 /* Desktop alti e larghi: scena più grande, con la stessa composizione. */
@@ -1071,14 +996,6 @@ dialog p { color: var(--body); }
   .journey .welcome-stand { margin: 28px auto 0; }
   .journey .welcome-stand .dock { --pillar: 40px; }
   /* Viaggio forzato su mobile: stessa scena, contenuti in colonna. */
-  .journey .holo-deck { flex-direction: column; align-items: stretch; gap: 14px; }
-  .journey .holo-index { flex-direction: row; width: auto; overflow-x: auto; padding: 6px; }
-  .journey .holo-index::before { display: none; }
-  .journey .holo-index [role='tab'] { flex: none; border-left: 0; border-bottom: 2px solid transparent; }
-  .journey .holo-index [aria-selected='true'] { border-bottom-color: var(--cyan); }
-  .journey .projects-grid { width: auto; }
-  .journey .project { padding: 16px; grid-template-columns: 48px minmax(0, 1fr); column-gap: 14px; }
-  .journey .project-media { width: 48px; height: 48px; font-size: 22px; }
   .journey-controls { gap: 16px; padding: 0 16px; }
   .hint { display: none; }
   #motion { margin-left: auto; }
@@ -1194,14 +1111,13 @@ dialog p { color: var(--body); }
 .lamp-out-right { left: calc(127 * var(--scene-unit)); }
 .station-equipment { z-index: 1; }
 .station-actors { z-index: 2; }
-/* Two emitters of the existing projector, off and on frames registered on each other. */
+/* One central emitter, using the existing registered off/on frames. */
 .projector {
-  width: calc(80 * var(--scene-unit));
-  height: calc(37 * var(--scene-unit));
+  width: calc(100 * var(--scene-unit));
+  height: calc(46.25 * var(--scene-unit));
   bottom: calc(6 * var(--scene-unit));
 }
-.projector[data-emitter='index'] { left: calc(-14 * var(--scene-unit)); }
-.projector[data-emitter='feature'] { left: calc(78 * var(--scene-unit)); }
+.projector[data-emitter='feature'] { left: calc(22 * var(--scene-unit)); }
 .projector img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .projector-on { opacity: 0; transition: opacity .18s steps(3); }
 .station-projects[data-power='on'] .projector-on { opacity: 1; }
@@ -1391,14 +1307,12 @@ dialog p { color: var(--body); }
   box-shadow: none;
   background:
     repeating-linear-gradient(to bottom, #00daff14 0 1px, transparent 1px 4px),
-    linear-gradient(to top, #00daffc0, #00daff40 55%, #00daff14);
+    linear-gradient(to top, #00daff45, #00daff18 55%, #00daff06);
   transform: scaleY(0);
   transform-origin: 50% 100%;
   transition: transform .26s cubic-bezier(.2, .8, .3, 1), opacity .26s;
 }
 .scene-link.beam.on { transform: none; opacity: .85; }
-.scene-link.beam.flicker { animation: retune .32s steps(4); }
-@keyframes retune { 0%, 50% { opacity: .3; } 25%, 100% { opacity: .85; } }
 
 /* Home's welcome terminal remains a content link, outside the resting pad. */
 .journey .welcome-stand { display: none; }

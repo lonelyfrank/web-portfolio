@@ -7,7 +7,7 @@
 | Home | Riposo, carezza, camminata/corsa in `assets/sprite/` | Nessuna attrezzatura sulla zona di sosta |
 | About | `Frank e il gatto calico animato.png` (1774 × 887) | Solo Frank e gatta, sopra la scrivania statica |
 | Contact | `Frank e il gatto calico, otto pose.png` (1774 × 887) | Solo Frank e gatta, sopra il modulo radio persistente |
-| Projects | `Proiettore olografico cyberpunk in pixel art.png` | Due emettitori; stato spento e acceso registrati fra loro (−7 px) |
+| Projects | `Proiettore olografico cyberpunk in pixel art.png` | Un emettitore centrale, 100 × 46,25 su; stato spento e acceso registrati fra loro (−7 px) |
 | Kit elevatore | `Atlante modulare per elevatore meccanico.png` | Piano, bordo frontale, cilindro, stelo, vano (`lift-*.webp`) |
 
 I precedenti compositi, che includevano anche l'attrezzatura, sono stati
@@ -24,7 +24,7 @@ più indietro/in alto; fascia frontale e supporti restano sotto i piedi.
 | --- | --- | --- | --- | --- | --- | --- |
 | Home | 72,132 | Lampioni −84 / 127 | 28,112,92,20 | — | 72 | 72 |
 | About | 91,132 | 68,129; lampione −35 | 36,108,96,24 | Tastiera 68,82 | 53 | 56 |
-| Projects | 72,132 | Emettitori −14 / 78 (y 130) | 8,112,64,20 | Nessuna sequenza PG disponibile | 72 | 72 |
+| Projects | 138,132 | Emettitore centrato a x=72 (y 130) | 74,112,64,20 | Nessuna sequenza PG disponibile | 72 | 72 |
 | Contact | 61,132 | 111,131; lampione 162 | 8,98,80,34 | Pannello 87,111; manopola 123,103 | 145 | 118 |
 
 Il piano mobile (176 su) ha la superficie a y=128, a filo della piazzola; le
@@ -73,13 +73,13 @@ piedi di Frank.
 ## Sequenza e scansione radio
 
 1. Uscita dall'interazione: l'avatar riparte dall'appoggio della posa corrente.
-2. Spegnimento di proiettori e collegamenti, dissolvenza dei contenuti.
+2. Spegnimento del proiettore, del fascio e della card; i testi seguono la camera.
 3. Al clic partono insieme discesa della postazione attuale (360 ms), salita
    della destinazione (420 ms) e movimento. Un vano occupato completa prima
    la discesa; durante i cambi rapidi le animazioni ripartono dalla quota corrente.
-   Pannelli, emettitori, fasci e cavi iniziano la comparsa con la salita della
-   destinazione: la tappa si compone mentre Frank si avvicina. I collegamenti
-   seguono sia i pannelli in movimento sia gli oggetti sull'elevatore.
+   La postazione Projects emerge spenta: proiettore, fascio e card si accendono
+   soltanto quando Frank ha completato il viaggio e il piano è fermo. Il fascio
+   si spegne immediatamente alla partenza, prima del movimento della camera.
 4. Trasferimento di un modulo per sezione: fra sezioni adiacenti si cammina a 168 su/s,
    con 8 fotogrammi in 571 ms (falcata 96 su); i salti di più sezioni usano
    la corsa a 280 su/s, con 8 fotogrammi in 429 ms (falcata 120 su).
@@ -92,7 +92,7 @@ piedi di Frank.
    dovuti al riciclo dei moduli. In Lettura e con movimento ridotto restano fermi.
 5–6. Arrivo alla postazione già alzata; per i ritorni molto brevi si attende
    soltanto il completamento dei movimenti dell'elevatore ancora in corso.
-7. Composizione già attiva all'arrivo, senza ripetere l'accensione degli effetti.
+7. All’arrivo si accende la proiezione Projects; le altre postazioni conservano la loro regia.
 8. Interazione: ciclo About; una sola sequenza Contact, poi posa finale.
 
 About mantiene soltanto la scena della scrivania: console, schede e cavo HTML
@@ -130,7 +130,7 @@ sui comandi. Un'eventuale gatta seduta completamente indipendente richiede un
 livello dedicato. Non è disponibile un'animazione di Frank col proiettore.
 
 Projects non ha un'animazione di Frank: all'arrivo resta nella posa di riposo
-fra i due emettitori. I salti di più aree percorrono un modulo del ponte per
+accanto al proiettore centrale. I salti di più aree percorrono un modulo del ponte per
 sezione saltata. Con un resize durante un
 trasferimento la scena passa subito alla composizione finale.
 

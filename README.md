@@ -6,7 +6,7 @@ Sito statico senza build: HTML, CSS e JavaScript leggibili in `dist/`, la cartel
 
 ## Due modalità
 
-- **Viaggio**: un'area alla volta. Frank e la gatta restano al centro della scena, il ponte e la città scorrono attorno a loro e l'allestimento dell'area (scrivania, proiettori, parabola, lampioni) sale da un vano elevatore. A Home la gatta gli gira intorno e Frank si china per accarezzarla; About e Contact hanno interazioni dedicate. Frecce, rotella, swipe, link e hash usano la stessa regia.
+- **Viaggio**: un'area alla volta. Frank e la gatta restano al centro della scena, il ponte e la città scorrono attorno a loro e l'allestimento dell'area (scrivania, proiettore, parabola, lampioni) sale da un vano elevatore. A Home la gatta gli gira intorno e Frank si china per accarezzarla; About e Contact hanno interazioni dedicate. Frecce, rotella, swipe, link e hash usano la stessa regia.
 - **Lettura**: una pagina che scorre normalmente. È la modalità predefinita su mobile e funziona anche senza JavaScript.
 
 ## Struttura
@@ -41,6 +41,64 @@ tools/export-skills.py   esportazione delle sfere fornite
 tools/export-contact.py  esportazione dei quattro satelliti forniti
 tools/check-contact.cjs  layout Contact, focus, movimento e destinazioni
 ```
+
+## Projects: carosello olografico
+
+La modalità Viaggio mantiene tre colonne solidali alla camera: introduzione,
+card e informazioni. Il proiettore esistente conserva elevatore e stati acceso/spento;
+la sua larghezza passa da 80 a 100 unità di scena. Il punto di sosta Projects di
+Frank passa da x=72 a x=138 per lasciare visibile la sorgente, senza modificare
+sprite, camera o postazioni delle altre sezioni. Il piano sale durante il viaggio,
+ma proiettore, fascio e card si accendono soltanto quando Frank e la camera sono
+fermi sulla postazione e l’elevatore è arrivato. Alla partenza il fascio si spegne
+immediatamente, evitando proiezioni oblique durante il trasferimento. Card,
+controlli e informazioni compaiono insieme solo all’arrivo, con transizioni
+simmetriche di 300 ms in entrata e uscita. La colonna sinistra rimane visibile
+durante il viaggio. Prima dell’accensione, card e informazioni sono anche
+escluse dal focus; in Lettura il catalogo è sempre disponibile.
+
+`dist/projects.js` gestisce un unico `activeProjectIndex`, navigazione ciclica,
+aggiornamento simultaneo di immagine e articolo e annunci accessibili. Il cambio
+impiega 150 ms in uscita e 190 ms in ingresso, dopo la decodifica della sola
+immagine richiesta. I clic durante il cambio e durante il viaggio sono ignorati;
+uscita dalla sezione, cambio modalità, documento nascosto e movimento ridotto
+annullano le animazioni pendenti. Non c’è avanzamento automatico. Le frecce della
+tastiera operano quando il focus è nel carosello, lasciando intatta la navigazione
+tra sezioni nel resto della pagina. La fluttuazione indipendente è di 4 px in 5 s;
+con movimento ridotto le immagini sono statiche e il cambio è immediato.
+
+`dist/projects.css` definisce il contenitore 3:2, i controlli ricavati dalle frecce
+fornite, distanziate dalla card, e la colonna informativa con righe stabili,
+titoli più marcati, badge delle tecnologie e CTA in evidenza. La colonna è
+aperta, senza sfondo né cornice come nelle altre sezioni. Sui desktop
+più bassi il pannello scorre nella propria colonna, lasciando ferma la card. I PNG includono già l’HUD,
+quindi non hanno una seconda cornice. Il fascio usa il collegamento misurato dalla
+regia esistente, dalla lente al 60% centrale della base del canvas stabile; resta spento durante
+gli spostamenti e non dipende dalla trasformazione di comparsa della card.
+Il contatore sotto la card è rimosso; gli annunci per i lettori di schermo
+conservano posizione e nome del progetto. Sotto 900 px le frecce si dispongono
+sotto la card, la composizione diventa verticale e il fascio viene nascosto per non
+attraversare il testo; Lettura e assenza di JavaScript mostrano tutti i progetti.
+
+Gli originali in `assets/projects/` restano intatti. Eseguire
+`python3 tools/export-projects.py` per rigenerare i WebP lossless 1056 × 704:
+i margini trasparenti vengono misurati ignorando solo rumore alpha ≤ 8/255,
+con 6 px di margine. Le card hanno uguale larghezza utile e base allineata,
+con `object-fit: contain` e campionamento nearest-neighbour. Casaurea ha un HUD
+più panoramico: la sua altezza effettiva resta proporzionalmente inferiore,
+all’interno dello stesso canvas, per non deformarlo o tagliarlo.
+
+Il catalogo unico è `design/projects.json`; `python3 tools/render-projects.py`
+aggiorna il blocco HTML semantico in `dist/index.html`. Il browser usa quegli stessi
+articoli per informazioni, immagini, Lettura e dialog. Stack e descrizioni derivano
+dai README e manifest delle repository locali, indicati nel campo `source`.
+Casaurea non ha un remote pubblico disponibile: nessun link viene inventato.
+Le demo sono incluse soltanto dove già documentate (BT e Cops & Robbers).
+
+`tools/check-projects.cjs` verifica arrivo, accensione, cinque card, sincronizzazione,
+wrap in entrambe le direzioni, clic rapidi, tastiera, dialog e focus, ritorno alla
+sezione, dimensioni stabili, resize, movimento ridotto, Lettura, mobile e assenza
+di JavaScript. Usa le stesse variabili browser e screenshot delle altre suite.
 
 ## Contact e satelliti
 
@@ -247,8 +305,9 @@ La parabola ruota con una scansione di 2,25 secondi seguita da una pausa casuale
 di 30–45 secondi, solo con Contact ferma (o in Lettura); in transizione, con
 movimento ridotto e con il documento nascosto il timer è sospeso.
 
-Projects conserva due ologrammi, l'archivio dei progetti e il progetto selezionato,
-proiettati dai rispettivi emettitori. About e Contact hanno invece composizioni
+Projects usa un unico proiettore centrale, ingrandito del 25%, e una card PNG
+alla volta. Frank e la gatta sostano accanto alla macchina; il fascio resta
+dietro ai personaggi. About e Contact hanno invece composizioni
 aperte, indipendenti dalle postazioni. In Lettura e senza JavaScript tutti i
 contenuti restano visibili.
 Vedi l'[audit degli asset e riferimenti](design/stations.md).
