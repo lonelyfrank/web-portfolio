@@ -1,12 +1,10 @@
 // Browser regression checks for the Journey stage. Supply PLAYWRIGHT_MODULE /
 // BROWSER_EXECUTABLE when Playwright is installed outside this buildless project.
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const url = process.env.PORTFOLIO_URL || 'http://127.0.0.1:8082';
-const shots = process.env.SCREENSHOT_DIR || '/tmp';
+const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
 
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.BROWSER_EXECUTABLE || undefined });
+  const browser = await chromium.launch(browserOptions);
   const errors = [];
   const open = async (viewport, options = {}) => {
     const page = await browser.newPage({ viewport, ...options });
@@ -458,7 +456,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     assert.deepEqual(await radar.boundingBox(), radarBox);
     await radarPage.clock.runFor(1750);
     assert.equal(await radar.getAttribute('data-state'), 'resting');
-    await radarPage.emulateMedia({ reducedMotion: 'reduce' });
+    await setSystemMotion(radarPage, 'reduce');
     await radarPage.clock.runFor(60000);
     assert.equal(await radar.getAttribute('data-state'), 'resting');
 

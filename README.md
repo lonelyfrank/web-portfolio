@@ -1,346 +1,215 @@
 # web-portfolio
 
-Portfolio interattivo di Francesco Spina: un viaggio in pixel art tra codice, creatività e progetti.
+Portfolio interattivo di Francesco Spina: un viaggio in pixel art fra codice,
+creatività e progetti. Sito statico senza build o dipendenze runtime:
+`dist/` contiene direttamente la versione pubblicabile.
 
-Sito statico senza build: HTML, CSS e JavaScript leggibili in `dist/`, la cartella pubblicata.
+## Avvio locale
 
-## Due modalità
+```sh
+python3 -m http.server 8082 --bind 127.0.0.1 --directory dist
+```
 
-- **Viaggio**: un'area alla volta. Frank e la gatta restano al centro della scena, il ponte e la città scorrono attorno a loro e l'allestimento dell'area (scrivania, proiettore, parabola, lampioni) sale da un vano elevatore. A Home la gatta gli gira intorno e Frank si china per accarezzarla; About e Contact hanno interazioni dedicate. Frecce, rotella, swipe, link e hash usano la stessa regia.
-- **Lettura**: una pagina che scorre normalmente. È la modalità predefinita su mobile e funziona anche senza JavaScript.
+Aprire `http://127.0.0.1:8082`. La configurazione Sites esistente è in
+`.openai/hosting.json`; modificare i file locali non pubblica automaticamente il sito.
 
 ## Struttura
 
+| Percorso | Responsabilità |
+| --- | --- |
+| `dist/index.html` | Contenuti semantici, navigazione, modalità iniziale, catalogo progetti |
+| `dist/app.js` | Regia del viaggio, input, camera, elevatori, personaggi, dialog e movimento ridotto |
+| `dist/style.css` | Layout condiviso, responsive, scena, About e Contact |
+| `dist/projects.js`, `dist/projects.css` | Stato e presentazione del carosello |
+| `dist/skills.js` | Dieci bolle, ricambio e risposta al puntatore |
+| `dist/contact.js` | Visibilità e pausa dei satelliti |
+| `dist/assets/` | Immagini WebP effettivamente usate dal sito |
+| `assets/` | Originali PNG, conservati senza alterazioni |
+| `design/assets.json` | Catalogo dei percorsi originali, esportazioni e riferimenti |
+| `design/projects.json` | Unica sorgente dei contenuti dei progetti |
+| `design/stations.md` | Coordinate, keypoint e vincoli degli sprite e delle postazioni |
+| `design/audit.md` | Esiti, interventi e limiti della revisione del progetto |
+| `tools/` | Esportatori e controlli locali; non sono distribuiti al browser |
+
+## Modalità e navigazione
+
+**Viaggio** mostra una sezione alla volta: Home, About, Projects e Contact.
+La camera muove ponte, postazioni e contenuti; personaggi e attrezzature usano
+una scala comune. Il comportamento predefinito si attiva da 900 × 640 CSS px.
+**Lettura** è una pagina a scorrimento normale, predefinita sui dispositivi più
+piccoli e disponibile anche senza JavaScript. La scelta esplicita è conservata
+in `localStorage`; valori sconosciuti o storage non disponibile non impediscono
+l’avvio.
+
+Navbar, hash, frecce, rotella e swipe convergono sulla stessa regia. Le sezioni
+inattive attraversano il viewport durante il viaggio ma restano escluse dal
+focus tramite `inert`. Lo scroll verticale conserva la priorità nei pannelli
+annidati e nella pagina: si cambia tappa solo quando nessun contenitore può
+scorrere nella direzione richiesta. I delta della rotella in pixel, righe e
+pagine vengono normalizzati. Gesti touch cancellati e scorciatoie con
+modificatori non provocano cambi di sezione.
+
+Una nuova destinazione interrompe le attese precedenti e riparte dalle
+coordinate renderizzate. Le sezioni adiacenti usano la camminata a 168 unità
+di scena/s; i salti usano la corsa a 280 unità/s. Cadenza e spostamento dei
+piedi sono sincronizzati. La camera conserva velocità lineare durante il
+tragitto; le misure del contenitore vengono aggiornate al cambio modalità
+e al resize, senza ricalcolarle a ogni fotogramma.
+
+Salita e discesa degli elevatori avvengono durante il viaggio. Il proiettore,
+il fascio e la card Projects si accendono solo ad arrivo completato. Il resize
+riprende il tragitto dalla camera corrente; movimento ridotto e documento
+nascosto portano la scena a una composizione stabile. Il passaggio a Lettura
+cancella anche le animazioni pendenti degli elevatori. Le animazioni decorative
+sono sospese quando il documento è nascosto.
+
+La preferenza iniziale di movimento segue il sistema. Il comando Movimento
+permette una scelta esplicita coerente per CSS e JavaScript; un successivo
+cambio della preferenza di sistema aggiorna nuovamente il controllo.
+
+Home alterna 6,4 secondi di riposo e 3,2 secondi di carezza; About usa otto
+pose in ciclo; Contact esegue una sequenza di otto pose e si ferma sull’ultima.
+La radio compie una scansione di 2,25 secondi dopo una pausa casuale di 30–45
+secondi. Tempi, ancoraggi e regole meccaniche sono descritti in
+[design/stations.md](design/stations.md).
+
+## Sezioni
+
+### About
+
+Biografia, competenze e formazione occupano tre colonne sui desktop e seguono
+l’ordine di lettura sugli schermi piccoli. Le 18 immagini delle competenze
+alimentano un gruppo di dieci bolle. Il ricambio casuale sostituisce una o due
+bolle ogni 2,2–5 secondi; crescita e assestamento durano 1,25 secondi. Le due
+varianti Windows non compaiono insieme. Il mouse muove una breve catena locale;
+il tocco conserva lo scorrimento. Fuori vista e a documento nascosto il ciclo
+si sospende. Con movimento ridotto o senza JavaScript compare la griglia
+completa. I nomi restano sempre disponibili ai lettori di schermo.
+
+### Projects
+
+Il catalogo contiene cinque progetti. In Viaggio si presenta una card alla
+volta, affiancata a introduzione e dettagli; in Lettura e senza JavaScript
+sono visibili tutti gli articoli. Il carosello non avanza automaticamente.
+Immagine, testo e annuncio accessibile condividono una sola selezione.
+Le frecce nel carosello cambiano progetto; quelle nel resto della pagina
+controllano il viaggio. L’approfondimento usa un dialog in Viaggio e un
+`details` in Lettura.
+
+Il cambio attende la decodifica dell’immagine richiesta, quindi esegue 150 ms
+in uscita e 190 ms in ingresso. Uscita dalla sezione, cambio modalità,
+movimento ridotto e documento nascosto annullano il cambio. Dopo 10 secondi
+una decodifica bloccata libera i controlli, conserva il progetto corrente e
+annuncia la possibilità di riprovare. Con movimento ridotto il cambio è immediato.
+
+Per aggiornare i contenuti, modificare `design/projects.json` ed eseguire:
+
+```sh
+python3 tools/render-projects.py
 ```
-dist/                 sito pubblicato
-  index.html          contenuti (i segnaposto "DA COMPLETARE" hanno la classe .todo)
-  style.css
-  app.js
-  skills.js           ciclo e movimento delle sfere About
-  contact.js          visibilità e pausa della fluttuazione dei satelliti
-  assets/universe.webp
-  assets/character-idle.webp
-  assets/character-motion.webp
-  assets/character-run.webp
-  assets/character-pet.webp
-  assets/interaction-about.webp
-  assets/interaction-contact.webp
-  assets/ui/          elementi grafici ottimizzati (WebP), lift-* = kit dell'elevatore
-assets/               originali in PNG degli elementi grafici
-  sprite/             fogli animati del ragazzo e della gatta
-design/               sfondo precedente, conservato come riferimento
-tools/export-assets.py
-tools/export-scene.py  esportazione del nuovo sfondo e del personaggio
-tools/export-props.py  skyline, banco da lavoro e arredo urbano
-tools/export-interactions.py  sprite registrati tramite keypoint, proiettore e terminali
-tools/export-elevator.py  parti del kit elevatore e stato acceso del proiettore
-tools/check-stations.cjs  regressioni browser sulla scena Viaggio
-tools/check-journey.cjs   frame intermedi, ancoraggi, visibilità e interruzioni
-tools/check-about.cjs     layout About, accessibilità e indipendenza dalla scena
-tools/check-bubbles.cjs   dieci bolle, ricambio casuale simultaneo e accessibilità
-tools/export-skills.py   esportazione delle sfere fornite
-tools/export-contact.py  esportazione dei quattro satelliti forniti
-tools/check-contact.cjs  layout Contact, focus, movimento e destinazioni
-```
 
-## Projects: carosello olografico
+Le immagini mantengono canvas 1056 × 704, uguale larghezza utile e base
+allineata; le diverse proporzioni dell’HUD originale restano intatte.
 
-La modalità Viaggio mantiene tre colonne solidali alla camera: introduzione,
-card e informazioni. Il proiettore esistente conserva elevatore e stati acceso/spento;
-la sua larghezza passa da 80 a 100 unità di scena. Il punto di sosta Projects di
-Frank passa da x=72 a x=138 per lasciare visibile la sorgente, senza modificare
-sprite, camera o postazioni delle altre sezioni. Il piano sale durante il viaggio,
-ma proiettore, fascio e card si accendono soltanto quando Frank e la camera sono
-fermi sulla postazione e l’elevatore è arrivato. Alla partenza il fascio si spegne
-immediatamente, evitando proiezioni oblique durante il trasferimento. Card,
-controlli e informazioni compaiono insieme solo all’arrivo, con transizioni
-simmetriche di 300 ms in entrata e uscita. La colonna sinistra rimane visibile
-durante il viaggio. Prima dell’accensione, card e informazioni sono anche
-escluse dal focus; in Lettura il catalogo è sempre disponibile.
+### Contact
 
-`dist/projects.js` gestisce un unico `activeProjectIndex`, navigazione ciclica,
-aggiornamento simultaneo di immagine e articolo e annunci accessibili. Il cambio
-impiega 150 ms in uscita e 190 ms in ingresso, dopo la decodifica della sola
-immagine richiesta. I clic durante il cambio e durante il viaggio sono ignorati;
-uscita dalla sezione, cambio modalità, documento nascosto e movimento ridotto
-annullano le animazioni pendenti. Non c’è avanzamento automatico. Le frecce della
-tastiera operano quando il focus è nel carosello, lasciando intatta la navigazione
-tra sezioni nel resto della pagina. La fluttuazione indipendente è di 4 px in 5 s;
-con movimento ridotto le immagini sono statiche e il cambio è immediato.
+Il testo affianca quattro satelliti, ordinati GitHub, Email, LinkedIn e CV.
+Fluttuano solo le immagini; targhette e aree dei link restano ferme. Hover e
+focus sospendono la fluttuazione nella posizione corrente. Sotto 900 px in
+Viaggio e fino a 1100 px in Lettura, il testo precede la griglia; sotto 361 px
+la griglia ha una sola colonna.
 
-`dist/projects.css` definisce il contenitore 3:2, i controlli ricavati dalle frecce
-fornite, distanziate dalla card, e la colonna informativa con righe stabili,
-titoli più marcati, badge delle tecnologie e CTA in evidenza. La colonna è
-aperta, senza sfondo né cornice come nelle altre sezioni. Sui desktop
-più bassi il pannello scorre nella propria colonna, lasciando ferma la card. I PNG includono già l’HUD,
-quindi non hanno una seconda cornice. Il fascio usa il collegamento misurato dalla
-regia esistente, dalla lente al 60% centrale della base del canvas stabile; resta spento durante
-gli spostamenti e non dipende dalla trasformazione di comparsa della card.
-Il contatore sotto la card è rimosso; gli annunci per i lettori di schermo
-conservano posizione e nome del progetto. Sotto 900 px le frecce si dispongono
-sotto la card, la composizione diventa verticale e il fascio viene nascosto per non
-attraversare il testo; Lettura e assenza di JavaScript mostrano tutti i progetti.
+È disponibile soltanto il collegamento GitHub. Email, profilo LinkedIn e PDF
+del CV non sono ancora forniti: gli elementi sono statici, con stato non
+disponibile, fuori dal percorso Tab. Per attivarli, sostituire i contenitori
+con link `mailto:`, al profilo o al PDF con `download`. Il dominio definitivo
+per il metadato `og:image` resta da configurare; `dist/og.jpg` è conservato.
 
-Gli originali in `assets/projects/` restano intatti. Eseguire
-`python3 tools/export-projects.py` per rigenerare i WebP lossless 1056 × 704:
-i margini trasparenti vengono misurati ignorando solo rumore alpha ≤ 8/255,
-con 6 px di margine. Le card hanno uguale larghezza utile e base allineata,
-con `object-fit: contain` e campionamento nearest-neighbour. Casaurea ha un HUD
-più panoramico: la sua altezza effettiva resta proporzionalmente inferiore,
-all’interno dello stesso canvas, per non deformarlo o tagliarlo.
+## Asset ed esportazione
 
-Il catalogo unico è `design/projects.json`; `python3 tools/render-projects.py`
-aggiorna il blocco HTML semantico in `dist/index.html`. Il browser usa quegli stessi
-articoli per informazioni, immagini, Lettura e dialog. Stack e descrizioni derivano
-dai README e manifest delle repository locali, indicati nel campo `source`.
-Casaurea non ha un remote pubblico disponibile: nessun link viene inventato.
-Le demo sono incluse soltanto dove già documentate (BT e Cops & Robbers).
+Gli originali e i WebP condividono categorie funzionali:
 
-`tools/check-projects.cjs` verifica arrivo, accensione, cinque card, sincronizzazione,
-wrap in entrambe le direzioni, clic rapidi, tastiera, dialog e focus, ritorno alla
-sezione, dimensioni stabili, resize, movimento ridotto, Lettura, mobile e assenza
-di JavaScript. Usa le stesse variabili browser e screenshot delle altre suite.
+| Cartella | Contenuto |
+| --- | --- |
+| `backgrounds/` | Panorama e livelli della città |
+| `bridge/` | Passerella, ringhiera, banchine, staffe e terminali della ringhiera |
+| `elevator/` | Kit del vano elevatore |
+| `stations/` | Scrivania, radio e proiettore |
+| `props/` | Lampioni, dissuasori, cavi e moduli decorativi |
+| `ships/` | Navi dello sfondo |
+| `sprite/` | Personaggi, camminata, corsa e interazioni |
+| `skills/`, `projects/`, `contact/` | Asset delle rispettive sezioni |
+| `ui/` | Cornici ancora utilizzate, insegne e terminale Home |
 
-## Contact e satelliti
+`assets/reference/` conserva sei originali attualmente non utilizzati, inclusi
+le vecchie cornici monitor e il riferimento del personaggio. Il panorama
+precedente resta in `design/universe.png`. Questi riferimenti non vengono
+esportati nel sito. Nessun PNG originale è stato eliminato o ricampionato.
 
-Contact ha il maxi titolo e il messaggio su quattro righe nella colonna
-sinistra, con le ultime due righe in corsivo. I satelliti occupano le altre
-due colonne: GitHub / Email, poi LinkedIn / Scarica CV. In Viaggio, dai 900 px
-di larghezza, restano tre colonne: satelliti (massimo 220 px), targhette
-(160–200 px) e spaziatura si adattano all'altezza utile sopra la scena usando
-le unità container. Anche la tipografia si compatta sui desktop bassi, senza
-tagliare i contenuti o nascondere le scrollbar per simulare il risultato.
-Le viewport desktop verificate da 900 × 600 a 2560 × 1440 non richiedono scroll.
-Sotto 900 px in Viaggio e fino a 1100 px in Lettura, il testo precede la griglia;
-sotto 361 px i contatti si dispongono in una colonna. Mobile e Lettura conservano
-lo scorrimento normale. I contenuti sono indipendenti dall'antenna; in Lettura
-la postazione segue i contenuti.
+Pillow è richiesto soltanto per gli strumenti Python. Tutti gli esportatori
+risolvono i percorsi tramite `tools/asset_paths.py` e `design/assets.json`.
+Per rigenerare **tutti** i 77 WebP:
 
-`python3 tools/export-contact.py` esporta gli originali in `assets/contact/`
-come WebP lossless trasparenti 512 × 320 in `dist/assets/contact/`. L'ingombro
-viene misurato ignorando il rumore alpha ≤ 8/255, con margine aggiuntivo;
-proporzioni, antenne e pannelli restano integri. Il campionamento è nearest-neighbour.
-Lo stesso script esporta le quattro targhette fornite come `cta-*.webp`
-trasparenti 640 × 144. Le targhette sostituiscono le etichette visibili e restano
-ferme sotto i satelliti, nello stesso link; i nomi HTML restano disponibili
-ai lettori di schermo senza una seconda scritta visibile. Hover e focus
-illuminano leggermente la targhetta dei link disponibili, senza ridimensionarla.
-
-Solo le immagini fluttuano di 5 px in cicli di 5,8–7,8 secondi. Le etichette
-e le aree dei link restano ferme. Hover e focus sospendono il movimento nella
-posizione corrente; fuori vista o con documento nascosto le animazioni sono
-in pausa. Movimento ridotto, il comando Movimento e l'assenza di JavaScript
-mantengono i satelliti statici. Il vecchio monitor, il cavo HTML della parabola
-e i pulsanti segnaposto sono rimossi; scena e animazioni esistenti sono conservate.
-
-L'unica destinazione disponibile è `https://github.com/lonelyfrank`.
-Email, profilo LinkedIn e PDF del CV **mancano nel progetto**: i tre elementi
-mostrano uno stato non disponibile, senza link inventati né controlli nel
-percorso Tab. Quando forniti, i contenitori statici in `dist/index.html`
-andranno convertiti in link semantici (mailto, profilo, PDF con `download`),
-conservando l'ordine GitHub, Email, LinkedIn, Curriculum.
-
-Con l'anteprima attiva sulla porta 8082, `node tools/check-contact.cjs` verifica
-sedici viewport da 320 × 568 a 2560 × 1440, entrambe le modalità, assenza di
-scroll su desktop in Viaggio e scorrimento accessibile su mobile,
-focus, pausa su hover/focus e fuori vista, movimento ridotto e assenza di JS.
-Supporta le stesse variabili browser degli altri controlli; screenshot in `/tmp`
-o `SCREENSHOT_DIR`. Eseguire anche `tools/check-about.cjs` e `tools/check-stations.cjs`
-per le regressioni nelle sezioni e nella scena condivisa.
-
-## About e asset delle competenze
-
-About usa tre colonne aperte: biografia, competenze e formazione. Sotto i
-1001 px diventano una colonna nello stesso ordine. Il titolo riprende font,
-peso e scala della Home. In Viaggio la composizione segue la camera insieme alla propria area del mondo,
-indipendentemente dal trasferimento della scrivania; su schermi bassi il contenuto scorre sopra
-la fascia della scena. In Lettura la postazione esistente segue il contenuto.
-
-Le sfere fornite in `assets/skill/` sono esportate da
-`python3 tools/export-skills.py` in `dist/assets/skills/`: WebP lossless
-256 × 256 con trasparenza e campionamento nearest-neighbour. Gli originali
-restano intatti; non vengono generate nuove immagini.
-
-Il ciclo include tutti i 18 asset forniti, comprese le due varianti Windows,
-come richiesto: HTML, CSS, JavaScript, Windows (due immagini), Vue, PHP,
-Laravel, AEM, WordPress, Jira, Linux, GitHub, TypeScript, React, Python, Claude
-e Shopify. Le varianti Windows sono distanziate nel ciclo e non compaiono
-insieme. I nomi rimangono nel DOM per i lettori di schermo, senza etichette visibili.
-
-`dist/skills.js` mantiene un gruppo compatto di dieci bolle. Ogni 2,2–5
-secondi (intervallo casuale) sostituisce una bolla, oppure due insieme nel
-42% dei ricambi. Le uscite privilegiano le sei bolle più periferiche e quelle più vecchie.
-Una bolla centrale presente da oltre 32 secondi può lasciare il posto, così
-nessun asset blocca la rotazione. Le immagini mostrate meno di recente hanno
-priorità per gli ingressi. Scoppio e nascita avvengono nello stesso
-fotogramma: non ci sono momenti con nove bolle o un'undicesima sovrapposta.
-
-Le nuove immagini nascono già visibili, piccole, in interstizi triangolari
-variabili tra le superstiti. Crescita e assestamento delle vicine partono
-insieme e durano 1,25 secondi. Un calcolo di impacchettamento compatto
-aggiorna le destinazioni solo al ricambio o al resize; non ci sono traiettorie
-libere o rimbalzi continui. Il gruppo resta contenuto nella colonna delle
-competenze. Il galleggiamento di 1,5 px completa il movimento senza agitare
-i loghi. I sottotitoli sono nascosti visivamente; i nomi restano accessibili
-ai lettori di schermo.
-
-Il mouse scosta prima la bolla più vicina e poi una breve catena di adiacenti,
-con ritardo di 110 ms per passaggio e intensità decrescente. Le altre bolle
-rimangono ferme; all'uscita del puntatore il gruppo si ricompone. Il tocco
-mantiene lo scorrimento della pagina senza repulsione.
-
-Il ciclo si sospende quando il campo esce dalla vista o il documento viene
-nascosto, conservando il tempo residuo delle bolle. Con movimento ridotto o
-senza JavaScript compare la griglia completa statica. L'elenco rimane sempre
-completo per i lettori di schermo, senza annunci live o controlli fittizi.
-
-La formazione riporta solo Boolean / Full Stack Development e gli argomenti
-già presenti; non sono state aggiunte date o certificazioni.
-
-Per verificare: servire `dist/` su `http://127.0.0.1:8082`, poi eseguire
-`node tools/check-about.cjs`, `node tools/check-bubbles.cjs` e
-`node tools/check-stations.cjs`. Se necessario,
-impostare `PLAYWRIGHT_MODULE`, `BROWSER_EXECUTABLE`, `PORTFOLIO_URL` e
-`SCREENSHOT_DIR` per usare gli strumenti browser già installati.
-
-## Elementi grafici
-
-Gli originali in `assets/` vengono ritagliati, ridimensionati e convertiti in WebP con:
-
-```
+```sh
 python3 tools/export-assets.py
 ```
 
-Lo script stampa anche i valori di `border-image-slice` per le cornici da riportare in `style.css`.
+Gli esportatori `export-scene.py`, `export-props.py`, `export-interactions.py`,
+`export-elevator.py`, `export-skills.py`, `export-contact.py` e
+`export-projects.py` possono anche essere eseguiti singolarmente. Conservano
+ritagli, keypoint, dimensioni e campionamento già definiti per ogni famiglia.
+Non vengono ricreati i derivati delle decorazioni rimosse.
 
-Per esportare solo il nuovo sfondo e il personaggio: `python3 tools/export-scene.py`.
-Per esportare solo gli elementi delle scene: `python3 tools/export-props.py`.
-Per le interazioni: `python3 tools/export-interactions.py`.
-Per il kit dell'elevatore: `python3 tools/export-elevator.py`.
-Gli script richiedono Pillow. Gli originali PNG restano in `assets/`.
+## Verifiche
 
-I nuovi fogli includono ragazzo e gatta nella stessa animazione. Camminata e corsa
-usano strisce separate da 8 e 16 celle di 160 × 112 px. La camminata usa le prime due righe di
-`Frank e il gatto calico in movimento(1).png` (1254 × 1254); la corsa usa le
-sedici pose di `Corsa pixel_ ragazzo e gatto.png` (1254 × 1254), in ordine
-da sinistra a destra e dall'alto verso il basso, esportate in `character-run.webp`.
-Riposo e carezza sono due strisce da 8 celle di 128 × 112 px.
-Ogni sequenza usa una sola scala, un asse corporeo fisso e un pavimento
-misurato per ciascuna riga, mantenendo la stessa scala in scena. Non
-si ridimensionano o ricentrano le singole pose sul loro ingombro; oscillazioni
-e salti restano quelli del disegno. I ritagli seguono lo spazio trasparente
-fra le colonne per conservare anche scarpe e code vicine al bordo.
-
-Il riposo dura 3,2 secondi: dopo due cicli parte una carezza di 3,2 secondi,
-poi riprende il riposo. La navigazione interrompe subito la carezza. Il ciclo
-funziona anche nel footer in Lettura; i timer si sospendono quando la scheda è
-nascosta. Con movimento ridotto viene mostrato il primo fotogramma statico.
-Velocità CSS in `dist/style.css`; tempi di spostamento e riposo in `dist/app.js`.
-
-### Scena Viaggio
-
-Il ponte è modulare: ogni 330 unità di scena (su; Frank in piedi è alto 96 su)
-c'è un vano elevatore appeso sotto la passerella, con piano mobile, steli,
-cilindri e bordo frontale ricavati da `Atlante modulare per elevatore meccanico.png`.
-La passerella resta continua sotto i piedi di Frank e della gatta: il vano si
-apre dietro la corsia di camminata, la piattaforma si ferma a filo della piazzola.
-
-Livelli, dal fondo: cielo e città (parallasse) → ringhiera e staffe → vano →
-superficie della piazzola → piano mobile con l'allestimento → cilindri →
-passerella → fascia della piazzola e bordo frontale → personaggio → HTML.
-
-Ogni area ha un solo allestimento (`STATIONS` in `dist/app.js`): `bay` è la
-posizione del vano nel canvas 144 × 136 dell'area, `focus` il centro del gruppo
-personaggio + postazione che viene messo al centro della finestra. Durante il
-trasferimento Frank e la gatta camminano fra sezioni adiacenti (anche dalla
-navbar) e corrono quando si saltano più sezioni. `character-motion.webp`
-contiene la camminata, `character-run.webp` la corsa. Velocità del ponte e cadenza sono
-sincronizzate da `STAGE.walkSpeed` / `walkStride` e `runSpeed` / `runStride`.
-Le quattro aree hanno ancoraggi permanenti su moduli consecutivi del ponte
-(`STATION_BAYS`, 330 su), senza vani vuoti intermedi. Le slide sono consecutive,
-separate da un piccolo margine (minimo 40 px, `SLIDE_GAP`, oppure il margine
-laterale della pagina per tenere le vicine fuori schermo a riposo), e conservano
-la larghezza responsive.
-La camera determina la posizione della striscia di slide interpolando fra gli
-ancoraggi delle postazioni: testi e ponte condividono il progresso del viaggio,
-con distanze diverse. La navigazione usa 168 su/s fra aree adiacenti e 280 su/s
-nei salti: circa 2 secondi fra tab vicine, 2,3 o 3,6 secondi per due o tre aree.
-La cadenza dello sprite resta naturale e sincronizzata ai piedi sul ponte.
-Le brevi inversioni della camera
-durano almeno 120 ms. Una richiesta durante il tragitto percorre solo la distanza
-residua dalla posizione effettiva; se serve solo riallineare la camera, il
-personaggio resta fermo nel mondo. La direzione dipende dalla destinazione
-nel mondo, non dal segno del cambio di voce nel menu.
-
-Home, About, Projects e Contact traslano come gruppi usando la camera renderizzata
-del ponte. Titoli, testi, CTA, competenze e contatti mantengono le loro coordinate
-interne; sfere e satelliti conservano animazioni locali su livelli figli.
-La parallasse lontana campiona la stessa camera a velocità ridotta. All'arrivo,
-`normalize()` sottrae lo stesso multiplo del modulo a camera, ancoraggi testuali
-e vani, compensando la texture: non cambia la posizione sullo schermo.
-
-Lo stato attivo governa navigazione, `inert` e focus, non la visibilità. Una
-sezione inattiva resta visibile finché il suo riquadro attraversa il viewport;
-le sezioni vengono posizionate prima di rimuovere `hidden`. Non ci sono
-animazioni di comparsa/scomparsa né timer di uscita per i contenuti. Nei salti
-si vedono anche i contenuti delle aree intermedie, senza renderli interattivi.
-Lo scorrimento verticale resta disponibile dentro ogni pagina.
-
-La regia meccanica resta indipendente: al clic si esce dall'interazione,
-la postazione precedente scende e quella di destinazione sale durante il viaggio.
-Proiettori, fasci e collegamenti mantengono accensione e misure sui pannelli reali.
-I testi non dipendono dall'accensione o dall'altezza degli elevatori. Ogni nuova
-richiesta annulla i timer della precedente e riparte dalle trasformazioni
-renderizzate, conservando gli ancoraggi anche nelle inversioni. Il resize
-prosegue il tragitto dalla camera corrente; cambio modalità, documento nascosto
-e movimento ridotto presentano direttamente una composizione stabile.
-
-About e Contact usano i fogli con soli Frank e gatta, registrati sui keypoint di
-piedi e mani: scrivania e parabola sono oggetti statici sul piano mobile e
-salgono e scendono con esso. About esegue un ciclo di 8 fotogrammi; Contact una
-sola sequenza, poi attende sull'ultima posa. In Lettura gli stessi nodi vengono
-spostati nelle rispettive sezioni, con pose statiche. Il footer conserva riposo
-e carezza.
-
-La parabola ruota con una scansione di 2,25 secondi seguita da una pausa casuale
-di 30–45 secondi, solo con Contact ferma (o in Lettura); in transizione, con
-movimento ridotto e con il documento nascosto il timer è sospeso.
-
-Projects usa un unico proiettore centrale, ingrandito del 25%, e una card PNG
-alla volta. Frank e la gatta sostano accanto alla macchina; il fascio resta
-dietro ai personaggi. About e Contact hanno invece composizioni
-aperte, indipendenti dalle postazioni. In Lettura e senza JavaScript tutti i
-contenuti restano visibili.
-Vedi l'[audit degli asset e riferimenti](design/stations.md).
-
-## Anteprima in locale
-
-```
-python3 -m http.server 8080 --directory dist
-```
-
-## Verifica delle postazioni
-
-Con l'anteprima attiva e Playwright disponibile:
+Controlli statici, senza server o browser:
 
 ```sh
-PORTFOLIO_URL=http://127.0.0.1:8080 node tools/check-stations.cjs
+python3 -B tools/check-assets.py
+python3 -B tools/check-exports.py
 ```
 
-Se Playwright o Chromium sono esterni al progetto, impostare `PLAYWRIGHT_MODULE`
-e `BROWSER_EXECUTABLE` ai rispettivi percorsi. I controlli verificano un solo
-vano alzato e un solo allestimento visibile, quote di piano e piedi, sequenza
-About → Projects, viaggio inverso, cambi rapidi, ritorno a metà trasferimento,
-tastiera, rotella e hash, documento nascosto, resize, viewport 1366 × 768,
-1440 × 900 e 1920 × 1080 senza pannelli tagliati, movimento ridotto, Lettura,
-focus, mobile e tempi della parabola. Screenshot di verifica in
-`/tmp/stations-*-verified.png` (o in `SCREENSHOT_DIR`).
+Il primo verifica percorsi HTML/CSS, immagini, ID, ancore, catalogo progetti,
+inventario degli originali ed esportazioni e configurazione di hosting.
+Il secondo rigenera l’intero insieme in una cartella temporanea e confronta
+dimensioni e pixel con i file presenti in `dist/`, senza modificarli.
 
-`node tools/check-journey.cjs` aggiunge verifiche dei frame intermedi in Chromium:
-Home ↔ About, About ↔ Contact, Home → Contact e passaggi attraverso Projects.
-Campiona le vere transizioni CSS della camera, controllando visibilità, opacità,
-assenza di sovrapposizioni, spostamenti dei gruppi e allineamenti interni.
-Verifica inoltre inversioni, click rapidi, normalizzazione, resize in transito,
-passaggio fra modalità, movimento ridotto, focus e viewport equivalente al 200%
-di zoom. Usa le stesse variabili ambiente degli altri controlli e salva i frame
-`journey-*-mid.png` in `SCREENSHOT_DIR` (predefinito `/tmp`) per revisione visiva.
+Con il server locale attivo, Playwright e Chromium disponibili:
+
+```sh
+node tools/check-all.cjs
+```
+
+La suite esegue controlli statici e di sintassi, poi sette gruppi browser in
+sequenza: `lifecycle`, `journey`, `projects`, `stations`, `about`, `contact` e
+`bubbles`. È possibile selezionarne alcuni, ad esempio:
+
+```sh
+node tools/check-all.cjs lifecycle journey
+```
+
+Per confrontare anche l’aspetto con una copia originale servita separatamente:
+
+```sh
+PORTFOLIO_BASELINE_URL=http://127.0.0.1:8087 node tools/check-all.cjs appearance
+```
+
+Il confronto acquisisce 12 coppie di screenshot con movimento ridotto e
+verifica l’identità dei pixel, in Viaggio desktop e Lettura desktop/mobile.
+
+Gli script `check-*.cjs` restano eseguibili anche singolarmente. Per usare
+installazioni esterne al progetto:
+
+```sh
+PLAYWRIGHT_MODULE=/percorso/node_modules/playwright \
+BROWSER_EXECUTABLE=/percorso/chromium \
+PORTFOLIO_URL=http://127.0.0.1:8082 \
+SCREENSHOT_DIR=/tmp/portfolio-checks \
+node tools/check-all.cjs
+```
+
+Gli screenshot sono salvati per impostazione predefinita in
+`/tmp/portfolio-checks`. I controlli coprono viewport da 320 a 2560 px,
+Lettura e Viaggio, assenza di JavaScript, movimento ridotto, tastiera e focus,
+scroll annidato, pose degli sprite, fotogrammi intermedi, inversioni, resize,
+visibilità del documento, ricambio delle bolle e timeout delle immagini.

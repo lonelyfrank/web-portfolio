@@ -1,11 +1,9 @@
 // About layout, accessibility and scene independence. Same environment as check-stations.cjs.
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const url = process.env.PORTFOLIO_URL || 'http://127.0.0.1:8082';
-const shots = process.env.SCREENSHOT_DIR || '/tmp';
+const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: process.env.BROWSER_EXECUTABLE || undefined });
+  const browser = await chromium.launch(browserOptions);
   const errors = [];
   try {
     for (const [width, height] of [[1920, 1080], [1440, 900], [1366, 768], [1280, 600], [1024, 768], [820, 900], [390, 844], [320, 568]]) {
@@ -72,9 +70,9 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
         }
       }
       // Both the system preference and the site's motion control stop the orbs.
-      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await setSystemMotion(page, 'reduce');
       assert.equal(await page.locator('.skill-orb').first().evaluate(n => getComputedStyle(n).animationName), 'none');
-      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await setSystemMotion(page, 'no-preference');
       await page.locator('#motion').click();
       assert.equal(await page.locator('.skill-orb').first().evaluate(n => getComputedStyle(n).animationName), 'none');
       await page.close();

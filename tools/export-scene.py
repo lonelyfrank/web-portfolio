@@ -4,14 +4,10 @@ Uso: python3 tools/export-scene.py (richiede Pillow).
 Camminata e corsa provengono da due fogli distinti. Scala, centro e pavimento
 sono registrati per ogni foglio, senza ridimensionamenti per fotogramma.
 """
-from pathlib import Path
+from asset_paths import source_path, output_path
 
 from PIL import Image, ImageChops, ImageFilter
 
-ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / 'assets'
-SPRITES = SRC / 'sprite'
-OUT = ROOT / 'dist' / 'assets'
 CELL = (128, 112)
 CHARACTER_HEIGHT = 96
 
@@ -122,8 +118,8 @@ def export_motion(sheet, running):
             frame = Image.new('RGBA', cell)
             frame.paste(figure, (x, y))
             atlas.paste(frame, (((row % 2) * 4 + column) * cell[0], row // 2 * cell[1]))
-    atlas.save(OUT / 'character-motion.webp', lossless=True, method=6)
-    running_strip(running).save(OUT / 'character-run.webp', lossless=True, method=6)
+    atlas.save(output_path('character-motion.webp'), lossless=True, method=6)
+    running_strip(running).save(output_path('character-run.webp'), lossless=True, method=6)
 
 
 def running_strip(sheet):
@@ -168,7 +164,7 @@ def running_strip(sheet):
 
 
 def rest_frames(name):
-    sheet = Image.open(SPRITES / name).convert('RGBA')
+    sheet = Image.open(source_path(name)).convert('RGBA')
     figures = components(sheet)
     rows = [sorted((item for item in figures if ((item[0][1] + item[0][3]) / 2 < sheet.height / 2) == (row == 0)),
                    key=lambda item: item[0][0]) for row in range(2)]
@@ -195,21 +191,20 @@ def export_atlas(rows, name, airborne=False, cell=CELL):
             if x < 0 or x + figure.width > cell[0] or y < 0:
                 raise ValueError(f'Fotogramma fuori cella: {name}, {row_index}, {column}')
             atlas.paste(figure, (column * cell[0] + x, row_index * cell[1] + y))
-    atlas.save(OUT / name, lossless=True, method=6)
+    atlas.save(output_path(name), lossless=True, method=6)
 
 
 def export_character():
-    sheet = Image.open(SPRITES / 'Frank e il gatto calico in movimento(1).png').convert('RGBA')
-    running = Image.open(SPRITES / 'Corsa pixel_ ragazzo e gatto.png').convert('RGBA')
+    sheet = Image.open(source_path('Frank e il gatto calico in movimento(1).png')).convert('RGBA')
+    running = Image.open(source_path('Corsa pixel_ ragazzo e gatto.png')).convert('RGBA')
     export_motion(sheet, running)
     export_atlas([rest_frames('Otto fotogrammi_ gatta calico tra le gambe.png')], 'character-idle.webp')
     export_atlas([rest_frames('Animazione pixel_ ragazzo accarezza la gatta.png')], 'character-pet.webp')
 
 
 if __name__ == '__main__':
-    OUT.mkdir(parents=True, exist_ok=True)
-    background = Image.open(SRC / 'Metropoli cyberpunk tra pianeti lontani.png').convert('RGB')
-    background.save(OUT / 'universe.webp', quality=88, method=6)
+    background = Image.open(source_path('Metropoli cyberpunk tra pianeti lontani.png')).convert('RGB')
+    background.save(output_path('universe.webp'), quality=88, method=6)
     export_character()
     for name in ['universe.webp', 'character-motion.webp', 'character-run.webp', 'character-idle.webp', 'character-pet.webp']:
-        print(f'{name}: {(OUT / name).stat().st_size // 1024} KB')
+        print(f'{name}: {output_path(name).stat().st_size // 1024} KB')

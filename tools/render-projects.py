@@ -6,8 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 START, END = '<!-- PROJECT CATALOGUE -->', '<!-- /PROJECT CATALOGUE -->'
 
-def render():
-    projects = json.loads((ROOT / 'design/projects.json').read_text())
+def rendered_html():
+    projects = json.loads((ROOT / 'design/projects.json').read_text(encoding='utf-8'))
     articles = []
     for i, project in enumerate(projects, 1):
         p = {k: escape(v) if isinstance(v, str) else v for k, v in project.items()}
@@ -30,10 +30,10 @@ def render():
           </details>
         </article>''')
     file = ROOT / 'dist/index.html'
-    text = file.read_text()
+    text = file.read_text(encoding='utf-8')
     before, rest = text.split(START)
     _, after = rest.split(END)
-    file.write_text(before + START + '\n' + '\n'.join(articles) + '\n      ' + END + after)
+    return before + START + '\n' + '\n'.join(articles) + '\n      ' + END + after
 
 if __name__ == '__main__':
-    render()
+    (ROOT / 'dist/index.html').write_text(rendered_html(), encoding='utf-8')

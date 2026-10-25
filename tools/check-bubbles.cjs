@@ -1,10 +1,8 @@
 // Full random cycles: ten visible bubbles, atomic swaps and organic gap filling.
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const url = process.env.PORTFOLIO_URL || 'http://127.0.0.1:8082';
-const shots = process.env.SCREENSHOT_DIR || '/tmp';
+const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
 (async () => {
-  const browser = await chromium.launch({ executablePath: process.env.BROWSER_EXECUTABLE || undefined });
+  const browser = await chromium.launch(browserOptions);
   try {
     for (const width of [1440, 1024, 390, 320]) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
@@ -127,7 +125,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       await page.clock.runFor(30000);
       assert.deepEqual(await snapshot(), paused);
       await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
-      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await setSystemMotion(page, 'reduce');
       await page.waitForFunction(() => !document.querySelector('.skill-orbits').classList.contains('is-floating'));
       assert.equal(await page.locator('.skill-orb:visible').count(), 18);
       const still = await page.locator('.skill-orbits').innerHTML();

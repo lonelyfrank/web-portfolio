@@ -5,15 +5,15 @@
 
 const SECTIONS = ['home', 'about', 'projects', 'contact'];
 // Local coordinates use the exported 144 × 136 canvas (floor y=132).
-// Footprints and controls are explicit: never infer them from frame alpha bounds.
+// Keypoints are documented in design/stations.md; runtime keeps only the anchors
+// used by the director. Never infer them from frame alpha bounds.
 // `bay` is the canvas x of the lift shaft centre, `focus` the canvas x of the
 // character + equipment group, which is the one centred in the viewport.
-// `link` is where the remaining screen connector starts (dish).
 const STATIONS = [
-  { id: 'home', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null, companion: [28, 112, 92, 20], hands: null },
-  { id: 'about', floor: 132, stop: [91, 132], bay: 53, focus: 56, equipment: [68, 129], companion: [36, 108, 96, 24], hands: [68, 82], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91] },
-  { id: 'projects', floor: 132, stop: [138, 132], bay: 72, focus: 72, equipment: null, companion: [74, 112, 64, 20], hands: null },
-  { id: 'contact', floor: 132, stop: [61, 132], bay: 145, focus: 118, equipment: [111, 131], companion: [8, 98, 80, 34], hands: [87, 111], controls: { panel: [87, 111], tuner: [123, 103] }, frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60] },
+  { id: 'home', floor: 132, stop: [72, 132], bay: 72, focus: 72, equipment: null },
+  { id: 'about', floor: 132, stop: [91, 132], bay: 53, focus: 56, equipment: [68, 129], frames: 8, loop: true, staticFrame: 0, actorX: [91, 91, 91, 91, 91, 91, 91, 91] },
+  { id: 'projects', floor: 132, stop: [138, 132], bay: 72, focus: 72, equipment: null },
+  { id: 'contact', floor: 132, stop: [61, 132], bay: 145, focus: 118, equipment: [111, 131], frames: 8, loop: false, staticFrame: 7, actorX: [61, 64, 62, 99, 98, 59, 60, 60] },
 ];
 const MODE_KEY = 'fs-mode';
 const REST_MS = 6400; // due giri della gatta prima della carezza
@@ -47,6 +47,8 @@ const root = document.documentElement;
 const pages = $$('.page');
 const navLinks = $$('.site-nav a');
 const avatar = $('#avatar');
+const main = $('main');
+const avatars = $$('.avatar');
 const strip = $('.journey-strip');
 const track = $('.bridge-track');
 const storage = $('.set-storage');
@@ -125,7 +127,10 @@ function setActiveNav(index) {
 /* ---------- Modalità ---------- */
 
 function savedMode() {
-  try { return localStorage.getItem(MODE_KEY); } catch { return null; }
+  try {
+    const mode = localStorage.getItem(MODE_KEY);
+    return ['journey', 'read'].includes(mode) ? mode : null;
+  } catch { return null; }
 }
 
 function setMode(mode, { save = false } = {}) {
@@ -135,9 +140,11 @@ function setMode(mode, { save = false } = {}) {
   const journey = mode === 'journey';
   director.cancel();
   cancelStation();
+  powerDown();
   root.classList.toggle('journey', journey);
   placeStations(journey);
-  setViews(journey);
+  projectCarousel.mode(journey);
+  measureContent();
   $$('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
 
   if (journey) {
@@ -156,7 +163,6 @@ function setMode(mode, { save = false } = {}) {
       page.classList.remove('active');
       delete page.dataset.stage;
     });
-    $$('.scenic').forEach(node => { node.inert = false; });
     root.style.setProperty('--step', 0);
     document.title = 'Francesco Spina — Space Journey';
     setActiveNav(current);
@@ -295,6 +301,15 @@ const contentPositions = new Map();
 let contentFrame = 0;
 let renderedCam = 0;
 let journeyGait = 'walking';
+let contentLayout;
+// Layout is stable during travel. Read dimensions once on mode/size changes,
+// before any per-frame writes, rather than forcing layout on every camera tick.
+function measureContent() {
+  const gutter = parseFloat(getComputedStyle(main).paddingLeft);
+  const width = main.clientWidth - 2 * gutter;
+  contentLayout = { width, pitch: width + Math.max(SLIDE_GAP, gutter),
+    left: main.getBoundingClientRect().left + gutter, viewport: innerWidth };
+}
 function contentProgress(cam) {
   let index = 0;
   while (index < pages.length - 2 && cam > contentPositions.get(index + 1)) index++;
@@ -307,17 +322,14 @@ function positionContent() {
   const cam = currentCam();
   renderedCam = cam;
   const progress = contentProgress(cam);
-  const main = $('main');
-  const gutter = parseFloat(getComputedStyle(main).paddingLeft);
-  const width = main.clientWidth - 2 * gutter;
-  const pitch = width + Math.max(SLIDE_GAP, gutter);
-  const left = main.getBoundingClientRect().left + gutter;
+  const { width, pitch, left, viewport } = contentLayout;
   pages.forEach((page, index) => {
     const x = (index - progress) * pitch;
     // Position before revealing: even an inactive section is rendered whenever
     // its scrollport intersects the main viewport. Navigation owns only inert.
     page.style.setProperty('--content-x', `${x}px`);
-    page.hidden = index !== current && (left + x + width <= 0 || left + x >= innerWidth);
+    const hidden = index !== current && (left + x + width <= 0 || left + x >= viewport);
+    if (page.hidden !== hidden) page.hidden = hidden;
   });
   // Distant scenery samples this same camera, at its existing slower ratios.
   setParallax((cam - contentPositions.get(0)) / (STATION_BAYS * STAGE.bay));
@@ -376,26 +388,33 @@ function normalize() {
 // from their current values, so nothing queues up or freezes midway.
 const director = {
   run: 0,
-  timers: new Set(),
+  timers: new Map(),
   requested: current,
   cancel() {
     // Commit the rendered values before removing a transition. In particular,
     // CSS reversal shortening must not change the selected ground speed.
     if (isJourney()) {
-      setCam(currentCam());
-      setActor(currentActor());
+      const cam = currentCam(), actor = currentActor();
+      setCam(cam);
+      setActor(actor);
       void avatar.offsetWidth;
     }
     this.run++;
     cancelAnimationFrame(contentFrame);
     contentFrame = 0;
-    this.timers.forEach(clearTimeout);
+    this.timers.forEach((resolve, timer) => { clearTimeout(timer); resolve(); });
     this.timers.clear();
+    // Resolve cancelled lift awaits too, including when switching to Reading.
+    bays.forEach(bay => {
+      if (bay.lift.getAnimations().length || bay.mount.getAnimations().length) {
+        moveLift(bay, liftLevel(bay), 0);
+      }
+    });
   },
   wait(ms) {
     return new Promise(resolve => {
       const timer = setTimeout(() => { this.timers.delete(timer); resolve(); }, Math.max(0, ms));
-      this.timers.add(timer);
+      this.timers.set(timer, resolve);
     });
   },
 };
@@ -406,7 +425,6 @@ async function stageTo(target, { instant = false, resume = false } = {}) {
   const alive = () => run === director.run && isJourney();
   const from = director.requested;
   director.requested = target;
-  clearTimeout(stationTimer);
   cancelStation();
   clearRest();
   powerDown();
@@ -441,7 +459,7 @@ async function stageTo(target, { instant = false, resume = false } = {}) {
     await lift;
   })();
 
-  // 4. Adjacent sections use the walking row; jumps use the running row.
+  // Adjacent sections use the walking row; jumps use the running row.
   // Use the previous request so rapid changes immediately select the new gait.
   const gait = resume ? journeyGait : Math.abs(target - from) > 1 ? 'running' : 'walking';
   journeyGait = gait;
@@ -705,7 +723,7 @@ function advanceInteraction() {
 
 function clearRest() {
   clearTimeout(restTimer);
-  $$('.avatar').forEach(node => node.classList.remove('petting'));
+  avatars.forEach(node => node.classList.remove('petting'));
 }
 
 function scheduleRest() {
@@ -719,6 +737,7 @@ function scheduleRest() {
 }
 
 document.addEventListener('visibilitychange', () => {
+  root.classList.toggle('document-hidden', document.hidden);
   clearRest();
   clearTimeout(stationTimer);
   if (document.hidden) {
@@ -742,7 +761,8 @@ window.addEventListener('resize', () => {
   const cam = renderedCam;
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
-    if (!isJourney()) return;
+    measureContent();
+    if (!isJourney()) { updateReadProgress(); return; }
     if (['waiting', 'interacting', 'aligning'].includes(phase)) {
       // Pixel values depend on the scene unit: re-apply them, keep the pose.
       bays.forEach(bay => moveLift(bay, bay.level, 0));
@@ -779,8 +799,9 @@ function go(index) {
 
 window.addEventListener('hashchange', () => {
   if (!isJourney()) return;
-  const index = SECTIONS.indexOf(location.hash.slice(1));
-  show(index < 0 ? 0 : index);
+  const index = location.hash ? SECTIONS.indexOf(location.hash.slice(1)) : 0;
+  if (index < 0) return; // e.g. the skip link targets #content, not Home.
+  show(index);
   $('h1, h2', pages[current]).focus({ preventScroll: true });
 });
 
@@ -788,29 +809,36 @@ $('#prev').addEventListener('click', () => go(current - 1));
 $('#next').addEventListener('click', () => go(current + 1));
 
 window.addEventListener('keydown', e => {
-  if (!isJourney() || dialog.open || e.defaultPrevented || e.target.closest('.project-carousel, button, input, textarea, select, [role="tab"]')) return;
+  if (!isJourney() || dialog.open || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey
+    || e.target.isContentEditable || e.target.closest('.project-carousel, button, input, textarea, select, summary')) return;
   if (e.key === 'ArrowRight') { e.preventDefault(); go(current + 1); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); go(current - 1); }
 });
 
 // La rotella cambia tappa solo quando il contenuto corrente è già a fine corsa.
 let wheelAmount = 0;
-let lastWheel = 0;
-window.addEventListener('wheel', e => {
-  if (!isJourney() || dialog.open || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-  const direction = Math.sign(e.deltaY);
-  const scroller = e.target.closest?.('.page, .scroll-area');
-  if (scroller && pages[current].contains(scroller)) {
-    const canScrollDown = scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 3;
-    const canScrollUp = scroller.scrollTop > 3;
-    if ((direction > 0 && canScrollDown) || (direction < 0 && canScrollUp)) return;
+let lastWheel = -Infinity;
+let lastWheelEvent = 0;
+function canScroll(target, direction) {
+  for (let node = target; node && pages[current].contains(node); node = node.parentElement) {
+    if (node.scrollHeight <= node.clientHeight + 3 || !/^(auto|scroll)$/.test(getComputedStyle(node).overflowY)) continue;
+    if (direction > 0 ? node.scrollTop + node.clientHeight < node.scrollHeight - 3 : node.scrollTop > 3) return true;
   }
+  return false;
+}
+window.addEventListener('wheel', e => {
+  if (!isJourney() || dialog.open || e.defaultPrevented || e.ctrlKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  const direction = Math.sign(e.deltaY);
+  if (canScroll(e.target, direction)) { wheelAmount = 0; return; }
 
   e.preventDefault();
-  const now = Date.now();
+  const now = performance.now();
+  if (now - lastWheelEvent > 180 || Math.sign(wheelAmount) !== direction) wheelAmount = 0;
+  lastWheelEvent = now;
   if (now - lastWheel < WHEEL_COOLDOWN_MS) return;
-  if (Math.sign(wheelAmount) !== direction) wheelAmount = 0;
-  wheelAmount += e.deltaY;
+  const delta = e.deltaY * (e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16
+    : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? pages[current].clientHeight : 1);
+  wheelAmount += delta;
   if (Math.abs(wheelAmount) > 85) {
     go(current + direction);
     lastWheel = now;
@@ -818,15 +846,19 @@ window.addEventListener('wheel', e => {
   }
 }, { passive: false });
 
-let touchX, touchY;
-$('main').addEventListener('touchstart', e => {
-  touchX = e.touches[0].clientX;
-  touchY = e.touches[0].clientY;
+let touchStart = null;
+main.addEventListener('touchstart', e => {
+  touchStart = e.touches.length === 1 ? e.touches[0] : null;
 }, { passive: true });
-$('main').addEventListener('touchend', e => {
-  if (!isJourney() || dialog.open || e.target.closest('.projects-grid, .project-carousel')) return;
-  const dx = e.changedTouches[0].clientX - touchX;
-  const dy = e.changedTouches[0].clientY - touchY;
+main.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
+main.addEventListener('touchend', e => {
+  const start = touchStart;
+  touchStart = null;
+  if (!start || e.touches.length || !isJourney() || dialog.open || e.target.closest('.projects-grid, .project-carousel')) return;
+  const end = [...e.changedTouches].find(touch => touch.identifier === start.identifier);
+  if (!end) return;
+  const dx = end.clientX - start.clientX;
+  const dy = end.clientY - start.clientY;
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(current + (dx < 0 ? 1 : -1));
 }, { passive: true });
 
@@ -838,10 +870,6 @@ const projectCarousel = new ProjectCarousel({
   reduced: () => reduced,
   onChange: () => placeLinks(2),
 });
-
-function setViews(journey) {
-  projectCarousel.mode(journey);
-}
 
 /* ---------- Lettura: sezione attiva e progresso ---------- */
 
@@ -875,9 +903,11 @@ function setReduced(value) {
   reduced = value;
   projectCarousel.cancel();
   document.body.classList.toggle('reduced', value);
+  root.classList.toggle('motion-reduced', value);
   const button = $('#motion');
   button.setAttribute('aria-pressed', String(value));
   button.title = value ? 'Riattiva movimento' : 'Riduci movimento';
+  button.setAttribute('aria-label', button.title);
   if (isJourney() && bays.length) {
     if (value) { director.cancel(); cancelStation(); settle(current); }
     else if (activeStation !== null && STATIONS[activeStation].loop) {
@@ -937,5 +967,7 @@ $('#year').textContent = new Date().getFullYear();
 /* ---------- Avvio ---------- */
 
 buildBays();
+measureContent();
+root.classList.toggle('document-hidden', document.hidden);
 setReduced(reduced);
 setMode(isJourney() ? 'journey' : 'read');

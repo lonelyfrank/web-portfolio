@@ -17,6 +17,8 @@ class ProjectCarousel {
     }));
     this.activeProjectIndex = 0;
     this.generation = 0;
+    this.animation = null;
+    this.decodeController = null;
     this.busy = false;
     this.buttons = [...this.root.querySelectorAll('button')];
     this.buttons.forEach((button, i) => button.addEventListener('click', () => this.move(i ? 1 : -1)));
@@ -50,7 +52,10 @@ class ProjectCarousel {
 
   cancel() {
     this.generation++;
+    this.decodeController?.abort();
+    this.decodeController = null;
     this.animation?.cancel();
+    this.animation = null;
     this.busy = false;
     this.root.removeAttribute('aria-busy');
     this.controls();
@@ -80,9 +85,31 @@ class ProjectCarousel {
   }
 
   async animate(frames, duration) {
-    this.animation = this.card.animate(frames, { duration, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' });
-    await this.animation.finished;
-    this.animation.cancel();
+    const animation = this.card.animate(frames, { duration, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' });
+    this.animation = animation;
+    try { await animation.finished; }
+    finally {
+      animation.cancel();
+      if (this.animation === animation) this.animation = null;
+    }
+  }
+
+  decode(source, signal) {
+    const image = new Image();
+    image.src = source;
+    return new Promise((resolve, reject) => {
+      const finish = error => {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', abort);
+        if (error) reject(error);
+        else resolve();
+      };
+      const abort = () => finish(new DOMException('Project change cancelled', 'AbortError'));
+      // A stalled image request must never lock the carousel indefinitely.
+      const timer = setTimeout(() => finish(new Error('Image decode timeout')), 10000);
+      signal.addEventListener('abort', abort, { once: true });
+      image.decode().then(() => finish(), finish);
+    });
   }
 
   async move(direction) {
@@ -91,12 +118,12 @@ class ProjectCarousel {
     this.controls();
     this.root.setAttribute('aria-busy', 'true');
     const generation = ++this.generation;
+    const controller = new AbortController();
+    this.decodeController = controller;
     const next = (this.activeProjectIndex + direction + this.items.length) % this.items.length;
     try {
       // Decode just the requested asset before dimming the current projection.
-      const asset = new Image();
-      asset.src = this.items[next].image.getAttribute('src');
-      await asset.decode();
+      await this.decode(this.items[next].image.getAttribute('src'), controller.signal);
       if (generation !== this.generation || !this.canNavigate()) return;
       if (!this.reduced()) await this.animate([
         { transform: 'translateX(0)', opacity: 1 },
@@ -117,6 +144,7 @@ class ProjectCarousel {
       }
     } finally {
       if (generation === this.generation) {
+        this.decodeController = null;
         this.busy = false;
         this.root.removeAttribute('aria-busy');
         this.controls();

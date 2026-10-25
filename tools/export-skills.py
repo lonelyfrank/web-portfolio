@@ -1,12 +1,11 @@
-"""Esporta le sfere fornite in assets/skill; non modifica gli originali.
+"""Esporta le sfere fornite in assets/skills/; non modifica gli originali.
 
 I 18 asset richiesti, incluse due varianti Windows. Pillow è già usato dagli
 altri esportatori. WebP lossless conserva il canale alpha.
 """
-from pathlib import Path
+from asset_paths import source_path, output_path
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parent.parent
 SKILLS = {
     'html': 'Bolla HTML5 fluttuante in pixel art-3.png',
     'css': 'Scudo CSS3 in bolla di vetro-6.png',
@@ -29,12 +28,10 @@ SKILLS = {
 }
 
 if __name__ == '__main__':
-    out = ROOT / 'dist/assets/skills'
-    out.mkdir(parents=True, exist_ok=True)
     for name, source in SKILLS.items():
-        with Image.open(ROOT / 'assets/skill' / source) as image:
+        with Image.open(source_path(source)) as image:
             image = image.convert('RGBA')
             # Uniform canvas and nearest-neighbour sampling preserve hard pixel edges.
             image.resize((256, 256), Image.Resampling.NEAREST).save(
-                out / f'{name}.webp', lossless=True, method=6)
-    print(f'Esportate {len(SKILLS)} sfere trasparenti in {out}')
+                output_path(f'{name}.webp'), lossless=True, method=6)
+    print(f'Esportate {len(SKILLS)} sfere trasparenti in dist/assets/skills')

@@ -3,10 +3,9 @@
 Only transparent padding is trimmed. Originals are retained. Every HUD has
 the same visible width and centre; differing artwork ratios remain intact.
 """
-from pathlib import Path
+from asset_paths import source_path, output_path
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parent.parent
 CARDS = {
     'bt-darts': 'Bite_Trouble__Bersaglio_Neon_Retro-removebg-preview.png',
     'sensei': 'Banner_HUD_olografico_SENSEI_Learning-removebg-preview.png',
@@ -30,12 +29,10 @@ def export(image, target, size, artwork_width):
     print(f'{target.name}: artwork {image.size}, canvas {size}')
 
 if __name__ == '__main__':
-    output = ROOT / 'dist/assets/projects'
-    output.mkdir(parents=True, exist_ok=True)
     for name, source in CARDS.items():
-        with Image.open(ROOT / 'assets/projects' / source) as image:
-            export(image.convert('RGBA'), output / f'{name}.webp', (1056, 704), 1000)
-    with Image.open(ROOT / 'assets/projects/Frecce_al_neon_in_pixel_art-removebg-preview.png') as source:
+        with Image.open(source_path(source)) as image:
+            export(image.convert('RGBA'), output_path(f'{name}.webp'), (1056, 704), 1000)
+    with Image.open(source_path('Frecce_al_neon_in_pixel_art-removebg-preview.png')) as source:
         # Middle-intensity arrows, isolated from the six authored variants.
         for name, bounds in [('prev', (142, 65, 270, 215)), ('next', (572, 65, 705, 215))]:
-            export(source.convert('RGBA').crop(bounds), output / f'arrow-{name}.webp', (128, 144), 112)
+            export(source.convert('RGBA').crop(bounds), output_path(f'arrow-{name}.webp'), (128, 144), 112)

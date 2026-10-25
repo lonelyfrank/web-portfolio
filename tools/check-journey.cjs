@@ -1,12 +1,10 @@
 // Rendered intermediate frames, fixed world anchors and interrupted navigation.
 // Same PLAYWRIGHT_MODULE / BROWSER_EXECUTABLE / PORTFOLIO_URL as check-stations.
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const url = process.env.PORTFOLIO_URL || 'http://127.0.0.1:8082';
-const shots = process.env.SCREENSHOT_DIR || '/tmp';
+const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: process.env.BROWSER_EXECUTABLE || undefined });
+  const browser = await chromium.launch(browserOptions);
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -192,7 +190,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     await page.clock.fastForward(30000);
     assert.equal(await page.locator('.page[hidden], .page[inert]').count(), 0);
     await page.locator('[data-mode="journey"]').click();
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await setSystemMotion(page, 'reduce');
     for (const id of ['about', 'contact', 'projects', 'home']) {
       await nav(id);
       assert.equal(await page.locator(`#${id}`).evaluate(n => parseFloat(getComputedStyle(n).translate)), 0);
@@ -208,11 +206,11 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
     }
     await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(() => !!document.activeElement.closest('.page[inert]')), false);
-    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await setSystemMotion(page, 'no-preference');
 
     // Effective CSS viewport at 200% desktop zoom; long content must scroll.
     await page.setViewportSize({ width: 720, height: 450 });
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await setSystemMotion(page, 'reduce');
     await nav('about');
     await page.locator('#about').evaluate(n => { n.scrollTop = n.scrollHeight; });
     const education = await page.locator('.education-course li').last().boundingBox();

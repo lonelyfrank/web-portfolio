@@ -1,10 +1,6 @@
 /* PNGs already contain their HUD: no second monitor frame. */
 .project-carousel { display: none; }
-#projects .project { border: 0; border-image: none; padding: 20px; background: none; }
-#projects .project-media, #detail-content .project-media {
-  aspect-ratio: 3 / 2; margin: 0; border: 0; background: none;
-}
-.project-media img { object-fit: contain; image-rendering: pixelated; }
+.project { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 20px; }
 .project-links { display: flex; gap: 20px; min-height: 24px; flex-wrap: wrap; }
 .project-links .text-link { font-size: 14px; margin-top: 0; }
 .journey #projects { container-type: size; padding-block: 28px 12px; }
@@ -110,11 +106,3 @@
   /* The stacked mobile reading area can scroll above the mechanical stage. */
   .journey .scene-link.beam { display: none; }
 }
-.reduced .holo-projection { transition: none; }
-.reduced .holo-float { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  .holo-projection { transition: none; }
-  .holo-float { animation: none; }
-}
-
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

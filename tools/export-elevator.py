@@ -11,13 +11,10 @@ Misure in unità di scena (su): il personaggio in piedi è alto 96 su.
 Le immagini sono esportate a 2 px per su, come gli altri elementi di scena.
 Run: python3 tools/export-elevator.py
 """
-from pathlib import Path
+from asset_paths import source_path, output_path
 
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / 'assets'
-OUT = ROOT / 'dist' / 'assets' / 'ui'
 ATLAS = 'Atlante modulare per elevatore meccanico.png'
 DENSITY = 2  # px per su
 
@@ -38,7 +35,7 @@ ROD_LENGTH = 124  # copre tutta la corsa (106 su) più l'innesto nel cilindro
 
 
 def part(name):
-    image = Image.open(SRC / ATLAS).convert('RGBA')
+    image = Image.open(source_path(ATLAS)).convert('RGBA')
     image = image.crop(PARTS[name])
     bounds = image.getchannel('A').point(lambda a: 255 if a > 40 else 0).getbbox()
     return image.crop(bounds)
@@ -50,7 +47,7 @@ def scaled(image, width_su):
 
 
 def save(image, name):
-    image.save(OUT / name, quality=90, method=6)
+    image.save(output_path(name), quality=90, method=6)
     print(f'{name}: {image.width} × {image.height} px = {image.width / DENSITY:g} × {image.height / DENSITY:g} su')
 
 
@@ -71,7 +68,6 @@ def repeat_rows(image, top, bottom, height):
 
 
 def export_elevator():
-    OUT.mkdir(parents=True, exist_ok=True)
     plate, _ = scaled(part('plate'), PLATE_W)
     save(plate, 'lift-plate.webp')
     edge, _ = scaled(part('edge'), SHAFT_W)
@@ -94,9 +90,9 @@ def export_elevator():
 
     # Stato acceso del proiettore, registrato sul ritaglio spento esistente
     # (scostamento misurato: -7 px orizzontali, 0 verticali).
-    projector = Image.open(SRC / 'Proiettore olografico cyberpunk in pixel art.png').convert('RGBA')
+    projector = Image.open(source_path('Proiettore olografico cyberpunk in pixel art.png')).convert('RGBA')
     projector.crop((793, 648, 1514, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
-        OUT / 'projector-on.webp', lossless=True, method=6)
+        output_path('projector-on.webp'), lossless=True, method=6)
     print('projector-on.webp: 160 × 74 px')
 
 

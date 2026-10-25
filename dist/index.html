@@ -15,13 +15,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
-  <link rel="preload" href="assets/character-motion.webp" as="image">
-  <link rel="preload" href="assets/character-run.webp" as="image">
-  <link rel="preload" href="assets/character-pet.webp" as="image">
-  <link rel="preload" href="assets/ui/lift-shaft.webp" as="image">
-  <link rel="preload" href="assets/ui/lift-plate.webp" as="image">
-  <link rel="preload" href="assets/ui/lift-rod.webp" as="image">
-  <link rel="preload" href="assets/ui/projector-on.webp" as="image">
+  <link rel="preload" href="assets/sprite/character-motion.webp" as="image">
+  <link rel="preload" href="assets/sprite/character-run.webp" as="image">
+  <link rel="preload" href="assets/sprite/character-pet.webp" as="image">
+  <link rel="preload" href="assets/elevator/lift-shaft.webp" as="image">
+  <link rel="preload" href="assets/elevator/lift-plate.webp" as="image">
+  <link rel="preload" href="assets/elevator/lift-rod.webp" as="image">
+  <link rel="preload" href="assets/stations/projector-on.webp" as="image">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="projects.css">
   <script>
@@ -30,8 +30,9 @@
       var root = document.documentElement, saved = null;
       root.classList.add('js');
       try { saved = localStorage.getItem('fs-mode'); } catch (e) {}
-      var journey = saved ? saved === 'journey' : matchMedia('(min-width: 900px) and (min-height: 640px)').matches;
+      var journey = saved === 'journey' || (saved !== 'read' && matchMedia('(min-width: 900px) and (min-height: 640px)').matches);
       if (journey) root.classList.add('journey');
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('motion-reduced');
     })();
   </script>
 </head>
@@ -44,9 +45,9 @@
     <div class="skyline skyline-far"></div>
     <div class="skyline skyline-mid"></div>
     <div class="skyline skyline-near"></div>
-    <img class="ship ship-cargo" src="assets/ui/ship-cargo.webp" alt="" width="640" height="136">
-    <img class="ship ship-shuttle" src="assets/ui/ship-shuttle.webp" alt="" width="440" height="121">
-    <img class="ship ship-scout" src="assets/ui/ship-scout.webp" alt="" width="300" height="89">
+    <img class="ship ship-cargo" src="assets/ships/ship-cargo.webp" alt="" width="640" height="136">
+    <img class="ship ship-shuttle" src="assets/ships/ship-shuttle.webp" alt="" width="440" height="121">
+    <img class="ship ship-scout" src="assets/ships/ship-scout.webp" alt="" width="300" height="89">
   </div>
 
   <header class="site-header">
@@ -111,109 +112,109 @@
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/html.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">HTML</span>
+              <span class="skill-name sr-only">HTML</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/css.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">CSS</span>
+              <span class="skill-name sr-only">CSS</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/javascript.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">JavaScript</span>
+              <span class="skill-name sr-only">JavaScript</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/windows.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Windows</span>
+              <span class="skill-name sr-only">Windows</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/vue.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Vue</span>
+              <span class="skill-name sr-only">Vue</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/php.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">PHP</span>
+              <span class="skill-name sr-only">PHP</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/laravel.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Laravel</span>
+              <span class="skill-name sr-only">Laravel</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/aem.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">AEM</span>
+              <span class="skill-name sr-only">AEM</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/wordpress.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">WordPress</span>
+              <span class="skill-name sr-only">WordPress</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/jira.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Jira</span>
+              <span class="skill-name sr-only">Jira</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/linux.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Linux</span>
+              <span class="skill-name sr-only">Linux</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/github.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">GitHub</span>
+              <span class="skill-name sr-only">GitHub</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/windows-blue.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Windows</span>
+              <span class="skill-name sr-only">Windows</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/react.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">React</span>
+              <span class="skill-name sr-only">React</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/python.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Python</span>
+              <span class="skill-name sr-only">Python</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/typescript.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">TypeScript</span>
+              <span class="skill-name sr-only">TypeScript</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/claude.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Claude</span>
+              <span class="skill-name sr-only">Claude</span>
             </li>
             <li>
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/shopify.webp" alt="" width="256" height="256">
               </span>
-              <span class="skill-name">Shopify</span>
+              <span class="skill-name sr-only">Shopify</span>
             </li>
           </ul>
         </section>
@@ -331,10 +332,10 @@
       </div>
 
       <div class="district-services" aria-hidden="true">
-        <img class="service-junction" src="assets/ui/junction.webp" alt="" width="240" height="173">
-        <img class="service-cable" src="assets/ui/cable-straight.webp" alt="" width="320" height="75">
-        <img class="service-vent" src="assets/ui/vent.webp" alt="" width="240" height="130">
-        <img class="service-elbow" src="assets/ui/cable-elbow.webp" alt="" width="180" height="204">
+        <img class="service-junction" src="assets/props/junction.webp" alt="" width="240" height="173">
+        <img class="service-cable" src="assets/props/cable-straight.webp" alt="" width="320" height="75">
+        <img class="service-vent" src="assets/props/vent.webp" alt="" width="240" height="130">
+        <img class="service-elbow" src="assets/props/cable-elbow.webp" alt="" width="180" height="204">
       </div>
     </section>
 
@@ -350,7 +351,7 @@
             <a class="contact-channel" href="https://github.com/lonelyfrank" target="_blank" rel="noopener noreferrer">
               <span class="contact-visual"><img src="assets/contact/satellite-github.webp" alt="" width="512" height="320"></span>
               <img class="contact-plate" src="assets/contact/cta-github.webp" alt="" width="640" height="144">
-              <span class="contact-label">GitHub</span>
+              <span class="contact-label sr-only">GitHub</span>
             </a>
           </li>
           <!-- Destinazioni non ancora fornite: contenuti statici, senza link o pulsanti fittizi.
@@ -359,7 +360,7 @@
             <div class="contact-channel" data-unavailable>
               <span class="contact-visual"><img src="assets/contact/satellite-email.webp" alt="" width="512" height="320"></span>
               <img class="contact-plate" src="assets/contact/cta-email.webp" alt="" width="640" height="144">
-              <span class="contact-label">Email</span>
+              <span class="contact-label sr-only">Email</span>
               <span class="contact-status">Email non disponibile</span>
             </div>
           </li>
@@ -367,7 +368,7 @@
             <div class="contact-channel" data-unavailable>
               <span class="contact-visual"><img src="assets/contact/satellite-linkedin.webp" alt="" width="512" height="320"></span>
               <img class="contact-plate" src="assets/contact/cta-linkedin.webp" alt="" width="640" height="144">
-              <span class="contact-label">LinkedIn</span>
+              <span class="contact-label sr-only">LinkedIn</span>
               <span class="contact-status">Profilo non disponibile</span>
             </div>
           </li>
@@ -375,7 +376,7 @@
             <div class="contact-channel" data-unavailable>
               <span class="contact-visual"><img src="assets/contact/satellite-cv.webp" alt="" width="512" height="320"></span>
               <img class="contact-plate" src="assets/contact/cta-cv.webp" alt="" width="640" height="144">
-              <span class="contact-label">Scarica CV</span>
+              <span class="contact-label sr-only">Scarica CV</span>
               <span class="contact-status">PDF non disponibile</span>
             </div>
           </li>
@@ -387,12 +388,12 @@
   <footer class="site-footer">
     <div class="bridge" aria-hidden="true">
       <div class="street-props">
-        <img class="street-lamp lamp-left" src="assets/ui/lamp-single.webp" alt="">
-        <img class="street-lamp lamp-right" src="assets/ui/lamp-double.webp" alt="">
-        <img class="street-bollard stop-home" src="assets/ui/bollard-home.webp" alt="">
-        <img class="street-bollard stop-about" src="assets/ui/bollard-about.webp" alt="">
-        <img class="street-bollard stop-projects" src="assets/ui/bollard-projects.webp" alt="">
-        <img class="street-bollard stop-contact" src="assets/ui/bollard-contact.webp" alt="">
+        <img class="street-lamp lamp-left" src="assets/props/lamp-single.webp" alt="">
+        <img class="street-lamp lamp-right" src="assets/props/lamp-double.webp" alt="">
+        <img class="street-bollard stop-home" src="assets/props/bollard-home.webp" alt="">
+        <img class="street-bollard stop-about" src="assets/props/bollard-about.webp" alt="">
+        <img class="street-bollard stop-projects" src="assets/props/bollard-projects.webp" alt="">
+        <img class="street-bollard stop-contact" src="assets/props/bollard-contact.webp" alt="">
       </div>
       <div class="railing"></div>
       <div class="avatar">
@@ -416,21 +417,21 @@
     <div class="avatar" id="avatar"><span class="avatar-sprite"></span></div>
     <div class="set-storage">
       <div class="station station-home" data-station="home">
-        <img class="station-lamp lamp-out-left" src="assets/ui/lamp-single.webp" alt="">
-        <img class="station-lamp lamp-out-right" src="assets/ui/lamp-single.webp" alt="">
+        <img class="station-lamp lamp-out-left" src="assets/props/lamp-single.webp" alt="">
+        <img class="station-lamp lamp-out-right" src="assets/props/lamp-single.webp" alt="">
       </div>
       <div class="station station-about" data-station="about">
         <div class="station-deck"></div>
-        <img class="station-lamp" src="assets/ui/lamp-single.webp" alt="">
-        <img class="station-equipment" src="assets/ui/workbench.webp" alt="">
+        <img class="station-lamp" src="assets/props/lamp-single.webp" alt="">
+        <img class="station-equipment" src="assets/stations/workbench.webp" alt="">
         <div class="station-actors"></div>
       </div>
       <div class="station station-projects" data-station="projects">
-        <div class="projector" data-emitter="feature"><img src="assets/ui/projector.webp" alt=""><img class="projector-on" src="assets/ui/projector-on.webp" alt=""></div>
+        <div class="projector" data-emitter="feature"><img src="assets/stations/projector.webp" alt=""><img class="projector-on" src="assets/stations/projector-on.webp" alt=""></div>
       </div>
       <div class="station station-contact" data-station="contact">
         <div class="station-deck"></div>
-        <img class="station-lamp" src="assets/ui/lamp-double.webp" alt="">
+        <img class="station-lamp" src="assets/props/lamp-double.webp" alt="">
         <div class="station-equipment"></div>
         <div class="station-actors"></div>
       </div>

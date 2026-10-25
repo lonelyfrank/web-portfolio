@@ -69,21 +69,6 @@ p { line-height: 1.65; }
 }
 .skip:focus { top: 10px; }
 
-/* Segnaposto per i contenuti ancora da fornire */
-.todo {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 1px;
-  line-height: 1.4;
-  text-transform: uppercase;
-  color: #ffb3d4;
-  border: 1px dashed #ff2e9199;
-  background: #ff2e9112;
-  padding: 2px 8px;
-}
-.todo::before { content: 'Da completare: '; opacity: .7; }
-
 /* ---------- Sfondo ---------- */
 
 .world {
@@ -108,7 +93,7 @@ p { line-height: 1.65; }
   position: absolute;
   inset: 0;
   width: 160%;
-  background: url('assets/universe.webp') center bottom / cover no-repeat;
+  background: url('assets/backgrounds/universe.webp') center bottom / cover no-repeat;
   opacity: .8;
   transform: translateX(calc(var(--step) * -12%));
 }
@@ -127,19 +112,19 @@ p { line-height: 1.65; }
 }
 .skyline-far {
   height: clamp(100px, 22vh, 220px);
-  background-image: url('assets/ui/skyline-far.webp');
+  background-image: url('assets/backgrounds/skyline-far.webp');
   opacity: .35;
   transform: translateX(calc(var(--step) * -2%));
 }
 .skyline-mid {
   height: clamp(60px, 12vh, 120px);
-  background-image: url('assets/ui/skyline-mid.webp');
+  background-image: url('assets/backgrounds/skyline-mid.webp');
   opacity: .6;
   transform: translateX(calc(var(--step) * -5%));
 }
 .skyline-near {
   height: clamp(70px, 15vh, 150px);
-  background-image: url('assets/ui/skyline-near.webp');
+  background-image: url('assets/backgrounds/skyline-near.webp');
   background-position-x: 35%;
   opacity: .7;
   transform: translateX(calc(var(--step) * -8%));
@@ -298,10 +283,7 @@ h3 { font-size: 20px; margin: 12px 0 22px; }
   Sono border-image a 9 sezioni: gli angoli restano intatti, i lati si allungano.
   Lo sfondo resta dentro la cornice (padding-box) per non uscire dagli angoli smussati.
 */
-.panel { position: relative; }
-.panel > .micro { display: block; }
-.panel > .micro + h3 { margin-top: 10px; }
-.panel, dialog {
+dialog {
   padding: 24px;
   border: 12px solid transparent;
   border-width: 12px 14px;
@@ -356,7 +338,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   width: 100%;
   aspect-ratio: 720 / 78;
   margin-bottom: var(--pillar);
-  background: url('assets/ui/dock-deck.webp') center / 100% 100% no-repeat;
+  background: url('assets/bridge/dock-deck.webp') center / 100% 100% no-repeat;
 }
 .dock::after {
   content: '';
@@ -365,7 +347,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   left: 22%;
   width: 56%;
   height: var(--pillar);
-  background: url('assets/ui/bracket.webp') center top / 100% auto no-repeat;
+  background: url('assets/bridge/bracket.webp') center top / 100% auto no-repeat;
   -webkit-mask-image: linear-gradient(#000 40%, transparent);
   mask-image: linear-gradient(#000 40%, transparent);
 }
@@ -379,7 +361,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   left: 5%;
   width: 90%;
   height: var(--pillar);
-  background: url('assets/ui/cable-loop.webp') center top / contain no-repeat;
+  background: url('assets/props/cable-loop.webp') center top / contain no-repeat;
   opacity: .8;
 }
 
@@ -445,7 +427,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .skill-orb { display: block; width: min(var(--bubble-size), 100%); aspect-ratio: 1; flex: none; }
 .skill-orb img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 /* Names remain accessible without visible subtitles. */
-.skill-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* Ten compact bubbles; births grow while neighbouring positions redistribute. */
 .skill-orbits.is-floating { position: relative; display: block; height: 340px; padding: 0; overflow: clip; }
 .skill-orbits.is-floating li { position: absolute; top: 0; left: 0; width: var(--bubble-size); opacity: 0; pointer-events: none; }
@@ -455,6 +437,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .skill-orbits.is-floating li:nth-child(2n) .skill-orb { animation-duration: 8.2s; animation-delay: -2.3s; }
 .skill-orbits.is-floating li:nth-child(3n) .skill-orb { animation-duration: 7.6s; animation-delay: -4.1s; }
 .skill-orbits.is-paused .skill-orb { animation-play-state: paused; }
+.skill-orbits.is-floating li:not([data-alive]) .skill-orb { animation-play-state: paused; }
 @keyframes skill-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
 .education-course { border-left: 1px solid var(--line-strong); padding-left: 20px; }
 .education-provider { margin: 0 0 8px; color: var(--cyan); font-family: var(--font-display); font-size: 14px; }
@@ -480,49 +463,21 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .district-services .service-cable { width: 32%; height: auto; }
 .district-services .service-elbow { height: 80%; }
 
-.project {
-  --accent: var(--cyan);
-  --pad-y: 10px;
-  --pad-x: 14px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 var(--pad-x) calc(var(--pad-y) + var(--pad-y-fix, 0px));
-  border: solid transparent;
-  border-width: 26px 27px 29px;
-  border-image: url('assets/ui/frame-monitor-cyan.webp') 53 55 58 54 / 26px 27px 29px stretch;
-  background: linear-gradient(145deg, #142b46, #061124) padding-box;
-  transition: transform .25s, filter .25s;
-}
-.project:nth-child(even) {
-  --accent: var(--pink);
-  --pad-y-fix: -3px;
-  border-width: 26px 26px 32px;
-  border-image: url('assets/ui/frame-monitor-pink.webp') 53 52 66 51 / 26px 26px 32px stretch;
-}
-
+/* Project details are shared with the dialog; layout lives in projects.css. */
 .project-media {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 3 / 2;
   display: grid;
   place-items: center;
   overflow: hidden;
-  margin: 0 calc(-1 * var(--pad-x)) 4px;
-  border-bottom: 1px solid var(--line);
-  background:
-    repeating-linear-gradient(0deg, #203b581f 0 1px, transparent 1px 17px),
-    radial-gradient(ellipse, #163055, #050c1b);
-  color: var(--accent);
-  font-size: 56px;
-  text-shadow: 0 0 25px currentColor;
+  margin: 0;
 }
-.project-media img { width: 100%; height: 100%; object-fit: contain; }
+.project-media img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 
 .project h3 { margin: 0; font-size: 20px; line-height: 1.3; }
 .summary { margin: 0; font-size: 15px; color: var(--body); }
 
 .stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.stack li:not(.todo) {
+.stack li {
   font-family: var(--font-display);
   font-size: 11px;
   letter-spacing: 1px;
@@ -544,7 +499,6 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .case summary::-webkit-details-marker { display: none; }
 .case summary > span:last-child { transition: transform .2s; }
 .case[open] summary > span:last-child { transform: rotate(90deg); }
-.when-journey { display: none; }
 
 .case-body dl { margin: 8px 0 20px; }
 .case-body dt,
@@ -560,7 +514,6 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 #detail-content dd { margin: 4px 0 0; font-size: 15px; color: var(--body); }
 .case-links { display: flex; flex-wrap: wrap; gap: 12px; }
 
-.gallery-controls { display: none; }
 
 /* Contact: contenuti aperti sopra la scena, satelliti in ordine di lettura. */
 .contact-layout {
@@ -615,7 +568,6 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
 .contact-visual.is-floating { animation-play-state: running; }
 .contact-channel:is(:hover, :focus-within) .contact-visual { animation-play-state: paused; }
 .contact-plate { display: block; width: min(100%, 260px); height: auto; margin-top: 12px; image-rendering: pixelated; }
-.contact-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .contact-status { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .contact-channel[href]:is(:hover, :focus-visible) .contact-plate { filter: brightness(1.2); }
 .contact-channel[href]:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; }
@@ -647,7 +599,7 @@ h1 { font-size: clamp(56px, 7.4vw, 112px); line-height: .95; letter-spacing: -4p
   right: 0;
   bottom: 0;
   height: 124px;
-  background: url('assets/ui/bracket.webp') 0 0 / 220px auto space no-repeat;
+  background: url('assets/bridge/bracket.webp') 0 0 / 220px auto space no-repeat;
 }
 .bridge .avatar { left: auto; right: 12%; bottom: 172px; transition: none; }
 .bridge .street-props { bottom: 172px; }
@@ -664,7 +616,6 @@ dialog {
 dialog::backdrop { background: #020612c9; backdrop-filter: blur(8px); }
 dialog h2 { font-size: 32px; margin: 10px 0 20px; }
 dialog p { color: var(--body); }
-#detail-content .project-media { margin-bottom: 8px; }
 #detail-content .stack { margin: 12px 0 4px; }
 .close { position: absolute; right: 12px; top: 8px; border: 0; font-size: 30px; }
 
@@ -687,21 +638,21 @@ dialog p { color: var(--body); }
   display: block;
   width: 100%;
   height: 100%;
-  background: url('assets/character-idle.webp') 0 0 / 800% 100% no-repeat;
+  background: url('assets/sprite/character-idle.webp') 0 0 / 800% 100% no-repeat;
   image-rendering: pixelated;
   /* La gatta gira intorno al ragazzo mentre lui riposa. */
   animation: idle-frames 3.2s steps(8) infinite;
 }
 .avatar.back .avatar-sprite { transform: scaleX(-1); }
 .avatar.petting .avatar-sprite {
-  background-image: url('assets/character-pet.webp');
+  background-image: url('assets/sprite/character-pet.webp');
   animation: pet-frames 3.2s steps(8) infinite;
 }
 .avatar:is(.walking, .running) .avatar-sprite {
   /* Celle di movimento 160 × 112: stesso centro e scala delle pose 128 × 112. */
   width: 125%;
   margin-left: -12.5%;
-  background-image: url('assets/character-motion.webp');
+  background-image: url('assets/sprite/character-motion.webp');
   background-size: 800% 100%;
   animation: sprite-frames var(--cycle-ms) step-end infinite;
 }
@@ -710,7 +661,7 @@ dialog p { color: var(--body); }
 .avatar.running { --cycle-ms: 429ms; }
 .avatar.walking .avatar-sprite { background-position-y: 0%; }
 .avatar.running .avatar-sprite {
-  background-image: url('assets/character-run.webp');
+  background-image: url('assets/sprite/character-run.webp');
   background-size: 1600% 100%;
   background-position-y: 0%;
   animation-name: running-frames;
@@ -727,39 +678,18 @@ dialog p { color: var(--body); }
 .stop-about { left: 33%; }
 .stop-projects { left: 54%; }
 .stop-contact { left: 85%; }
-.street-exhaust {
-  position: absolute;
-  bottom: 0;
-  left: 68%;
-  width: 40px;
-  height: 48px;
-  background: url('assets/ui/exhaust.webp') center bottom / contain no-repeat;
-}
-.steam {
-  position: absolute;
-  left: -12px;
-  bottom: 32px;
-  width: 64px;
-  height: 64px;
-  background: url('assets/ui/steam.webp') 0 0 / 600% 100% no-repeat;
-  opacity: .45;
-  animation: steam-frames 1.8s steps(6) infinite;
-}
-
 /* Passerella e ringhiera: moduli ripetuti in orizzontale */
 .walkway {
   height: var(--road-h);
-  background: url('assets/ui/walkway.webp') 0 100% / auto 100% repeat-x;
+  background: url('assets/bridge/walkway.webp') 0 100% / auto 100% repeat-x;
 }
 .railing {
   position: absolute;
   left: 0;
   right: 0;
   height: calc(var(--road-h) * .83);
-  background: url('assets/ui/railing.webp') 0 100% / auto 100% repeat-x;
+  background: url('assets/bridge/railing.webp') 0 100% / auto 100% repeat-x;
 }
-.journey-strip .walkway { position: absolute; left: 0; right: 0; bottom: 0; }
-.journey-strip .railing { bottom: calc(var(--road-h) - 4px); }
 
 .journey-controls {
   position: fixed;
@@ -853,7 +783,6 @@ dialog p { color: var(--body); }
 .journey .case summary { width: fit-content; gap: 14px; }
 .journey .case-body { display: none; }
 .journey .when-read { display: none; }
-.journey .when-journey { display: inline; }
 
 /* Contact resta consultabile anche mentre la parabola raggiunge la postazione. */
 .journey #contact { padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }
@@ -899,12 +828,13 @@ dialog p { color: var(--body); }
 @keyframes pet-frames {
   to { background-position-x: calc(-512 * var(--u) * 1px); }
 }
-@keyframes steam-frames { to { background-position-x: -384px; } }
 
-.reduced *, .reduced *::before, .reduced *::after { animation: none !important; transition: none !important; }
+.motion-reduced *, .motion-reduced *::before, .motion-reduced *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  /* With JavaScript, the explicit motion control owns the same state as the
+     director. Without it, respect the system preference directly. */
+  html:not(.js) { scroll-behavior: auto; }
+  html:not(.js) *, html:not(.js) *::before, html:not(.js) *::after { animation: none !important; transition: none !important; }
 }
 
 /* Compact spacing before reducing the readable text area. */
@@ -931,7 +861,6 @@ dialog p { color: var(--body); }
 @media (max-width: 1100px) {
   .site-nav { gap: 20px; }
   .github { display: none; }
-  .panel { padding: 20px; }
 }
 
 /* Navbar compatta per il nickname completo sui tablet. */
@@ -956,8 +885,6 @@ dialog p { color: var(--body); }
   .journey .page { padding-top: 14px; }
   .journey .role { margin: 14px 0 12px; }
   .journey .actions { margin-top: 20px; }
-  .journey .panel h3 { margin: 4px 0 10px; }
-  .journey .panel > .micro { display: none; }
 }
 
 /* Desktop alti e larghi: scena più grande, con la stessa composizione. */
@@ -1028,12 +955,9 @@ dialog p { color: var(--body); }
   .district-services { height: 48px; gap: 6px; }
   .district-services .service-elbow { display: none; }
   .street-bollard { height: 27px; }
-  .street-exhaust { left: 65%; width: 24px; height: 30px; }
-  .steam { width: 40px; height: 40px; left: -8px; bottom: 20px; animation-name: steam-small-frames; }
   .lamp-left { left: -20px; }
   .lamp-right { right: -20px; }
 }
-@keyframes steam-small-frames { to { background-position-x: -240px; } }
 
 /* Contact: prima il testo, poi due colonne; una sui telefoni più stretti. */
 @media (max-width: 1100px) {
@@ -1095,12 +1019,12 @@ dialog p { color: var(--body); }
   top: calc((var(--floor-y) - 4) * var(--scene-unit));
   width: calc(180 * var(--scene-unit));
   aspect-ratio: 720 / 78;
-  background: url('assets/ui/dock-deck.webp') center top / 100% 100% no-repeat;
+  background: url('assets/bridge/dock-deck.webp') center top / 100% 100% no-repeat;
   image-rendering: pixelated;
 }
 .station-contact .station-deck {
   aspect-ratio: 720 / 172;
-  background-image: url('assets/ui/dock-supported.webp');
+  background-image: url('assets/bridge/dock-supported.webp');
 }
 .station-equipment, .station-actors, .station-lamp, .projector { position: absolute; image-rendering: pixelated; }
 .station-about .station-equipment {
@@ -1115,7 +1039,7 @@ dialog p { color: var(--body); }
   left: calc((var(--equipment-x) - 51) * var(--scene-unit));
   bottom: calc((136 - var(--equipment-y)) * var(--scene-unit));
   /* A single scan is scheduled by JS, then the angled pose is held. */
-  background: url('assets/ui/radio.webp') calc(var(--radio-frame, 1) * -1 * var(--radio-size)) 0 / 800% 100% no-repeat;
+  background: url('assets/stations/radio.webp') calc(var(--radio-frame, 1) * -1 * var(--radio-size)) 0 / 800% 100% no-repeat;
 }
 .station-actors {
   display: none;
@@ -1124,8 +1048,8 @@ dialog p { color: var(--body); }
   background-position: calc(var(--frame) * -144 * var(--scene-unit)) 0;
   background-repeat: no-repeat;
 }
-.station-about .station-actors { background-image: url('assets/interaction-about.webp'); }
-.station-contact .station-actors { background-image: url('assets/interaction-contact.webp'); }
+.station-about .station-actors { background-image: url('assets/sprite/interaction-about.webp'); }
+.station-contact .station-actors { background-image: url('assets/sprite/interaction-contact.webp'); }
 /* Lamps light their own area and travel with it on the lift (100 su, taller than Frank). */
 .station-lamp { z-index: 0; height: calc(100 * var(--scene-unit)); bottom: calc(6 * var(--scene-unit)); }
 .station-about .station-lamp { left: calc(-35 * var(--scene-unit)); }
@@ -1187,7 +1111,7 @@ dialog p { color: var(--body); }
   width: calc(var(--bay) * var(--bay-radius, 9) * 2 * var(--scene-unit));
   top: var(--stage-above);
   height: calc(48 * var(--scene-unit));
-  background: url('assets/ui/walkway.webp') repeat-x;
+  background: url('assets/bridge/walkway.webp') repeat-x;
   background-size: auto calc(52 * var(--scene-unit));
   background-position: calc(var(--texture-x, 0) * -1 * var(--scene-unit)) calc(-4 * var(--scene-unit));
 }
@@ -1207,7 +1131,7 @@ dialog p { color: var(--body); }
   width: calc((var(--bay) - 180) * var(--scene-unit));
   top: calc(-36 * var(--scene-unit));
   height: calc(36 * var(--scene-unit));
-  background: url('assets/ui/railing.webp') center bottom / auto 100% repeat-x;
+  background: url('assets/bridge/railing.webp') center bottom / auto 100% repeat-x;
 }
 .bay-rail::before, .bay-rail::after {
   content: '';
@@ -1215,17 +1139,17 @@ dialog p { color: var(--body); }
   bottom: 0;
   width: calc(18 * var(--scene-unit));
   height: calc(35 * var(--scene-unit));
-  background: url('assets/ui/rail-end-left.webp') left bottom / auto 100% no-repeat;
+  background: url('assets/bridge/rail-end-left.webp') left bottom / auto 100% no-repeat;
 }
 .bay-rail::before { left: 0; }
-.bay-rail::after { right: 0; background-image: url('assets/ui/rail-end-right.webp'); background-position: right bottom; }
+.bay-rail::after { right: 0; background-image: url('assets/bridge/rail-end-right.webp'); background-position: right bottom; }
 .bay-bracket {
   z-index: 2;
   left: calc((var(--bay) / 2 - 55) * var(--scene-unit));
   top: calc(48 * var(--scene-unit));
   width: calc(110 * var(--scene-unit));
   height: calc(62 * var(--scene-unit));
-  background: url('assets/ui/bracket.webp') center top / 100% auto no-repeat;
+  background: url('assets/bridge/bracket.webp') center top / 100% auto no-repeat;
   -webkit-mask-image: linear-gradient(#000 45%, transparent);
   mask-image: linear-gradient(#000 45%, transparent);
 }
@@ -1235,7 +1159,7 @@ dialog p { color: var(--body); }
   top: calc(60 * var(--scene-unit));
   width: calc(214 * var(--scene-unit));
   height: calc(66 * var(--scene-unit));
-  background: url('assets/ui/lift-shaft.webp') 0 0 / 100% 100% no-repeat;
+  background: url('assets/elevator/lift-shaft.webp') 0 0 / 100% 100% no-repeat;
 }
 .bay-shaft::after {
   content: '';
@@ -1249,7 +1173,7 @@ dialog p { color: var(--body); }
 .bay-pad {
   left: calc(-90 * var(--scene-unit));
   width: calc(180 * var(--scene-unit));
-  background: url('assets/ui/dock-deck.webp') 0 0 / calc(180 * var(--scene-unit)) calc(19 * var(--scene-unit)) no-repeat;
+  background: url('assets/bridge/dock-deck.webp') 0 0 / calc(180 * var(--scene-unit)) calc(19 * var(--scene-unit)) no-repeat;
 }
 .bay-pad-top { z-index: 3; top: calc(-4 * var(--scene-unit)); height: calc(4 * var(--scene-unit)); }
 .bay-pad-front { z-index: 7; top: 0; height: calc(15 * var(--scene-unit)); background-position: 0 calc(-4 * var(--scene-unit)); }
@@ -1270,13 +1194,13 @@ dialog p { color: var(--body); }
   top: 0;
   width: 100%;
   height: calc(11 * var(--scene-unit));
-  background: url('assets/ui/lift-plate.webp') 0 0 / 100% 100% no-repeat;
+  background: url('assets/elevator/lift-plate.webp') 0 0 / 100% 100% no-repeat;
 }
 .bay-rod {
   top: calc(7 * var(--scene-unit));
   width: calc(17 * var(--scene-unit));
   height: calc(124 * var(--scene-unit));
-  background: url('assets/ui/lift-rod.webp') 0 0 / 100% 100% no-repeat;
+  background: url('assets/elevator/lift-rod.webp') 0 0 / 100% 100% no-repeat;
 }
 .bay-rod-left { left: calc(12.5 * var(--scene-unit)); }
 .bay-rod-right { left: calc(151.5 * var(--scene-unit)); }
@@ -1289,7 +1213,7 @@ dialog p { color: var(--body); }
   top: calc(113 * var(--scene-unit));
   width: calc(26 * var(--scene-unit));
   height: calc(47.5 * var(--scene-unit));
-  background: url('assets/ui/lift-cylinder.webp') 0 0 / 100% 100% no-repeat;
+  background: url('assets/elevator/lift-cylinder.webp') 0 0 / 100% 100% no-repeat;
 }
 .bay-cylinder-left { left: calc(-80 * var(--scene-unit)); }
 .bay-cylinder-right { left: calc(59 * var(--scene-unit)); }
@@ -1299,7 +1223,7 @@ dialog p { color: var(--body); }
   top: calc(48 * var(--scene-unit));
   width: calc(214 * var(--scene-unit));
   height: calc(15.5 * var(--scene-unit));
-  background: url('assets/ui/lift-edge.webp') 0 0 / 100% 100% no-repeat;
+  background: url('assets/elevator/lift-edge.webp') 0 0 / 100% 100% no-repeat;
 }
 
 .journey-strip .avatar {
@@ -1351,4 +1275,5 @@ dialog p { color: var(--body); }
 .page .station-contact { margin-bottom: 72px; }
 .page .station-projects { display: none; }
 .page .station-lamp { display: none; }
-.reduced { scroll-behavior: auto; }
+html.motion-reduced { scroll-behavior: auto; }
+.document-hidden *, .document-hidden *::before, .document-hidden *::after { animation-play-state: paused !important; }

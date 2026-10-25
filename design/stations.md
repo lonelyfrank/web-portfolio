@@ -1,5 +1,8 @@
 # Postazioni: asset e keypoint
 
+I percorsi completi sono raccolti in [assets.json](assets.json). Gli originali
+sono divisi per funzione in `assets/`; i derivati usati dal sito in `dist/assets/`.
+
 ## Asset attuali
 
 | Postazione | Originale | Rendering |
@@ -98,7 +101,7 @@ piedi di Frank.
 About mantiene soltanto la scena della scrivania: console, schede e cavo HTML
 sono stati rimossi. Biografia, competenze e formazione restano visibili nella
 parte superiore dalla selezione della sezione, senza attendere la salita o
-l'interazione. Non seguono la camera del ponte. La fascia contenuti scorre
+l'interazione. Seguono la camera del ponte come gruppo rigido, senza dipendere dall’elevatore. La fascia contenuti scorre
 verticalmente quando necessario, mentre la scena conserva scala e animazioni.
 Le regole di comparsa e collegamento sopra descritte rimangono per Projects.
 `tools/check-about.cjs` verifica layout, scorrimento, accessibilità e
@@ -107,7 +110,7 @@ movimento ridotto da 320 a 1920 px, in entrambe le modalità.
 Contact segue la stessa separazione: titolo e messaggio a sinistra, quattro
 satelliti su due colonne a destra, scena nella fascia inferiore. Il monitor
 dei canali e il relativo cavo HTML sono rimossi, senza modificare radio,
-personaggi, keypoint o elevatore. I contenuti non seguono la camera e restano
+personaggi, keypoint o elevatore. I contenuti seguono la camera come gruppo rigido e restano
 consultabili durante il trasferimento. `tools/check-contact.cjs` verifica
 anche focus, fluttuazione, assenza del vecchio pannello, composizione senza
 scroll sui desktop bassi e scorrimento accessibile su mobile.
@@ -132,7 +135,8 @@ livello dedicato. Non è disponibile un'animazione di Frank col proiettore.
 Projects non ha un'animazione di Frank: all'arrivo resta nella posa di riposo
 accanto al proiettore centrale. I salti di più aree percorrono un modulo del ponte per
 sezione saltata. Con un resize durante un
-trasferimento la scena passa subito alla composizione finale.
+trasferimento la scena riprende dalla camera corrente; documento nascosto e
+movimento ridotto presentano invece direttamente la composizione finale.
 
 ## Verifica
 

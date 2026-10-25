@@ -1,11 +1,9 @@
 // Browser regression coverage for the holographic carousel and its scene lifecycle.
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const url = process.env.PORTFOLIO_URL || 'http://127.0.0.1:8082';
-const shots = process.env.SCREENSHOT_DIR || '/tmp';
+const { chromium, url, shots, browserOptions, setSystemMotion } = require('./browser-settings.cjs');
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: process.env.BROWSER_EXECUTABLE || undefined });
+  const browser = await chromium.launch(browserOptions);
   const errors = [];
   const open = async options => {
     const page = await browser.newPage(options);
@@ -139,7 +137,7 @@ const shots = process.env.SCREENSHOT_DIR || '/tmp';
       await page.screenshot({ path: `${shots}/projects-${viewport.width}.png` });
     }
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await setSystemMotion(page, 'reduce');
     await settled('projects');
     await page.locator('#project-next').click();
     await page.waitForFunction(() => !document.querySelector('.project-carousel').hasAttribute('aria-busy'));

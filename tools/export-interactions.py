@@ -4,12 +4,9 @@ A fixed scale preserves Frank's standing height (96px). Equipment is rendered
 separately and never replaced. Source keypoints are measured in each grid cell.
 Run: python3 tools/export-interactions.py (Pillow).
 """
-from pathlib import Path
+from asset_paths import source_path, output_path
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / 'assets'
-OUT = ROOT / 'dist/assets'
 CELL = (144, 136)
 FLOOR = 132
 # Floor registration is constant across each row. Hand targets translate the
@@ -19,7 +16,7 @@ CONTACT_TARGETS = [None, (87, 111), (87, 111), (123, 103), (123, 103), (87, 105)
 
 
 def actors(source, name, scale, rows, ground, origins):
-    sheet = Image.open(SRC / 'sprite' / source).convert('RGBA')
+    sheet = Image.open(source_path(source)).convert('RGBA')
     atlas = Image.new('RGBA', (CELL[0] * 8, CELL[1]))
     for index in range(8):
         row, column = divmod(index, 4)
@@ -32,11 +29,10 @@ def actors(source, name, scale, rows, ground, origins):
         cell = Image.new('RGBA', CELL)
         cell.paste(frame, (round(origins[index]), FLOOR - round(ground[row] * scale)))
         atlas.paste(cell, (index * CELL[0], 0))
-    atlas.save(OUT / f'interaction-{name}.webp', lossless=True, method=6)
+    atlas.save(output_path(f'interaction-{name}.webp'), lossless=True, method=6)
 
 
 def export_interactions():
-    OUT.mkdir(parents=True, exist_ok=True)
     actors('Frank e il gatto calico animato.png', 'about', 96 / 438,
            (0, 443), (442, 443), [36] * 8)
     scale = 96 / 380
@@ -49,13 +45,13 @@ def export_interactions():
             assert abs(FLOOR - (floor - hand[1]) * scale - target[1]) <= 4
     actors('Frank e il gatto calico, otto pose.png', 'contact', scale,
            (0, 470), (460, 396), origins)
-    sheet = Image.open(SRC / 'Banchine industriali modulari in pixel art.png').convert('RGBA')
+    sheet = Image.open(source_path('Banchine industriali modulari in pixel art.png')).convert('RGBA')
     for name, box in [('left', (48, 810, 383, 960)), ('right', (1152, 810, 1492, 960))]:
-        sheet.crop(box).save(OUT / 'ui' / f'rail-end-{name}.webp', lossless=True, method=6)
+        sheet.crop(box).save(output_path(f'rail-end-{name}.webp'), lossless=True, method=6)
     # Existing projector asset, base only. No invented character interaction.
-    projector = Image.open(SRC / 'Proiettore olografico cyberpunk in pixel art.png').convert('RGBA')
+    projector = Image.open(source_path('Proiettore olografico cyberpunk in pixel art.png')).convert('RGBA')
     projector.crop((25, 648, 746, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
-        OUT / 'ui/projector.webp', lossless=True, method=6)
+        output_path('projector.webp'), lossless=True, method=6)
 
 
 if __name__ == '__main__':
