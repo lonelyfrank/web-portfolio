@@ -56,8 +56,9 @@ export const INTERACTION = {
   alignMs: 100, // attesa fra l'arrivo e la prima posa
 };
 export const RADIO = {
-  minDelayMs: 30000,
-  maxDelayMs: 45000,
+  minDelayMs: 7000, // pausa fra due scansioni
+  maxDelayMs: 12000,
+  tunedDelayMs: 600, // la parabola risponde quando Frank ha finito di sintonizzarla
   frameMs: 250,
   scan: [1, 2, 3, 4, 5, 6, 7, 0, 1], // una scansione, poi torna alla posa inclinata
 };

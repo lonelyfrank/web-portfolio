@@ -8,10 +8,10 @@ sono divisi per funzione in `assets/`; i derivati usati dal sito in `dist/assets
 | Postazione | Originale | Rendering |
 | --- | --- | --- |
 | Home | Riposo, carezza, camminata/teletrasporto in `assets/sprite/` | Nessuna attrezzatura sulla zona di sosta |
-| About | `Frank e il gatto calico animato.png` (1774 × 887) | Solo Frank e gatta, sopra la scrivania statica |
-| Contact | `Frank e il gatto calico, otto pose.png` (1774 × 887) | Solo Frank e gatta, sopra il modulo radio persistente |
-| Projects | `Proiettore olografico cyberpunk in pixel art.png` | Un emettitore centrale, 100 × 46,25 su; stato spento e acceso registrati fra loro (−7 px) |
-| Kit elevatore | `Atlante modulare per elevatore meccanico.png` | Piano, bordo frontale, cilindro, stelo, vano (`lift-*.webp`) |
+| About | `character_interaction_desk_about.png` (1774 × 887) | Solo Frank e gatta, sopra la scrivania statica |
+| Contact | `character_interaction_radio_contact.png` (1774 × 887) | Solo Frank e gatta, sopra il modulo radio persistente |
+| Projects | `station_projector.png` | Un emettitore centrale, 100 × 46,25 su; stato spento e acceso registrati fra loro (−7 px) |
+| Kit elevatore | `elevator_kit_atlas.png` | Piano, bordo frontale, cilindro, stelo, vano (`lift-*.webp`) |
 
 I precedenti compositi, che includevano anche l'attrezzatura, sono stati
 sostituiti dagli asset aggiornati. Gli atlanti `interaction-*.webp` ora
@@ -122,8 +122,9 @@ consultabili durante il trasferimento. `tools/check-contact.cjs` verifica
 anche focus, fluttuazione, assenza del vecchio pannello, composizione senza
 scroll sui desktop bassi e scorrimento accessibile su mobile.
 
-Il radar ha un timer indipendente: pausa casuale fra 30.000 e 45.000 ms,
-scansione singola di 2.250 ms (frame 1,2,3,4,5,6,7,0,1), poi nuova pausa.
+Il radar ha un timer indipendente: la prima scansione parte 600 ms dopo che Frank
+ha finito di sintonizzare la parabola, poi pausa casuale fra 7.000 e 12.000 ms,
+scansione singola di 2.250 ms (frame 1,2,3,4,5,6,7,0,1) e nuova pausa.
 L'immagine resta sulla posa inclinata 1 fra le scansioni. La base del modulo
 mantiene posizione e dimensioni; il foglio originale anima disco e segnale.
 
@@ -157,7 +158,7 @@ con screenshot ravvicinati.
 
 ## Atlante del teletrasporto
 
-`assets/sprite/Teletrasporto cyberpunk di ragazzo e gatto.png` contiene una griglia
+`assets/sprite/character_teleport.png` contiene una griglia
 4 × 3 con 11 pose e l’ultima cella vuota. `tools/export-scene.py` esporta
 `dist/assets/sprite/character-teleport.webp` in 12 celle da 160 × 144 px.
 Scala unica 96/340, asse corporeo sorgente x=134, pavimenti delle righe

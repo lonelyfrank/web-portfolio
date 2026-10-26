@@ -2,109 +2,247 @@
   {
     "id": "aem",
     "name": "AEM",
-    "source": "Bolla di vetro pixel art AEM-1.png",
+    "source": "skill_aem.png",
     "group": "Lavoro in agenzia"
   },
   {
     "id": "wordpress",
     "name": "WordPress",
-    "source": "Bolla WordPress in vetro pixel art-3.png",
+    "source": "skill_wordpress.png",
     "group": "Lavoro in agenzia"
   },
   {
     "id": "jira",
     "name": "Jira",
-    "source": "Bolla pixel art con logo Jira-11.png",
+    "source": "skill_jira.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "woocommerce",
+    "name": "WooCommerce",
+    "source": "skill_woocommerce.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "adobe",
+    "name": "Adobe",
+    "source": "skill_adobe.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "office",
+    "name": "Microsoft Office",
+    "source": "skill_office.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "bootstrap",
+    "name": "Bootstrap",
+    "source": "skill_bootstrap.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "sass",
+    "name": "Sass",
+    "source": "skill_sass.png",
     "group": "Lavoro in agenzia"
   },
   {
     "id": "html",
     "name": "HTML",
-    "source": "Bolla HTML5 fluttuante in pixel art-3.png",
+    "source": "skill_html.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "css",
     "name": "CSS",
-    "source": "Scudo CSS3 in bolla di vetro-6.png",
+    "source": "skill_css.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "javascript",
     "name": "JavaScript",
-    "source": "Bolla JavaScript in vetro pixel art-2.png",
+    "source": "skill_javascript.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "vue",
     "name": "Vue",
-    "source": "Bolla pixel art con logo Vue-5.png",
+    "source": "skill_vue.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "php",
     "name": "PHP",
-    "source": "Bolla PHP cyberpunk in pixel art-10.png",
+    "source": "skill_php.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "laravel",
     "name": "Laravel",
-    "source": "Bolla di vetro cyberpunk con logo Laravel-7.png",
+    "source": "skill_laravel.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "github",
     "name": "GitHub",
-    "source": "Bolla GitHub con Octocat pixel art-2.png",
+    "source": "skill_github.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "react",
     "name": "React",
-    "source": "Bolla React cibernetica in pixel art-1.png",
+    "source": "skill_react.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "python",
     "name": "Python",
-    "source": "Bolla pixel art con logo Python-8.png",
+    "source": "skill_python.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "typescript",
     "name": "TypeScript",
-    "source": "Bolla TypeScript di vetro al neon-2.png",
+    "source": "skill_typescript.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "nextjs",
+    "name": "Next.js",
+    "source": "skill_nextjs.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "nodejs",
+    "name": "Node.js",
+    "source": "skill_nodejs.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "tailwind",
+    "name": "Tailwind CSS",
+    "source": "skill_tailwind.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "vercel",
+    "name": "Vercel",
+    "source": "skill_vercel.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "threejs",
+    "name": "Three.js",
+    "source": "skill_threejs.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "mysql",
+    "name": "MySQL",
+    "source": "skill_mysql.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "electron",
+    "name": "Electron",
+    "source": "skill_electron.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "android",
+    "name": "Android",
+    "source": "skill_android.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "vscode",
+    "name": "VS Code",
+    "source": "skill_vscode.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "playwright",
+    "name": "Playwright",
+    "source": "skill_playwright.png",
     "group": "Formazione e progetti"
   },
   {
     "id": "windows",
     "name": "Windows",
-    "source": "Bolla pixel art con logo Windows-4.png",
+    "source": "skill_windows.png",
     "group": "Sperimentazione personale"
   },
   {
     "id": "linux",
     "name": "Linux",
-    "source": "Tux in una bolla cyberpunk-1.png",
+    "source": "skill_linux.png",
     "group": "Sperimentazione personale"
   },
   {
     "id": "shopify",
     "name": "Shopify",
-    "source": "Bolla di vetro pixel art Shopify-3.png",
+    "source": "skill_shopify.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "docker",
+    "name": "Docker",
+    "source": "skill_docker.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "arduino",
+    "name": "Arduino",
+    "source": "skill_arduino.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "raspberry-pi",
+    "name": "Raspberry Pi",
+    "source": "skill_raspberry_pi.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "esp32",
+    "name": "ESP32",
+    "source": "skill_esp32.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "kvm",
+    "name": "KVM",
+    "source": "skill_kvm.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "ssh",
+    "name": "SSH",
+    "source": "skill_ssh.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "tailscale",
+    "name": "Tailscale",
+    "source": "skill_tailscale.png",
     "group": "Sperimentazione personale"
   },
   {
     "id": "claude",
     "name": "Claude",
-    "source": "Bolla pixel-art con simbolo Claude-12.png",
+    "source": "skill_claude.png",
     "group": "Strumenti AI"
   },
   {
     "id": "chatgpt",
     "name": "ChatGPT",
-    "source": "Sfera pixel art con logo ChatGPT.png",
+    "source": "skill_chatgpt.png",
+    "group": "Strumenti AI"
+  },
+  {
+    "id": "ollama",
+    "name": "Ollama",
+    "source": "skill_ollama.png",
     "group": "Strumenti AI"
   }
 ]

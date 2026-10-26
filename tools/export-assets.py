@@ -57,22 +57,22 @@ def frame(src, name, width):
 
 if __name__ == '__main__':
     # Strada (modalità Viaggio) e ponte (fondo pagina in Lettura)
-    tile('Modulo di passerella cyberpunk-1.png', 'walkway.webp', 825, 1346, height=96, pad_top=6, pad_bottom=6)
-    tile('Modulo ringhiera cyberpunk in pixel art-2.png', 'railing.webp', 1068, 1594, height=80, pad_top=10, pad_bottom=6)
-    sprite('Staffa strutturale cyberpunk in pixel art-3.png', 'bracket.webp', width=440)
+    tile('walkway_tile.png', 'walkway.webp', 825, 1346, height=96, pad_top=6, pad_bottom=6)
+    tile('railing_tile.png', 'railing.webp', 1068, 1594, height=80, pad_top=10, pad_bottom=6)
+    sprite('support_bracket.png', 'bracket.webp', width=440)
 
     # Cornici
-    frame('Cornice pixel art orizzontale trasparente-1.png', 'frame-panel.webp', width=800)
-    frame('Cornice a freccia cyberpunk al neon.png', 'sign-arrow.webp', width=520)
-    frame('Cornice cyberpunk al neon, vuota.png', 'sign.webp', width=520)
+    frame('panel_frame_horizontal.png', 'frame-panel.webp', width=800)
+    frame('sign_frame_arrow.png', 'sign-arrow.webp', width=520)
+    frame('sign_frame_empty.png', 'sign.webp', width=520)
 
     # Oggetti
-    sprite('Terminale cyberpunk a schermo trasparente-3.png', 'terminal.webp', width=640)
+    sprite('terminal_frame.png', 'terminal.webp', width=640)
 
     # Navi nel cielo
-    sprite('Cargo cruiser corazzato al neon-3.png', 'ship-cargo.webp', width=640)
-    sprite('Navetta pixel art con bagliori magenta-2.png', 'ship-shuttle.webp', width=440)
-    sprite('Scout spaziale compatto in pixel art-1.png', 'ship-scout.webp', width=300)
+    sprite('ship_cargo.png', 'ship-cargo.webp', width=640)
+    sprite('ship_shuttle.png', 'ship-shuttle.webp', width=440)
+    sprite('ship_scout.png', 'ship-scout.webp', width=300)
 
     # Sfondo panoramico e personaggio con posa ferma, camminata e teletrasporto.
     for exporter in ['scene', 'props', 'interactions', 'elevator', 'skills', 'contact', 'projects']:

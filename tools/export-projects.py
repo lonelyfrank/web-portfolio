@@ -28,7 +28,7 @@ if __name__ == '__main__':
     for name, source in CARDS.items():
         with Image.open(source_path(source)) as image:
             export(image.convert('RGBA'), output_path(f'{name}.webp'), (1056, 704), 1000)
-    with Image.open(source_path('Frecce_al_neon_in_pixel_art-removebg-preview.png')) as source:
+    with Image.open(source_path('carousel_arrows_variants.png')) as source:
         # Middle-intensity arrows, isolated from the six authored variants.
         for name, bounds in [('prev', (142, 65, 270, 215)), ('next', (572, 65, 705, 215))]:
             export(source.convert('RGBA').crop(bounds), output_path(f'arrow-{name}.webp'), (128, 144), 112)

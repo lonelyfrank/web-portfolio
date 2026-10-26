@@ -25,12 +25,12 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
           const r = n.getBoundingClientRect(), img = n.querySelector('img');
           return { key: img.getAttribute('src'), name: n.textContent.trim(), x: r.x - area.x, y: r.y - area.y,
             w: r.width, h: r.height, fw: area.width, fh: area.height, opacity: Number(getComputedStyle(n).opacity),
-            scale: new DOMMatrixReadOnly(getComputedStyle(img).transform).a };
+            scale: new DOMMatrixReadOnly(getComputedStyle(n).transform).a };
         });
       });
       await page.clock.runFor(80);
       const resting = await snapshot();
-      assert.equal(resting.length, 10);
+      assert.equal(resting.length, 14);
       if (width >= 1024) {
         // Hover grows the bubble under the pointer and the others make room; nothing else moves.
         const target = resting.find(b => b.scale > .98 && b.x > resting[0].fw * .3 && b.x < resting[0].fw * .6) || resting[0];
@@ -66,7 +66,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
         assert.equal(await page.locator('.skill-orbits [data-popping]').count(), 1, 'Double click pops the bubble');
         await page.clock.runFor(1800);
         const after = await snapshot();
-        assert.equal(after.length, 10, 'A new bubble is generated after the pop');
+        assert.equal(after.length, 14, 'A new bubble is generated after the pop');
         assert.ok(!after.some(b => b.key === clickable.key), 'The clicked bubble is gone');
         assert.ok((await page.evaluate(() => window.eggOrder)).replace(/^B/, '').startsWith('P'), 'The double click pops a bubble');
         assert.ok((await page.evaluate(() => window.eggOrder)).includes('PB'), 'A birth follows the pop');
@@ -91,7 +91,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
           attributeFilter: ['data-alive', 'data-popping'] });
         const audit = () => {
           const count = field.querySelectorAll('[data-alive]').length;
-          if (count < 9 || count > 10) window.bubbleAudit.bad.push({ count, time: performance.now() });
+          if (count < 13 || count > 14) window.bubbleAudit.bad.push({ count, time: performance.now() });
           window.bubbleAudit.frame = requestAnimationFrame(audit);
         };
         audit();
@@ -102,7 +102,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
       for (let elapsed = .25; elapsed <= 85; elapsed += .25) {
         await page.clock.runFor(250);
         const bubbles = await snapshot();
-        assert.ok(bubbles.length >= 9 && bubbles.length <= 10, 'Nine or ten bubbles at any time');
+        assert.ok(bubbles.length >= 13 && bubbles.length <= 14, 'Thirteen or fourteen bubbles at any time');
         assert.equal(new Set(bubbles.map(b => b.name)).size, bubbles.length, 'No duplicate Windows variants');
         const incoming = bubbles.filter(b => !previous.some(p => p.key === b.key));
         for (const b of bubbles) {
@@ -138,13 +138,13 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
           assert.ok(nearest < a.w * 1.35, `${width}: cluster stays compact, a bubble drifts alone`);
         }
         previous = bubbles;
-        if (elapsed === 12) await page.screenshot({ path: `${shots}/foam-ten-${width}.png` });
+        if (elapsed === 12) await page.screenshot({ path: `${shots}/foam-fourteen-${width}.png` });
       }
       const audit = await page.evaluate(() => {
         cancelAnimationFrame(window.bubbleAudit.frame);
         return window.bubbleAudit;
       });
-      assert.deepEqual(audit.bad, [], 'Never fewer than nine or more than ten bubbles');
+      assert.deepEqual(audit.bad, [], 'Never fewer than thirteen or more than fourteen bubbles');
       // The audit may begin while the birth of an earlier pop is still pending.
       assert.match(audit.order.replace(/^B/, ''), /^P(BP?)*B?$/, 'Pops are followed by births, never two births in a row');
       assert.ok(!audit.order.includes('BB'), 'Births are sequential');
@@ -170,7 +170,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
       await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
       await setSystemMotion(page, 'reduce');
       await page.waitForFunction(() => !document.querySelector('.skill-orbits').classList.contains('is-floating'));
-      assert.equal(await page.locator('.skill-orb:visible').count(), 18);
+      assert.equal(await page.locator('.skill-orb:visible').count(), require('../design/skills.json').length);
       const still = await page.locator('.skill-orbits').innerHTML();
       await page.clock.runFor(30000);
       assert.equal(await page.locator('.skill-orbits').innerHTML(), still);

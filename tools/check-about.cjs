@@ -22,7 +22,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
         await page.waitForTimeout(350);
         assert.equal(await about.locator('[role="tab"], [role="tabpanel"], button, .scenic, .panel').count(), 0);
         assert.equal(await page.locator('[data-link="about"]').count(), 0);
-        assert.deepEqual(await about.locator('.skill-name').allTextContents(), ["AEM", "WordPress", "Jira", "HTML", "CSS", "JavaScript", "Vue", "PHP", "Laravel", "GitHub", "React", "Python", "TypeScript", "Windows", "Linux", "Shopify", "Claude", "ChatGPT"]);
+        assert.deepEqual(await about.locator('.skill-name').allTextContents(), require('../design/skills.json').map(skill => skill.name));
         const layout = await about.evaluate(n => {
           const rect = s => {
             const r = n.querySelector(s).getBoundingClientRect();
@@ -101,7 +101,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
     const noJS = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     await noJS.goto(`${url}/#about`);
     assert.equal(await noJS.locator('.about-layout > :visible').count(), 3);
-    assert.equal(await noJS.locator('.skill-name:visible').count(), 18);
+    assert.equal(await noJS.locator('.skill-name:visible').count(), require('../design/skills.json').length);
     await noJS.close();
     assert.deepEqual(errors, []);
     console.log('About: scene independence, keyboard, reduced motion, no-JS and browser errors OK');

@@ -15,7 +15,7 @@ from assetlib import alpha_bbox, load, output_path
 
 from PIL import Image
 
-ATLAS = 'Atlante modulare per elevatore meccanico.png'
+ATLAS = 'elevator_kit_atlas.png'
 DENSITY = 2  # px per su
 
 # Riquadri misurati sulle componenti connesse dell'atlante (alpha > 40).
@@ -89,7 +89,7 @@ def export_elevator():
 
     # Stato acceso del proiettore, registrato sul ritaglio spento esistente
     # (scostamento misurato: -7 px orizzontali, 0 verticali).
-    projector = load('Proiettore olografico cyberpunk in pixel art.png')
+    projector = load('station_projector.png')
     projector.crop((793, 648, 1514, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
         output_path('projector-on.webp'), lossless=True, method=6)
     print('projector-on.webp: 160 × 74 px')

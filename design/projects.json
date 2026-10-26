@@ -13,7 +13,7 @@
     ],
     "github": "https://github.com/lonelyfrank/BT-score-board",
     "demo": "https://bt-score-board.vercel.app/",
-    "artwork": "Bite_Trouble__Bersaglio_Neon_Retro-removebg-preview.png",
+    "artwork": "hud_bite_trouble.png",
     "problem": "Il totem gestisce giochi e punteggi, ma non l’organizzazione di giocatori e tornei.",
     "solution": "L’app registra risultati, organizza gironi ed eliminazione diretta e conserva lo storico. La modalità standalone usa IndexedDB e funziona offline; quella condivisa usa un’API Fastify con SQLite.",
     "source": "BT-score-board/README.md, package.json, apps/web/package.json; demo già presente nel portfolio",
@@ -36,7 +36,7 @@
     ],
     "github": "https://github.com/lonelyfrank/sensei-learning",
     "demo": null,
-    "artwork": "Banner_HUD_olografico_SENSEI_Learning-removebg-preview.png",
+    "artwork": "hud_sensei.png",
     "problem": "Raccogliere esperienze interattive generate dall’AI e ritrovare i propri progressi nel tempo.",
     "solution": "Sensei esegue artifact JSX, distingue percorsi strutturati e documenti da consultare e tiene traccia di progressi, XP e livelli in un’app desktop. Il progetto è in sviluppo attivo.",
     "source": "sensei-learning/README.md e package.json"
@@ -57,7 +57,7 @@
     "github": null,
     "demo": "https://casaurea.it",
     "demo_label": "Sito del cliente",
-    "artwork": "Casaurea_ Interfaccia e Trullo Futuristico.png",
+    "artwork": "hud_casaurea.png",
     "case": [
       [
         "Il mio ruolo",
@@ -94,7 +94,7 @@
     ],
     "github": "https://github.com/lonelyfrank/cops-robbers",
     "demo": "https://cops-robbers.vercel.app/",
-    "artwork": "Cops___Robbers__Inseguimento_Neon-removebg-preview.png",
+    "artwork": "hud_cops_robbers.png",
     "problem": "Trasformare una sequenza di scelte di gioco in un’esperienza leggibile e immersiva nel browser.",
     "solution": "Un prototipo interamente client-side con città modulare 3D, interfaccia di sorveglianza, tre livelli di difficoltà e storico della sessione. Nessun account o pagamento: i crediti sono solo virtuali.",
     "source": "cops-and-robbers/README.md, package.json e remote origin cops-robbers"
@@ -112,7 +112,7 @@
     ],
     "github": "https://github.com/lonelyfrank/good-game",
     "demo": null,
-    "artwork": "Good_Game__Dadi_e_Mappe_Cyberpunk-removebg-preview.png",
+    "artwork": "hud_good_game.png",
     "problem": "Individuare incompatibilità e problemi tecnici prima che interrompano una sessione di gioco.",
     "solution": "Il Game Health Meter combina scansione dei moduli, monitoraggio degli errori e snapshot confrontabili in un punteggio da 0 a 100. Una mascotte reagisce allo stato della sessione.",
     "source": "good-game/README.md, module.json, scripts/ui e templates/health-panel.hbs"

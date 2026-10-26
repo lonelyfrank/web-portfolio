@@ -181,15 +181,15 @@ def export_atlas(rows, name, airborne=False, cell=CELL):
 
 
 def export_character():
-    sheet = load('Frank e il gatto calico in movimento(1).png')
+    sheet = load('character_run.png')
     export_motion(sheet)
-    export_teleport(load('Teletrasporto cyberpunk di ragazzo e gatto.png'))
-    export_atlas([rest_frames('Otto fotogrammi_ gatta calico tra le gambe.png')], 'character-idle.webp')
-    export_atlas([rest_frames('Animazione pixel_ ragazzo accarezza la gatta.png')], 'character-pet.webp')
+    export_teleport(load('character_teleport.png'))
+    export_atlas([rest_frames('character_idle_cat_between_legs.png')], 'character-idle.webp')
+    export_atlas([rest_frames('character_pet_cat.png')], 'character-pet.webp')
 
 
 if __name__ == '__main__':
-    background = load('Metropoli cyberpunk tra pianeti lontani.png').convert('RGB')
+    background = load('universe_background.png').convert('RGB')
     background.save(output_path('universe.webp'), quality=88, method=6)
     export_character()
     for name in ['universe.webp', 'character-motion.webp', 'character-teleport.webp', 'character-idle.webp', 'character-pet.webp']:

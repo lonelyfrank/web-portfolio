@@ -33,7 +33,7 @@ def actors(source, name, scale, rows, ground, origins):
 
 
 def export_interactions():
-    actors('Frank e il gatto calico animato.png', 'about', 96 / 438,
+    actors('character_interaction_desk_about.png', 'about', 96 / 438,
            (0, 443), (442, 443), [36] * 8)
     scale = 96 / 380
     origins = [target[0] - hand[0] * scale if hand else 4
@@ -43,13 +43,13 @@ def export_interactions():
             floor = (460, 396)[index // 4]
             # Keep feet planted; the hand must overlap the control's 4px radius.
             assert abs(FLOOR - (floor - hand[1]) * scale - target[1]) <= 4
-    actors('Frank e il gatto calico, otto pose.png', 'contact', scale,
+    actors('character_interaction_radio_contact.png', 'contact', scale,
            (0, 470), (460, 396), origins)
-    sheet = load('Banchine industriali modulari in pixel art.png')
+    sheet = load('dock_modules_sheet.png')
     for name, box in [('left', (48, 810, 383, 960)), ('right', (1152, 810, 1492, 960))]:
         sheet.crop(box).save(output_path(f'rail-end-{name}.webp'), lossless=True, method=6)
     # Existing projector asset, base only. No invented character interaction.
-    projector = load('Proiettore olografico cyberpunk in pixel art.png')
+    projector = load('station_projector.png')
     projector.crop((25, 648, 746, 980)).resize((160, 74), Image.Resampling.NEAREST).save(
         output_path('projector.webp'), lossless=True, method=6)
 

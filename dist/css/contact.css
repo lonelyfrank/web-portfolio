@@ -46,17 +46,19 @@
   animation: satellite-float 6.4s ease-in-out infinite;
   animation-play-state: paused;
 }
-.contact-visual img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.contact-visual img { display: block; width: 100%; height: auto; image-rendering: pixelated; animation: satellite-glow 3.2s ease-in-out infinite; animation-play-state: inherit; }
 .contact-satellites li:nth-child(2) .contact-visual { animation-duration: 7.2s; animation-delay: -2.1s; }
 .contact-satellites li:nth-child(3) .contact-visual { animation-duration: 5.8s; animation-delay: -3.4s; }
 .contact-satellites li:nth-child(4) .contact-visual { animation-duration: 7.8s; animation-delay: -1.3s; }
+.contact-satellites li:nth-child(2) .contact-visual img { animation-delay: -1.6s; }
 .contact-visual.is-floating { animation-play-state: running; }
 .contact-channel:is(:hover, :focus-within) .contact-visual { animation-play-state: paused; }
-.contact-plate { display: block; width: min(100%, 260px); height: auto; margin-top: 12px; image-rendering: pixelated; }
+.contact-plate { display: block; width: min(100%, 260px); height: auto; margin-top: 12px; image-rendering: pixelated; transition: filter .2s ease, transform .2s ease; }
 .contact-status { color: var(--muted); font-size: 12px; line-height: 1.5; }
-.contact-channel[href]:is(:hover, :focus-visible) .contact-plate { filter: brightness(1.2); }
+.contact-channel[href]:is(:hover, :focus-visible) .contact-plate { filter: brightness(1.2); transform: translateY(-2px); }
 .contact-channel[href]:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; }
-@keyframes satellite-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes satellite-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes satellite-glow { 0%, 100% { filter: drop-shadow(0 0 0 transparent); } 50% { filter: drop-shadow(0 0 8px rgba(0, 229, 255, .45)); } }
 
 /* Contact resta consultabile anche mentre la parabola raggiunge la postazione. */
 .journey #contact { padding-top: clamp(20px, 4vh, 44px); padding-bottom: 24px; }

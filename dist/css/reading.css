@@ -79,6 +79,7 @@ html:not(.journey) .skill-orbits .skill-name {
   overflow: visible;
   clip-path: none;
   white-space: normal;
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
   font-size: 11px;
   letter-spacing: 1px;
@@ -180,6 +181,8 @@ html:not(.journey) .district-services { display: none; }
 @media (max-width: 760px) {
   html:not(.journey) .skill-orbits { --bubble-size: 56px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 6px; }
   html:not(.journey) .skill-orbits .skill-name { font-size: 10px; letter-spacing: .5px; }
+  /* Le etichette lunghe (WooCommerce) non entrano in quattro colonne sui 320 px. */
+  @media (max-width: 360px) { html:not(.journey) .skill-orbits { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   html:not(.journey) .read-scene { height: 170px; margin-top: 36px; }
   html:not(.journey) .read-bench { margin-top: 36px; }
   .read-bench img { width: 190px; }

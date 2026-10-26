@@ -8,16 +8,16 @@ from assetlib import alpha_bbox, source_path, output_path
 from PIL import Image
 
 SATELLITES = {
-    'github': 'Satellite GitHub in pixel art-1.png',
-    'email': 'Satellite pixel art per email-3.png',
-    'linkedin': 'Satellite orbitale LinkedIn pixel art-2.png',
-    'cv': 'Satellite di download in pixel art-4.png',
+    'github': 'satellite_github.png',
+    'email': 'satellite_email.png',
+    'linkedin': 'satellite_linkedin.png',
+    'cv': 'satellite_cv_download.png',
 }
 PLATES = {
-    'github': 'Targhetta GitHub pixel art cyberpunk-1.png',
-    'email': 'Targhetta Email cyberpunk in pixel art-2.png',
-    'linkedin': 'Targhetta LinkedIn in pixel art-3.png',
-    'cv': 'Targa pixel art cyberpunk Scarica CV-4.png',
+    'github': 'cta_plate_github.png',
+    'email': 'cta_plate_email.png',
+    'linkedin': 'cta_plate_linkedin.png',
+    'cv': 'cta_plate_cv_download.png',
 }
 
 if __name__ == '__main__':

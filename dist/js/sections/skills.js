@@ -1,4 +1,4 @@
-// Ten compact soap bubbles. Pops are random and each one is followed, in sequence, by a
+// Fourteen compact soap bubbles. Pops are random and each one is followed, in sequence, by a
 // birth in an interior gap; the cluster keeps packing itself while bubbles vanish and grow.
 // Returns the update to call whenever the motion preference changes.
 import { root } from '../dom.js';
@@ -7,20 +7,23 @@ import { isJourney, state } from '../state.js';
 export function initSkills() {
   const field = document.querySelector('.skill-orbits');
   const items = [...field.querySelectorAll('.skill-item')];
-  const COUNT = 10, BIRTH = 1.5, POP = .34, PULL = 1.4, HOVER = .22;
+  const COUNT = 14, FILL = .72, GAP = 1, BIRTH = 1.5, POP = .34, PULL = 1.4, HOVER = .22, STEP = 1 / 60;
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const ease = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
   let bubbles = [], cursor = 0, clock = 0, queue = [], lastAt = 0, doubled = false;
   const lastShown = new Map();
   let size = 0, width = 0, height = 0, spacing = 0;
   let frame = 0, last = 0, visible = false, enabled = false;
-  let pointer = null, lastGap = null;
+  let pointer = null, lastGap = null, hoveredBubble = null, calm = 0, owed = 0;
 
   function measure() {
     if (!field.clientWidth) return false;
     width = field.clientWidth; height = field.clientHeight;
-    size = Math.floor(Math.min(106, (width - 40) / 3.5, (height - 36) / 3));
-    spacing = size * .91; // Leave a small visible gap beyond the artwork's transparent margins.
+    // The largest bubble whose hexagonal packing of COUNT leaves FILL of the field used, so births
+    // and the hover swell still find room.
+    size = 106;
+    while (size > 40 && COUNT * .866 * (size * GAP) ** 2 > FILL * (width - 24 - size) * (height - 24 - size)) size--;
+    spacing = size * GAP; // Centres rest one bubble apart, so neighbours keep a visible gap.
     field.style.setProperty('--bubble-size', `${size}px`);
     return true;
   }
@@ -28,7 +31,6 @@ export function initSkills() {
     b.x = clamp(b.x, size / 2 + 12, width - size / 2 - 12);
     b.y = clamp(b.y, size / 2 + 12, height - size / 2 - 12);
   }
-  const position = b => [b.x, b.y];
   // Share of its full footprint a bubble claims: newborns and hovered ones swell and shoulder their
   // neighbours aside, popped ones free the space.
   function footprint(b) {
@@ -42,14 +44,20 @@ export function initSkills() {
       .sort((a, b) => (lastShown.get(a) ?? -1) - (lastShown.get(b) ?? -1))[0];
     lastShown.set(node, cursor++);
     node.dataset.alive = '';
-    bubbles.push({ node, x, y, hover: 0, dying: null,
+    bubbles.push({ node, x, y, shownX: x, shownY: y, hover: 0, dying: null,
       born: initial ? clock - BIRTH - Math.random() * 18 : clock });
   }
 
   function relax(dt) {
     // Continuous packing: a weak pull to the centre closes holes, overlaps push neighbours apart.
+    // Returns the largest distance any bubble travelled, to tell when the cluster has come to rest.
+    const before = bubbles.map(b => [b.x, b.y]);
+    // The bubble under the pointer is an anchor: if it were pushed by its own swell, it would slide out
+    // from under the cursor, shrink, slide back and swell again, a rapid left-right shake.
+    const anchored = b => b === hoveredBubble;
     for (let pass = 0; pass < 3; pass++) {
       for (const b of bubbles) {
+        if (anchored(b)) continue;
         b.x += (width / 2 - b.x) * PULL * dt / 3;
         b.y += (height / 2 - b.y) * PULL * dt / 3;
       }
@@ -59,14 +67,23 @@ export function initSkills() {
         if (Math.hypot(dx, dy) < .01) { dx = .1; dy = .07; }
         const distance = Math.hypot(dx, dy), reach = spacing * (footprint(a) + footprint(b)) / 2;
         if (distance >= reach) continue;
-        const move = (reach - distance) / (2 * distance);
-        a.x -= dx * move; a.y -= dy * move;
-        b.x += dx * move; b.y += dy * move;
+        const move = (reach - distance) / distance;
+        const wa = anchored(a) ? 0 : anchored(b) ? 1 : .5, wb = 1 - wa;
+        a.x -= dx * move * wa; a.y -= dy * move * wa;
+        b.x += dx * move * wb; b.y += dy * move * wb;
       }
       bubbles.forEach(bound);
     }
+    return Math.max(0, ...bubbles.map((b, i) => Math.hypot(b.x - before[i][0], b.y - before[i][1])));
   }
-  function settle() { for (let i = 0; i < 120; i++) relax(1 / 60); }
+  function settle() {
+    for (let i = 0; i < 120; i++) relax(STEP);
+    for (const b of bubbles) { b.shownX = b.x; b.shownY = b.y; }
+    calm = 0;
+  }
+  // Anything still growing, bursting or swelling keeps the packing live.
+  const busy = () => bubbles.some(b => b.dying !== null || clock - b.born < BIRTH + .1
+    || Math.abs(b.hover - (b === hoveredBubble ? 1 : 0)) > .003);
 
   function gap() {
     // Interior triangular gaps vary with each arrangement; no fixed centre emitter.
@@ -136,11 +153,21 @@ export function initSkills() {
       .sort((p, q) => p.distance - q.distance)[0]?.b;
   }
   function paint(dt = 0) {
-    const hovered = pointer && bubbleAt(pointer.x, pointer.y);
+    // Hysteresis: the bubble already hovered keeps the pointer until it leaves with a small margin, so two
+    // neighbours never trade the swell back and forth while the cluster shifts under a still cursor.
+    const holds = pointer && hoveredBubble && bubbles.includes(hoveredBubble) && hoveredBubble.dying === null
+      && Math.hypot(hoveredBubble.x - pointer.x, hoveredBubble.y - pointer.y)
+        <= size / 2 * footprint(hoveredBubble) * (1 + .22 * hoveredBubble.hover) * 1.1;
+    const hovered = !pointer ? null : holds ? hoveredBubble : bubbleAt(pointer.x, pointer.y) || null;
+    hoveredBubble = hovered;
     field.classList.toggle('is-hovering', !!hovered);
     for (const b of bubbles) {
       b.hover += ((b === hovered ? 1 : 0) - b.hover) * (1 - Math.exp(-9 * dt));
-      const [x, y] = position(b);
+      // The drawn position follows the packing through a low-pass filter, so any residual flutter of the
+      // packing (frames of uneven length move the pull and the pushes by different amounts) stays invisible.
+      const follow = 1 - Math.exp(-20 * dt);
+      b.shownX += (b.x - b.shownX) * follow; b.shownY += (b.y - b.shownY) * follow;
+      const x = b.shownX, y = b.shownY;
       let scale = .18 + .82 * ease((clock - b.born) / BIRTH), opacity = 1;
       if (b.dying !== null) {
         // A quick swell, then the bubble bursts and fades.
@@ -149,8 +176,9 @@ export function initSkills() {
         opacity = 1 - burst;
       }
       b.node.style.opacity = opacity.toFixed(3);
-      b.node.style.setProperty('--birth-scale', (scale * (1 + HOVER * b.hover)).toFixed(4));
-      b.node.style.transform = `translate3d(${clamp(x - size / 2, 4, width - size - 4).toFixed(2)}px, ${clamp(y - size / 2, 6, height - size - 6).toFixed(2)}px, 0)`;
+      // One transform per bubble (position and swell), so each stays a single stable
+      // compositor layer: no nested animated layers re-rasterised every frame.
+      b.node.style.transform = `translate3d(${clamp(x - size / 2, 4, width - size - 4).toFixed(2)}px, ${clamp(y - size / 2, 6, height - size - 6).toFixed(2)}px, 0) scale(${(scale * (1 + HOVER * b.hover)).toFixed(4)})`;
     }
   }
   function tick(now) {
@@ -159,7 +187,13 @@ export function initSkills() {
     last = now; clock += dt;
     while (queue.length && queue[0].at <= clock) perform(queue.shift());
     if (!queue.some(action => !action.manual)) schedule(lastAt);
-    retire(); relax(dt);
+    retire();
+    // At rest the packing is frozen: the pull and the overlap pushes never settle to the last hundredth of a
+    // pixel, and that endless creep reads as a shimmer on fine logos.
+    // The packing advances in fixed steps: its resting arrangement must not depend on how long each frame took.
+    if (busy()) calm = 0;
+    owed = Math.min(owed + dt, STEP * 4);
+    for (; owed >= STEP; owed -= STEP) if (calm < 20) calm = relax(STEP) < .04 && !busy() ? calm + 1 : 0;
     paint(dt);
     frame = requestAnimationFrame(tick);
   }
@@ -172,11 +206,17 @@ export function initSkills() {
     else frame = requestAnimationFrame(tick);
   }
   function seed() {
-    clock = 0; lastAt = -2; doubled = false; queue = []; lastGap = null;
-    const rows = [[-1, 0, 1], [-1.5, -.5, .5, 1.5], [-1, 0, 1]];
-    rows.flatMap((row, r) => row.map(col => [col, r])).slice(0, COUNT)
-      .forEach(([col, r]) => add(width / 2 + col * spacing,
-        height / 2 + (r - 1) * spacing * .866, true));
+    clock = 0; owed = 0; lastAt = -2; doubled = false; queue = []; lastGap = null; hoveredBubble = null; calm = 0;
+    // Hexagonal lattice points inside the field, nearest the centre first.
+    const lattice = [], rowGap = spacing * .866, reach = Math.ceil(Math.max(width, height) / rowGap);
+    for (let r = -reach; r <= reach; r++) for (let c = -reach; c <= reach; c++) {
+      const x = width / 2 + (c + (r & 1 ? .5 : 0)) * spacing, y = height / 2 + r * rowGap;
+      if (Math.abs(x - width / 2) <= width / 2 - size / 2 - 12 && Math.abs(y - height / 2) <= height / 2 - size / 2 - 12)
+        lattice.push([x, y]);
+    }
+    lattice.sort((p, q) => Math.hypot(p[0] - width / 2, p[1] - height / 2) - Math.hypot(q[0] - width / 2, q[1] - height / 2));
+    lattice.slice(0, COUNT).forEach(([x, y]) => add(x, y, true));
+    while (bubbles.length < COUNT) add(width / 2 + (Math.random() - .5) * spacing, height / 2 + (Math.random() - .5) * spacing, true);
     settle();
     schedule(0); paint();
   }
@@ -222,6 +262,7 @@ export function initSkills() {
     if (!bubbles.length) seed();
     else {
       bubbles.forEach(b => { b.x *= width / oldWidth; b.y *= height / oldHeight; });
+      calm = 0;
       settle();
     }
     paint(); run();

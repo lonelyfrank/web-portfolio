@@ -1,5 +1,5 @@
 // Postazioni: allestimenti di ogni area e interazioni di Frank (About, Contact).
-import { INTERACTION, SECTION, STATIONS } from '../config.js';
+import { INTERACTION, RADIO, SECTION, STATIONS } from '../config.js';
 import { avatar, pages, stationNodes } from '../dom.js';
 import { isJourney, state } from '../state.js';
 import { setActor, stopAvatar } from './actor.js';
@@ -89,7 +89,7 @@ function advanceInteraction() {
   const station = STATIONS[activeStation];
   if (interactionFrame === station.frames - 1) {
     setPhase('waiting');
-    if (!station.loop) { scheduleRadio(); return; } // Setup and stand-up play once.
+    if (!station.loop) { scheduleRadio(RADIO.tunedDelayMs); return; } // Setup and stand-up play once.
   }
   interactionFrame = (interactionFrame + 1) % station.frames;
   stationNodes[activeStation].style.setProperty('--frame', interactionFrame);

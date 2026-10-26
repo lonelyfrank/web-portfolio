@@ -444,7 +444,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await mobile.screenshot({ path: `${shots}/stations-mobile-verified.png` });
 
-    // Radar: one 2.25 s scan after 30–45 s, only while Contact is idle.
+    // Radar: a 2.25 s scan 0.6 s after Frank tunes it, then one every 7–12 s, only while Contact is idle.
     const radarPage = await open({ width: 1440, height: 900 });
     await radarPage.addInitScript(() => { Math.random = () => 0; localStorage.setItem('fs-mode', 'journey'); });
     const epoch = new Date('2026-10-24T10:00:00Z');
@@ -452,18 +452,23 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
     await radarPage.clock.pauseAt(epoch);
     await radarPage.goto(`${url}/#contact`);
     const radar = radarPage.locator('.station-contact .station-equipment');
+    const radarState = () => radar.getAttribute('data-state');
     await radarPage.clock.runFor(100 + 8 * 400);
     assert.equal(await radarPage.locator('.journey-strip').getAttribute('data-phase'), 'waiting');
     const radarBox = await radar.boundingBox();
-    await radarPage.clock.runFor(29999);
-    assert.equal(await radar.getAttribute('data-state'), 'resting');
+    await radarPage.clock.runFor(599);
+    assert.equal(await radarState(), 'resting');
     await radarPage.clock.runFor(1);
-    assert.equal(await radar.getAttribute('data-state'), 'scanning');
+    assert.equal(await radarState(), 'scanning');
     await radarPage.clock.runFor(500);
     assert.notEqual(await radar.evaluate(n => n.style.getPropertyValue('--radio-frame')), '1');
     assert.deepEqual(await radar.boundingBox(), radarBox);
     await radarPage.clock.runFor(1750);
-    assert.equal(await radar.getAttribute('data-state'), 'resting');
+    assert.equal(await radarState(), 'resting');
+    await radarPage.clock.runFor(6999);
+    assert.equal(await radarState(), 'resting');
+    await radarPage.clock.runFor(1);
+    assert.equal(await radarState(), 'scanning');
     await setSystemMotion(radarPage, 'reduce');
     await radarPage.clock.runFor(60000);
     assert.equal(await radar.getAttribute('data-state'), 'resting');

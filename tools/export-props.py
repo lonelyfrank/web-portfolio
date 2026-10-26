@@ -16,18 +16,18 @@ def export(source, name, box=None, width=None, height=None):
 
 
 def export_props():
-    export('Banco da lavoro cyberpunk con server.png', 'workbench.webp', width=800)
-    docks = 'Banchine industriali modulari in pixel art.png'
+    export('station_desk_workbench.png', 'workbench.webp', width=800)
+    docks = 'dock_modules_sheet.png'
     export(docks, 'dock-deck.webp', (20, 208, 1518, 367), width=720)
     export(docks, 'dock-supported.webp', (210, 475, 1327, 742), width=720)
 
-    lights = 'Lampioni e dissuasori cyberpunk in pixel art-2.png'
+    lights = 'lamps_and_bollards_sheet.png'
     export(lights, 'lamp-single.webp', (0, 0, 720, 735), height=360)
     export(lights, 'lamp-double.webp', (720, 0, 1367, 735), height=360)
     for i, name in enumerate(['home', 'about', 'projects', 'contact']):
         export(lights, f'bollard-{name}.webp', (i * 1367 // 4, 735, (i + 1) * 1367 // 4, 1151), height=128)
 
-    modules = 'Set di moduli cyberpunk in pixel art-3.png'
+    modules = 'cables_junction_vent_sheet.png'
     for name, box, width in [
         ('cable-loop', (20, 20, 570, 350), 320),
         ('cable-straight', (590, 100, 1190, 320), 320),
@@ -42,10 +42,10 @@ def export_props():
         ('skyline-mid', (0, 385, 1536, 645)),
         ('skyline-near', (0, 645, 1536, 1024)),
     ]:
-        export('Tre skyline cyberpunk in pixel art-1.png', f'{name}.webp', box, width=1536)
+        export('skyline_layers_far_mid_near.png', f'{name}.webp', box, width=1536)
 
     # La base della parabola resta ferma mentre disco e segnale si animano.
-    sheet = load('Modulo radio cyberpunk in otto fotogrammi.png')
+    sheet = load('station_radio_8_frames.png')
     frames = []
     for row in range(2):
         for column in range(4):

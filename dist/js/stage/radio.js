@@ -1,4 +1,4 @@
-// Parabola di Contact: una scansione occasionale, poi la posa inclinata.
+// Parabola di Contact: una scansione ogni 7-12 s (subito dopo la sintonia di Frank), poi la posa inclinata.
 import { RADIO, SECTION } from '../config.js';
 import { $ } from '../dom.js';
 import { isJourney, state } from '../state.js';
@@ -13,12 +13,12 @@ function radioAvailable() {
     && (!isJourney() || (state.current === SECTION.contact && state.phase === 'waiting'));
 }
 
-export function scheduleRadio() {
+export function scheduleRadio(firstDelayMs) {
   clearTimeout(radioTimer);
   radio.style.setProperty('--radio-frame', 1);
   radio.dataset.state = 'resting';
   if (!radioAvailable()) return;
-  const delay = RADIO.minDelayMs + Math.random() * (RADIO.maxDelayMs - RADIO.minDelayMs);
+  const delay = firstDelayMs ?? RADIO.minDelayMs + Math.random() * (RADIO.maxDelayMs - RADIO.minDelayMs);
   radioTimer = setTimeout(() => scanRadio(0), delay);
 }
 
