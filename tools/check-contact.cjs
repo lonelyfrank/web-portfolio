@@ -79,16 +79,21 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
           assert.ok(main.y + main.height <= scene.y + 1, 'Scene stays below the content');
           await section.evaluate(n => { n.scrollTop = 0; });
         } else {
-          assert.ok(layout.scene.y >= layout.items.at(-1).bottom, 'Reading scene follows the contacts');
+          assert.equal(await section.locator('.station-contact').evaluate(n => getComputedStyle(n).display), 'none', 'Reading has no Journey station; the footer bridge follows the contacts');
         }
-        const github = section.locator('a.contact-channel');
+        const github = section.locator('a.contact-channel[href*="github.com"]');
+        const linkedin = section.locator('a.contact-channel[href*="linkedin.com"]');
+        assert.equal(await linkedin.getAttribute('href'), 'https://www.linkedin.com/in/francescoo-spina/');
+        assert.equal(await linkedin.getAttribute('rel'), 'noopener noreferrer');
         assert.equal(await github.getAttribute('href'), 'https://github.com/lonelyfrank');
         assert.equal(await github.getAttribute('rel'), 'noopener noreferrer');
         // Missing destinations remain honest static content outside keyboard order.
-        assert.equal(await section.locator('[data-unavailable]').count(), 3);
+        assert.equal(await section.locator('[data-unavailable]').count(), 2);
         await page.keyboard.press('Tab');
         await github.focus();
         assert.equal(await github.evaluate(n => n === document.activeElement && getComputedStyle(n).outlineStyle === 'solid'), true);
+        await page.keyboard.press('Tab');
+        assert.equal(await linkedin.evaluate(n => n === document.activeElement), true);
         await page.keyboard.press('Tab');
         assert.equal(await page.evaluate(() => !!document.activeElement.closest('#contact')), false);
         if ([1920, 1280, 390].includes(width)) {
@@ -105,7 +110,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
     const page = await open({ viewport: { width: 1440, height: 900 } });
     await page.goto(`${url}/#contact`);
     const visual = page.locator('.contact-visual').first();
-    const link = page.locator('a.contact-channel');
+    const link = page.locator('a.contact-channel[href*="github.com"]');
     const playState = () => visual.evaluate(n => getComputedStyle(n).animationPlayState);
     await page.waitForFunction(() => document.querySelector('.contact-visual').classList.contains('is-floating'));
     assert.equal(await playState(), 'running');
@@ -153,7 +158,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
     const noJS = await open({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     await noJS.goto(`${url}/#contact`);
     assert.equal(await noJS.locator('.contact-label:visible').count(), 4);
-    assert.equal(await noJS.locator('a.contact-channel').isVisible(), true);
+    assert.equal(await noJS.locator('a.contact-channel[href*="github.com"]').isVisible(), true);
     assert.equal(await noJS.locator('.contact-visual').first().evaluate(n => getComputedStyle(n).animationPlayState), 'paused');
     await noJS.close();
     assert.deepEqual(errors, []);
