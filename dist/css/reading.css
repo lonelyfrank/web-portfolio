@@ -213,3 +213,7 @@ html:not(.journey) .district-services { display: none; }
   html:not(.journey) .contact-visual { width: min(100%, 280px); }
   html:not(.journey) .contact-plate { width: min(100%, 230px); }
 }
+/* Affiancati al messaggio: la base dei canali segue la base di "NEW IDEAS…". */
+@media (min-width: 1101px) {
+  html:not(.journey) .contact-satellites { align-self: end; }
+}
