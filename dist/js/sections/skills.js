@@ -1,6 +1,7 @@
 // Ten compact soap bubbles. Atomic replacements keep the visible population constant.
 // Returns the update to call whenever the motion preference changes.
-import { state } from '../state.js';
+import { root } from '../dom.js';
+import { isJourney, state } from '../state.js';
 
 export function initSkills() {
   const field = document.querySelector('.skill-orbits');
@@ -178,7 +179,8 @@ export function initSkills() {
     schedule(); paint();
   }
   function motion() {
-    const next = !state.reduced;
+    // The floating bubbles belong to Journey; Reading shows the static labelled grid.
+    const next = !state.reduced && isJourney();
     if (next === enabled) return;
     enabled = next;
     field.classList.toggle('is-floating', enabled);
@@ -212,6 +214,7 @@ export function initSkills() {
     paint(); run();
   }).observe(field);
   document.addEventListener('visibilitychange', run);
+  new MutationObserver(motion).observe(root, { attributes: true, attributeFilter: ['class'] });
   motion();
   return motion;
 }

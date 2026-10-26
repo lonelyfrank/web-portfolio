@@ -1,0 +1,209 @@
+/* ---------- Lettura: composizione della pagina a scorrimento ----------
+   Ultimo foglio in cascata. Ogni regola è limitata a html:not(.journey), così
+   il Viaggio resta invariato; il carosello richiede anche html.js. */
+
+html:not(.journey) body { overflow-x: clip; }
+
+/* Il paesaggio urbano sta dentro le sezioni, non più fisso dietro la pagina. */
+html:not(.journey) .skyline { display: none; }
+/* Le postazioni del Viaggio non fanno parte della pagina a scorrimento: About usa .read-bench. */
+html:not(.journey) .page .station { display: none; }
+
+.read-scene, .read-bench, .project-counter { display: none; }
+
+/* ---------- Home: titolo in alto, ponte a tutta larghezza in basso ---------- */
+html:not(.journey) #home {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0;
+  padding-bottom: 0;
+}
+html:not(.journey) .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: 40px; }
+html:not(.journey) .welcome-stand { display: none; }
+html:not(.journey) .read-scene {
+  display: block;
+  position: relative;
+  flex: none;
+  height: 230px;
+  margin: 12px calc(50% - 50vw) 0;
+}
+.scene-sky {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 60px;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  pointer-events: none;
+}
+.scene-sky-far { height: 170px; background-image: url('../assets/backgrounds/skyline-far.webp'); background-position: 0 100%; opacity: .35; }
+.scene-sky-near { height: 140px; background-image: url('../assets/backgrounds/skyline-near.webp'); background-position: 35% 100%; opacity: .7; }
+.scene-lamp { position: absolute; bottom: 86px; height: 120px; width: auto; }
+.lamp-a { left: 8%; }
+.lamp-b { right: 6%; }
+.read-scene .railing { bottom: 56px; height: 40px; }
+.read-scene .walkway { position: absolute; left: 0; right: 0; bottom: 0; height: 60px; }
+.read-scene .avatar { left: 58%; bottom: 52px; width: 128px; height: 112px; margin-left: 0; transition: none; }
+
+/* ---------- About: postazione come divisore ---------- */
+html:not(.journey) .read-bench {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-top: 64px;
+}
+.read-bench img { width: 240px; height: auto; }
+.bench-actor {
+  width: 144px;
+  height: 136px;
+  margin-left: -96px;
+  background: url('../assets/sprite/interaction-about.webp') 0 0 / 800% 100% no-repeat;
+  image-rendering: pixelated;
+}
+
+/* Competenze: icone fisse con il nome visibile. Le bolle animate restano del Viaggio. */
+html:not(.journey) .skill-orbits {
+  --bubble-size: 64px;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 18px 10px;
+  max-width: none;
+  padding: 0;
+}
+html:not(.journey) .skill-orbits .skill-name {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 4px 0 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ---------- Projects: carosello con frecce, dettaglio e miniature ---------- */
+html.js:not(.journey) .holo-deck {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 40px clamp(40px, 5vw, 72px);
+  align-items: center;
+}
+html.js:not(.journey) .holo-deck .section-heading { margin: 0; align-self: end; }
+html.js:not(.journey) .project-counter {
+  display: block;
+  justify-self: end;
+  align-self: end;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--body);
+}
+.project-counter b { font-size: 28px; font-weight: 600; color: var(--cyan); }
+html.js:not(.journey) .project-carousel { display: block; position: relative; min-width: 0; padding-inline: 72px; }
+html.js:not(.journey) .project-carousel::after {
+  content: '';
+  display: block;
+  width: 60%;
+  height: 2px;
+  margin: -8px auto 0;
+  background: var(--cyan);
+  opacity: .5;
+  box-shadow: 0 0 18px 4px #00daff55;
+}
+html.js:not(.journey) .holo-projection { opacity: 1; transform: none; visibility: visible; }
+html.js:not(.journey) .holo-float { animation: none; }
+html.js:not(.journey) .holo-card { filter: drop-shadow(0 0 28px #00daff40); }
+html.js:not(.journey) .project-controls { inset: 0; }
+html.js:not(.journey) .projects-grid { display: block; padding: 0; }
+html.js:not(.journey) .project { display: block; padding: 0; }
+html.js:not(.journey) .project[hidden] { display: none; }
+html.js:not(.journey) .project-media { display: none; }
+html.js:not(.journey) .project h3 { margin: 10px 0 16px; font-size: clamp(26px, 2.6vw, 34px); line-height: 1.15; }
+html.js:not(.journey) .project .summary { margin-bottom: 20px; }
+html.js:not(.journey) .project .stack { margin-bottom: 22px; }
+html.js:not(.journey) .project .stack li { color: var(--body); letter-spacing: .5px; }
+html.js:not(.journey) .project-links { gap: 10px; margin-bottom: 24px; min-height: 0; }
+html.js:not(.journey) .project-links:empty { display: none; }
+html.js:not(.journey) .project-links .text-link {
+  display: inline-block;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  font-weight: 600;
+  color: var(--text);
+}
+html.js:not(.journey) .project-links .text-link:hover { color: var(--cyan); }
+/* Approfondimento: pannello sempre aperto, in cornice pixel art. */
+html.js:not(.journey) .case {
+  margin: 0;
+  padding: 18px 20px;
+  border: solid transparent;
+  border-width: 12px 14px;
+  border-image: url('../assets/ui/frame-panel.webp') 24 27 24 27 / 12px 14px stretch;
+  background: #0a1936e6 padding-box;
+}
+html.js:not(.journey) .case summary {
+  display: block;
+  margin-bottom: 12px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: default;
+}
+html.js:not(.journey) .case summary > span:last-child,
+html.js:not(.journey) .case-links { display: none; }
+html.js:not(.journey) .case-body dl { margin: 0; }
+html.js:not(.journey) .case-body dt { margin: 0; font-family: var(--font-display); font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); }
+html.js:not(.journey) .case-body dd { margin: 2px 0 12px; font-size: 14px; }
+html.js:not(.journey) .case-body dd:last-child { margin-bottom: 0; }
+
+@media (max-width: 899px) {
+  html.js:not(.journey) .holo-deck { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  html.js:not(.journey) .project-counter { justify-self: start; }
+  html.js:not(.journey) .project-carousel { padding-inline: 0; }
+}
+
+/* ---------- Footer: skyline e nave sopra il ponte ---------- */
+.site-footer .scene-sky-far { bottom: 120px; height: 150px; opacity: .3; }
+.footer-ship { position: absolute; left: 18%; top: 10px; width: 170px; height: auto; opacity: .6; }
+
+html:not(.journey) .district-services { display: none; }
+
+/* ---------- Telefono (390): stesse misure del design ---------- */
+@media (max-width: 760px) {
+  html:not(.journey) .skill-orbits { --bubble-size: 56px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 6px; }
+  html:not(.journey) .skill-orbits .skill-name { font-size: 10px; letter-spacing: .5px; }
+  html:not(.journey) .read-scene { height: 170px; margin-top: 36px; }
+  html:not(.journey) .read-bench { margin-top: 36px; }
+  .read-bench img { width: 190px; }
+  .bench-actor { width: 115px; height: 109px; margin-left: -78px; }
+
+  html.js:not(.journey) .holo-deck { grid-template-columns: minmax(0, 1fr) auto; gap: 0; align-items: end; }
+  html.js:not(.journey) .holo-deck .section-heading { display: contents; }
+  html.js:not(.journey) .holo-deck .eyebrow { grid-column: 1 / -1; margin: 0 0 16px; }
+  html.js:not(.journey) #projects-title { grid-column: 1; margin: 0; }
+  html.js:not(.journey) .holo-deck .section-heading > p:last-child { grid-column: 1 / -1; margin: 12px 0 20px; font-size: 15px; }
+  html.js:not(.journey) .project-counter { grid-column: 2; grid-row: 3; justify-self: end; margin: 0 0 6px; font-size: 13px; letter-spacing: 1.5px; color: var(--muted); }
+  html.js:not(.journey) .project-counter b { font-size: 20px; }
+  html.js:not(.journey) .project-carousel { grid-column: 1 / -1; padding-inline: 34px; margin-bottom: 24px; }
+  html.js:not(.journey) .project-carousel::after { display: none; }
+  html.js:not(.journey) .holo-card { filter: drop-shadow(0 0 22px #00daff40); }
+  html.js:not(.journey) .project-controls { position: absolute; inset: 0; display: block; }
+  html.js:not(.journey) .project-controls button { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 50px; }
+  html.js:not(.journey) .project-controls #project-prev { left: 4px; }
+  html.js:not(.journey) .project-controls #project-next { right: 4px; }
+  html.js:not(.journey) .holo-deck > .projects-grid { grid-column: 1 / -1; }
+  html.js:not(.journey) .project h3 { margin: 8px 0 12px; font-size: 26px; }
+  html.js:not(.journey) .project .summary { margin-bottom: 16px; }
+  html.js:not(.journey) .project .stack { margin-bottom: 18px; }
+  html.js:not(.journey) .project-links { margin-bottom: 18px; }
+  html.js:not(.journey) .project-links .text-link { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; text-align: center; }
+  html.js:not(.journey) .case { padding: 14px 16px; }
+}

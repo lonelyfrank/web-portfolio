@@ -143,15 +143,24 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
     assert.equal(await page.locator('.holo-float').evaluate(n => n.getAnimations().length), 0);
     assert.equal(await page.locator('.holo-card').evaluate(n => n.getAnimations().length), 0);
     await page.locator('[data-mode="read"]').click();
-    assert.equal(await page.locator('.project:visible').count(), 5);
-    assert.equal(await page.locator('.project-carousel').isVisible(), false);
-    await page.locator('#project-3 summary').click();
-    assert.equal(await page.locator('#project-3 details').getAttribute('open'), '');
+    // Reading: one project at a time, with arrows, an open case panel and no thumbnails.
+    assert.equal(await page.locator('.project:visible').count(), 1);
+    assert.equal(await page.locator('.project-carousel').isVisible(), true);
+    assert.equal(await page.locator('.project-thumbs').count(), 0);
+    assert.equal(await page.locator('.project:visible details').getAttribute('open'), '');
+    for (let i = 0; i < 2; i++) {
+      await page.locator('#project-next').click();
+      await page.waitForFunction(() => !document.querySelector('.project-carousel').hasAttribute('aria-busy'));
+    }
+    await page.waitForFunction(() => document.querySelector('.project-carousel').dataset.project === 'project-3'
+      && !document.querySelector('.project-carousel').hasAttribute('aria-busy'));
+    assert.equal(await page.locator('#project-counter').textContent(), '03');
+    assert.equal(await page.locator('#project-3').isVisible(), true);
     assert.equal(await page.locator('#detail').evaluate(n => n.open), false);
 
     const mobile = await open({ viewport: { width: 390, height: 844 } });
     await mobile.goto(`${url}/#projects`);
-    assert.equal(await mobile.locator('.project:visible').count(), 5);
+    assert.equal(await mobile.locator('.project:visible').count(), 1);
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await mobile.locator('[data-mode="journey"]').click();
     await mobile.locator('.site-nav [href="#projects"]').click();

@@ -1,5 +1,5 @@
-// Caso di studio: in Viaggio si apre nel dialog; in Lettura il <details>
-// si espande sul posto.
+// Caso di studio: in Viaggio si apre nel dialog; in Lettura è un pannello
+// sempre aperto sotto il progetto selezionato.
 import { $, dialog, el } from './dom.js';
 import { isJourney } from './state.js';
 
@@ -14,6 +14,8 @@ function openDetail(...nodes) {
 export function initDetail() {
   grid.addEventListener('click', e => {
     const project = e.target.closest('.project');
+    // In Reading the open panel is part of the page, not a disclosure.
+    if (!isJourney() && e.target.closest('summary')) e.preventDefault();
     if (!isJourney() || !project || e.target.closest('a')) return;
     // Desktop: only the explicit command opens it; the projection is for reading.
     if (!e.target.closest('summary') && matchMedia('(min-width: 761px)').matches) return;

@@ -22,6 +22,7 @@ export class ProjectCarousel {
     this.busy = false;
     this.buttons = [...this.root.querySelectorAll('button')];
     this.buttons.forEach((button, i) => button.addEventListener('click', () => this.move(i ? 1 : -1)));
+    document.querySelector('#project-total').textContent = String(this.items.length).padStart(2, '0');
     this.root.addEventListener('keydown', event => {
       const direction = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
       if (!direction || event.altKey || event.ctrlKey || event.metaKey) return;
@@ -38,7 +39,16 @@ export class ProjectCarousel {
 
   render(announce = false) {
     const item = this.items[this.activeProjectIndex];
-    this.items.forEach(({ panel }, i) => { panel.hidden = this.journey && i !== this.activeProjectIndex; });
+    this.items.forEach(({ panel }, i) => {
+      panel.hidden = i !== this.activeProjectIndex;
+      // Reading shows the case study as an open panel; Journey opens it in the dialog.
+      const details = panel.querySelector('details');
+      details.open = !this.journey;
+      const summary = details.querySelector('summary');
+      if (this.journey) summary.removeAttribute('tabindex');
+      else summary.tabIndex = -1;
+    });
+    document.querySelector('#project-counter').textContent = String(this.activeProjectIndex + 1).padStart(2, '0');
     this.image.src = item.image.getAttribute('src');
     this.image.alt = item.image.alt;
     this.root.dataset.project = item.panel.id;
@@ -112,7 +122,15 @@ export class ProjectCarousel {
     });
   }
 
-  async move(direction) {
+  select(index) {
+    if (index !== this.activeProjectIndex) this.go(index, index > this.activeProjectIndex ? 1 : -1);
+  }
+
+  move(direction) {
+    return this.go((this.activeProjectIndex + direction + this.items.length) % this.items.length, direction);
+  }
+
+  async go(next, direction) {
     if (this.busy || !this.canNavigate()) return;
     this.busy = true;
     this.controls();
@@ -120,7 +138,6 @@ export class ProjectCarousel {
     const generation = ++this.generation;
     const controller = new AbortController();
     this.decodeController = controller;
-    const next = (this.activeProjectIndex + direction + this.items.length) % this.items.length;
     try {
       // Decode just the requested asset before dimming the current projection.
       await this.decode(this.items[next].image.getAttribute('src'), controller.signal);

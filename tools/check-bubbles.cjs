@@ -9,6 +9,8 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
       const errors = [];
       trackErrors(page, errors);
       // Different reproducible random schedules exercise both single and double births.
+      // Bubbles belong to Journey; Reading uses the static labelled grid (check-about).
+      await page.addInitScript(() => localStorage.setItem('fs-mode', 'journey'));
       await page.addInitScript(seed => {
         Math.random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
       }, width);

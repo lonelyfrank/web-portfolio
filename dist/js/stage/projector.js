@@ -10,8 +10,9 @@ const beam = $('.scene-link[data-link="feature"]');
 const screen = $('.project-carousel');
 
 export const projectCarousel = new ProjectCarousel({
-  canNavigate: () => isJourney() && state.current === SECTION.projects && state.phase === 'waiting'
-    && state.poweredStation === SECTION.projects && !dialog.open && !document.hidden,
+  // Reading can always change project; Journey only from the powered station.
+  canNavigate: () => !dialog.open && !document.hidden && (!isJourney()
+    || (state.current === SECTION.projects && state.phase === 'waiting' && state.poweredStation === SECTION.projects)),
   reduced: () => state.reduced,
   onChange: () => placeBeam(),
 });

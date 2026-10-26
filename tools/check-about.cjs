@@ -49,7 +49,14 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
           const style = getComputedStyle(n);
           return style.clipPath === 'inset(50%)' && n.getBoundingClientRect().width <= 1;
         }));
-        assert.equal(hiddenNames, true, 'Names stay available to screen readers without visible subtitles');
+        if (mode === 'journey') assert.equal(hiddenNames, true, 'Names stay available to screen readers without visible subtitles');
+        else {
+          assert.equal(await about.locator('.skill-orbits').evaluate(n => n.classList.contains('is-floating')), false);
+          assert.equal(await about.locator('.skill-name').evaluateAll(nodes => nodes.every(n => {
+            const r = n.getBoundingClientRect();
+            return getComputedStyle(n).clipPath === 'none' && r.width > 20 && r.height > 8;
+          })), true, 'Reading shows each skill name under its icon');
+        }
         if (mode === 'journey') {
           assert.equal(parseFloat(layout.translate), 0);
           assert.equal(layout.overflowY, 'auto');

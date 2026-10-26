@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="css/projects.css">
   <link rel="stylesheet" href="css/contact.css">
   <link rel="stylesheet" href="css/stage.css">
+  <link rel="stylesheet" href="css/reading.css">
   <script>
     // Sceglie la modalità prima del primo paint, così non c'è sfarfallio di layout.
     (function () {
@@ -120,6 +121,16 @@
           </span>
         </a>
         <div class="dock" aria-hidden="true"></div>
+      </div>
+      <!-- Solo Lettura: skyline e ponte su cui Frank e la gatta aspettano il visitatore. -->
+      <div class="read-scene" aria-hidden="true">
+        <div class="scene-sky scene-sky-far"></div>
+        <div class="scene-sky scene-sky-near"></div>
+        <img class="scene-lamp lamp-a" src="assets/props/lamp-single.webp" alt="">
+        <img class="scene-lamp lamp-b" src="assets/props/lamp-double.webp" alt="">
+        <div class="railing"></div>
+        <div class="avatar"><span class="avatar-sprite"></span></div>
+        <div class="walkway"></div>
       </div>
     </section>
 
@@ -263,6 +274,11 @@
           </div>
         </section>
       </div>
+      <!-- Solo Lettura: la postazione di About come divisore di sezione. -->
+      <div class="read-bench" aria-hidden="true">
+        <img src="assets/stations/workbench.webp" alt="" width="800" height="466">
+        <span class="bench-actor"></span>
+      </div>
     </section>
 
     <section id="projects" class="page" aria-labelledby="projects-title" data-project-power="off">
@@ -272,6 +288,7 @@
           <h2 id="projects-title" tabindex="-1">PROJECTS<span class="dot">.</span></h2>
           <p>Progetti personali.<br>Esperimenti concreti.</p>
         </div>
+        <p class="project-counter" aria-hidden="true"><b id="project-counter">01</b> / <span id="project-total">05</span></p>
         <div class="project-carousel" role="region" aria-roledescription="carosello" aria-label="Progetti olografici" tabindex="0">
           <div class="holo-projection" data-power="off">
             <div class="holo-float"><div class="holo-card"><img id="project-image" width="1056" height="704" alt=""></div></div>
@@ -420,6 +437,8 @@
 
   <footer class="site-footer">
     <div class="bridge" aria-hidden="true">
+      <div class="scene-sky scene-sky-far"></div>
+      <img class="footer-ship" src="assets/ships/ship-scout.webp" alt="" width="300" height="89">
       <div class="street-props">
         <img class="street-lamp lamp-left" src="assets/props/lamp-single.webp" alt="">
         <img class="street-lamp lamp-right" src="assets/props/lamp-double.webp" alt="">
@@ -436,6 +455,7 @@
     </div>
     <div class="footer-row">
       <span>© <span id="year">2026</span> Francesco Spina</span>
+      <a href="#home">Torna su ↑</a>
       <a href="https://github.com/lonelyfrank" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </footer>
