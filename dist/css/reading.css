@@ -207,3 +207,9 @@ html:not(.journey) .district-services { display: none; }
   html.js:not(.journey) .project-links .text-link { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; text-align: center; }
   html.js:not(.journey) .case { padding: 14px 16px; }
 }
+
+/* Contact: due canali, centrati rispetto al messaggio e più grandi. */
+@media (min-width: 900px) {
+  html:not(.journey) .contact-visual { width: min(100%, 280px); }
+  html:not(.journey) .contact-plate { width: min(100%, 230px); }
+}
