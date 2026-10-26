@@ -27,7 +27,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
         await page.waitForTimeout(350);
         assert.equal(await section.locator('.panel, .scenic, button, [data-placeholder]').count(), 0);
         assert.equal(await page.locator('[data-link="contact"]').count(), 0);
-        assert.deepEqual(await section.locator('.contact-label').allTextContents(), ['GitHub', 'Email', 'LinkedIn', 'Scarica CV']);
+        assert.deepEqual(await section.locator('.contact-label').allTextContents(), ['GitHub', 'Email', 'LinkedIn']);
         assert.equal(await section.locator('img:not([alt=""])').count(), 0);
         assert.equal(await section.locator('a[href="#"]').count(), 0);
         const layout = await section.evaluate(n => {
@@ -88,7 +88,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
         assert.equal(await github.getAttribute('href'), 'https://github.com/lonelyfrank');
         assert.equal(await github.getAttribute('rel'), 'noopener noreferrer');
         // Missing destinations remain honest static content outside keyboard order.
-        assert.equal(await section.locator('[data-unavailable]').count(), 2);
+        assert.equal(await section.locator('[data-unavailable]').count(), 1);
         await page.keyboard.press('Tab');
         await github.focus();
         assert.equal(await github.evaluate(n => n === document.activeElement && getComputedStyle(n).outlineStyle === 'solid'), true);
@@ -157,7 +157,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
 
     const noJS = await open({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     await noJS.goto(`${url}/#contact`);
-    assert.equal(await noJS.locator('.contact-label:visible').count(), 4);
+    assert.equal(await noJS.locator('.contact-label:visible').count(), 3);
     assert.equal(await noJS.locator('a.contact-channel[href*="github.com"]').isVisible(), true);
     assert.equal(await noJS.locator('.contact-visual').first().evaluate(n => getComputedStyle(n).animationPlayState), 'paused');
     await noJS.close();
