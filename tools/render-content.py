@@ -20,20 +20,32 @@ def projects():
     articles = []
     for i, project in enumerate(load('projects.json'), 1):
         p = {k: escape(v) if isinstance(v, str) else v for k, v in project.items()}
+        stack_label = p.get('stack_label', 'Tecnologie')
         stack = ''.join(f'<li>{escape(tech)}</li>' for tech in p['stack'])
         links = ''.join(f'<a class="text-link" href="{p[key]}" target="_blank" rel="noopener">{label} ↗</a>'
-                        for key, label in [('github', 'GitHub'), ('demo', 'Demo')] if p[key])
+                        for key, label in [('github', 'GitHub'), ('demo', p.get('demo_label', 'Demo'))] if p[key])
+        evidence = ''.join(f'<dt>{label}</dt><dd>{p[key]}</dd>'
+                           for key, label in [('contribution', 'Il mio contributo'),
+                                              ('challenge', 'La difficoltà affrontata'),
+                                              ('validation', 'Verifiche documentate'),
+                                              ('ai', 'Uso dell’AI')]
+                           if p.get(key))
+        if 'case' in p:  # custom case-study labels, e.g. consulting entries
+            evidence = ''.join(f'<dt>{escape(label)}</dt><dd>{escape(text)}</dd>' for label, text in p['case'])
+            story = ''
+        else:
+            story = f"<dt>Il problema</dt><dd>{p['problem']}</dd><dt>La soluzione</dt><dd>{p['solution']}</dd>"
         articles.append(f'''        <article class="project" id="project-{i}" aria-labelledby="project-title-{i}">
           <div class="project-media"><img src="assets/projects/{p['id']}.webp" alt="Schermata olografica di {p['name']}" width="1056" height="704" loading="lazy" decoding="async"></div>
           <span class="micro">{i:02d} / {p['category']}</span>
           <h3 id="project-title-{i}">{p['name']}</h3>
           <p class="summary">{p['summary']}</p>
-          <ul class="stack" aria-label="Tecnologie">{stack}</ul>
+          <ul class="stack" aria-label="{stack_label}">{stack}</ul>
           <div class="project-links">{links}</div>
           <details class="case">
             <summary><span>Approfondimento</span><span aria-hidden="true">→</span></summary>
             <div class="case-body">
-              <dl><dt>Il problema</dt><dd>{p['problem']}</dd><dt>La soluzione</dt><dd>{p['solution']}</dd></dl>
+              <dl>{story}{evidence}</dl>
               <div class="case-links">{links}</div>
             </div>
           </details>
@@ -42,13 +54,21 @@ def projects():
 
 
 def skills():
-    # Names stay available to screen readers; the bubbles are decorative.
-    return [f'''            <li>
+    # Keep one entry per technology; headings are visible in Reading.
+    rows, previous = [], None
+    for skill in load('skills.json'):
+        group = escape(skill['group'])
+        if group != previous:
+            rows.append(f'            <li class="skill-group"><h4>{group}</h4></li>')
+            previous = group
+        rows.append(f'''            <li class="skill-item" title="{escape(skill['name'])} — {group}">
               <span class="skill-orb" aria-hidden="true">
                 <img src="assets/skills/{escape(skill['id'])}.webp" alt="" width="256" height="256">
               </span>
               <span class="skill-name sr-only">{escape(skill['name'])}</span>
-            </li>''' for skill in load('skills.json')]
+              <span class="sr-only skill-context"> — {group}</span>
+            </li>''')
+    return rows
 
 
 # Marker name → (renderer, indentation of the closing marker).

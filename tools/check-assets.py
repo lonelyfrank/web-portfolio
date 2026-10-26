@@ -19,6 +19,10 @@ class Document(HTMLParser):
         self.ids, self.references, self.fragments, self.labels = [], [], [], []
         self.modules, self.preloads = [], []
 
+    def handle_comment(self, data):
+        # Email/CV artwork is intentionally retained in commented-out markup.
+        self.references.extend(re.findall(r'<img\b[^>]*\bsrc="(assets/[^"\s]+)"', data))
+
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if 'id' in attrs:

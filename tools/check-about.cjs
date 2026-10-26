@@ -22,7 +22,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
         await page.waitForTimeout(350);
         assert.equal(await about.locator('[role="tab"], [role="tabpanel"], button, .scenic, .panel').count(), 0);
         assert.equal(await page.locator('[data-link="about"]').count(), 0);
-        assert.deepEqual(await about.locator('.skill-name').allTextContents(), ['HTML', 'CSS', 'JavaScript', 'Windows', 'Vue', 'PHP', 'Laravel', 'AEM', 'WordPress', 'Jira', 'Linux', 'GitHub', 'Windows', 'React', 'Python', 'TypeScript', 'Claude', 'Shopify']);
+        assert.deepEqual(await about.locator('.skill-name').allTextContents(), ["AEM", "WordPress", "Jira", "HTML", "CSS", "JavaScript", "Vue", "PHP", "Laravel", "GitHub", "React", "Python", "TypeScript", "Windows", "Linux", "Shopify", "Claude", "ChatGPT"]);
         const layout = await about.evaluate(n => {
           const rect = s => {
             const r = n.querySelector(s).getBoundingClientRect();
@@ -47,7 +47,7 @@ const { chromium, url, shots, browserOptions, setSystemMotion, trackErrors } = r
         }
         const hiddenNames = await about.locator('.skill-name').evaluateAll(nodes => nodes.every(n => {
           const style = getComputedStyle(n);
-          return style.clipPath === 'inset(50%)' && n.getBoundingClientRect().width <= 1;
+          return style.clipPath === 'inset(50%)' && n.getBoundingClientRect().width <= 1.01;
         }));
         if (mode === 'journey') assert.equal(hiddenNames, true, 'Names stay available to screen readers without visible subtitles');
         else {

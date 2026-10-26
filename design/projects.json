@@ -1,49 +1,117 @@
 [
   {
-    "id": "bt-darts", "name": "BT Darts Score Board", "category": "Web Application",
+    "id": "bt-darts",
+    "name": "BT Darts Score Board",
+    "category": "Web Application",
     "summary": "Giocatori, tornei e classifiche per le serate di freccette. Un companion offline per il totem Pub Time Darts.",
-    "stack": ["React", "TypeScript", "Vite", "IndexedDB", "Fastify"],
-    "github": "https://github.com/lonelyfrank/BT-score-board", "demo": "https://bt-score-board.vercel.app/",
+    "stack": [
+      "React",
+      "TypeScript",
+      "Vite",
+      "IndexedDB",
+      "Fastify"
+    ],
+    "github": "https://github.com/lonelyfrank/BT-score-board",
+    "demo": "https://bt-score-board.vercel.app/",
     "artwork": "Bite_Trouble__Bersaglio_Neon_Retro-removebg-preview.png",
     "problem": "Il totem gestisce giochi e punteggi, ma non l’organizzazione di giocatori e tornei.",
     "solution": "L’app registra risultati, organizza gironi ed eliminazione diretta e conserva lo storico. La modalità standalone usa IndexedDB e funziona offline; quella condivisa usa un’API Fastify con SQLite.",
-    "source": "BT-score-board/README.md, package.json, apps/web/package.json; demo già presente nel portfolio"
+    "source": "BT-score-board/README.md, package.json, apps/web/package.json; demo già presente nel portfolio",
+    "contribution": "Ho definito i requisiti e l’interfaccia del companion, lavorando al codice con il supporto dell’AI.",
+    "challenge": "Gestire iscritti e squadre oltre i quattro slot del totem, distribuendoli in manche flessibili senza confondere i turni. Il risultato finale del totem resta il riferimento ufficiale.",
+    "validation": "Il repository include test Vitest per regole, API e persistenza e test Playwright per i flussi shared e standalone. È documentata una checklist per le prove su smartphone: la presenza dei test non equivale a una validazione sul campo completa.",
+    "ai": "L’AI supporta lo sviluppo del codice. Requisiti e scelte di interfaccia sono parte del mio contributo; le verifiche tecniche documentate sono consultabili nel repository."
   },
   {
-    "id": "sensei", "name": "Sensei Learning", "category": "Learning Platform",
+    "id": "sensei",
+    "name": "Sensei Learning",
+    "category": "Learning Platform",
     "summary": "Uno spazio desktop per eseguire artifact interattivi generati dall’AI e seguire percorsi di apprendimento, progressi e obiettivi.",
-    "stack": ["Electron", "React", "JavaScript", "Vite", "SQLite"],
-    "github": "https://github.com/lonelyfrank/sensei-learning", "demo": null,
+    "stack": [
+      "Electron",
+      "React",
+      "JavaScript",
+      "Vite",
+      "SQLite"
+    ],
+    "github": "https://github.com/lonelyfrank/sensei-learning",
+    "demo": null,
     "artwork": "Banner_HUD_olografico_SENSEI_Learning-removebg-preview.png",
     "problem": "Raccogliere esperienze interattive generate dall’AI e ritrovare i propri progressi nel tempo.",
     "solution": "Sensei esegue artifact JSX, distingue percorsi strutturati e documenti da consultare e tiene traccia di progressi, XP e livelli in un’app desktop. Il progetto è in sviluppo attivo.",
     "source": "sensei-learning/README.md e package.json"
   },
   {
-    "id": "casaurea", "name": "Casaurea Property Management", "category": "Property Management",
-    "summary": "Dalla prenotazione al soggiorno: onboarding degli ospiti, servizi e richieste di assistenza in un’unica piattaforma per case vacanza.",
-    "stack": ["Next.js", "TypeScript", "Tailwind CSS", "Express", "Prisma", "SQLite"],
-    "github": null, "demo": null,
+    "id": "casaurea",
+    "name": "Casaurea",
+    "category": "Consulenza digitale · Web Operations",
+    "summary": "Gestione e revisione del sito, test di navigazione e consulenza sulle soluzioni digitali a supporto delle attività di Casaurea.",
+    "stack_label": "Ambiti di intervento",
+    "stack": [
+      "Web Operations",
+      "QA funzionale",
+      "Analisi dei requisiti",
+      "Lodgify",
+      "Consulenza infrastrutturale"
+    ],
+    "github": null,
+    "demo": "https://casaurea.it",
+    "demo_label": "Sito del cliente",
     "artwork": "Casaurea_ Interfaccia e Trullo Futuristico.png",
-    "problem": "Collegare prenotazione, documenti, servizi e assistenza durante l’intero soggiorno.",
-    "solution": "La demo include un’app ospite e un backoffice con ruoli distinti. Ogni prenotazione genera una sessione con onboarding, ordini e richieste. L’integrazione Lodgify usa webhook simulati; email e pagamenti sono simulati.",
-    "source": "casaurea-agent/README.md, apps/web/package.json, apps/api/package.json; nessun remote Git pubblico configurato"
+    "case": [
+      [
+        "Il mio ruolo",
+        "Affianco Casaurea nella gestione e nell’evoluzione dei suoi strumenti digitali, dalla revisione del sito esistente alla valutazione di nuovi applicativi e soluzioni infrastrutturali."
+      ],
+      [
+        "Gestione web e QA",
+        "Esamino i percorsi di navigazione e le funzionalità del sito, individuo criticità e segnalo contenuti da aggiornare, elementi da rivedere e nuove pagine o funzionalità da introdurre."
+      ],
+      [
+        "Consulenza digitale",
+        "Analizzo le esigenze operative e valuto soluzioni per nuovi applicativi e integrazioni con Lodgify. La consulenza comprende anche la ricerca di server, UPS e hardware adatti alla gestione degli applicativi."
+      ],
+      [
+        "Metodo di lavoro",
+        "Navigazione e verifiche funzionali del sito, raccolta delle criticità e formulazione di proposte di aggiornamento e miglioramento."
+      ],
+      [
+        "Ambito del contributo",
+        "Il mio contributo riguarda gestione, revisione e consulenza digitale. La realizzazione originaria del sito casaurea.it è esterna al mio incarico."
+      ]
+    ],
+    "source": "Indicazioni dirette dell’autore sull’incarico. Il prototipo applicativo (casaurea-agent) è documentato in design/audit.md e non è presentato come progetto pubblico."
   },
   {
-    "id": "cops-robbers", "name": "Cops & Robbers", "category": "Browser Game",
+    "id": "cops-robbers",
+    "name": "Cops & Robbers",
+    "category": "Browser Game",
     "summary": "Una fuga in una città voxel notturna, osservata da una console CCTV. Dodici incroci, tre difficoltà e crediti esclusivamente virtuali.",
-    "stack": ["JavaScript", "Three.js", "Vite"],
-    "github": "https://github.com/lonelyfrank/cops-robbers", "demo": "https://cops-robbers.vercel.app/",
+    "stack": [
+      "JavaScript",
+      "Three.js",
+      "Vite"
+    ],
+    "github": "https://github.com/lonelyfrank/cops-robbers",
+    "demo": "https://cops-robbers.vercel.app/",
     "artwork": "Cops___Robbers__Inseguimento_Neon-removebg-preview.png",
     "problem": "Trasformare una sequenza di scelte di gioco in un’esperienza leggibile e immersiva nel browser.",
     "solution": "Un prototipo interamente client-side con città modulare 3D, interfaccia di sorveglianza, tre livelli di difficoltà e storico della sessione. Nessun account o pagamento: i crediti sono solo virtuali.",
     "source": "cops-and-robbers/README.md, package.json e remote origin cops-robbers"
   },
   {
-    "id": "good-game", "name": "Good Game", "category": "Foundry VTT Module",
+    "id": "good-game",
+    "name": "Good Game",
+    "category": "Foundry VTT Module",
     "summary": "Un indicatore della salute tecnica della sessione di gioco: compatibilità dei moduli, dipendenze ed errori, prima e durante la partita.",
-    "stack": ["JavaScript", "Foundry VTT", "Handlebars", "CSS"],
-    "github": "https://github.com/lonelyfrank/good-game", "demo": null,
+    "stack": [
+      "JavaScript",
+      "Foundry VTT",
+      "Handlebars",
+      "CSS"
+    ],
+    "github": "https://github.com/lonelyfrank/good-game",
+    "demo": null,
     "artwork": "Good_Game__Dadi_e_Mappe_Cyberpunk-removebg-preview.png",
     "problem": "Individuare incompatibilità e problemi tecnici prima che interrompano una sessione di gioco.",
     "solution": "Il Game Health Meter combina scansione dei moduli, monitoraggio degli errori e snapshot confrontabili in un punteggio da 0 a 100. Una mascotte reagisce allo stato della sessione.",

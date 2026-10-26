@@ -1,20 +1,110 @@
 [
-  {"id": "html", "name": "HTML", "source": "Bolla HTML5 fluttuante in pixel art-3.png"},
-  {"id": "css", "name": "CSS", "source": "Scudo CSS3 in bolla di vetro-6.png"},
-  {"id": "javascript", "name": "JavaScript", "source": "Bolla JavaScript in vetro pixel art-2.png"},
-  {"id": "windows", "name": "Windows", "source": "Bolla pixel art con logo Windows-4.png"},
-  {"id": "vue", "name": "Vue", "source": "Bolla pixel art con logo Vue-5.png"},
-  {"id": "php", "name": "PHP", "source": "Bolla PHP cyberpunk in pixel art-10.png"},
-  {"id": "laravel", "name": "Laravel", "source": "Bolla di vetro cyberpunk con logo Laravel-7.png"},
-  {"id": "aem", "name": "AEM", "source": "Bolla di vetro pixel art AEM-1.png"},
-  {"id": "wordpress", "name": "WordPress", "source": "Bolla WordPress in vetro pixel art-3.png"},
-  {"id": "jira", "name": "Jira", "source": "Bolla pixel art con logo Jira-11.png"},
-  {"id": "linux", "name": "Linux", "source": "Tux in una bolla cyberpunk-1.png"},
-  {"id": "github", "name": "GitHub", "source": "Bolla GitHub con Octocat pixel art-2.png"},
-  {"id": "windows-blue", "name": "Windows", "source": "Bolla pixel con logo Windows azzurro-9.png"},
-  {"id": "react", "name": "React", "source": "Bolla React cibernetica in pixel art-1.png"},
-  {"id": "python", "name": "Python", "source": "Bolla pixel art con logo Python-8.png"},
-  {"id": "typescript", "name": "TypeScript", "source": "Bolla TypeScript di vetro al neon-2.png"},
-  {"id": "claude", "name": "Claude", "source": "Bolla pixel-art con simbolo Claude-12.png"},
-  {"id": "shopify", "name": "Shopify", "source": "Bolla di vetro pixel art Shopify-3.png"}
+  {
+    "id": "aem",
+    "name": "AEM",
+    "source": "Bolla di vetro pixel art AEM-1.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "wordpress",
+    "name": "WordPress",
+    "source": "Bolla WordPress in vetro pixel art-3.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "jira",
+    "name": "Jira",
+    "source": "Bolla pixel art con logo Jira-11.png",
+    "group": "Lavoro in agenzia"
+  },
+  {
+    "id": "html",
+    "name": "HTML",
+    "source": "Bolla HTML5 fluttuante in pixel art-3.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "css",
+    "name": "CSS",
+    "source": "Scudo CSS3 in bolla di vetro-6.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "javascript",
+    "name": "JavaScript",
+    "source": "Bolla JavaScript in vetro pixel art-2.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "vue",
+    "name": "Vue",
+    "source": "Bolla pixel art con logo Vue-5.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "php",
+    "name": "PHP",
+    "source": "Bolla PHP cyberpunk in pixel art-10.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "laravel",
+    "name": "Laravel",
+    "source": "Bolla di vetro cyberpunk con logo Laravel-7.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "source": "Bolla GitHub con Octocat pixel art-2.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "react",
+    "name": "React",
+    "source": "Bolla React cibernetica in pixel art-1.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "python",
+    "name": "Python",
+    "source": "Bolla pixel art con logo Python-8.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "typescript",
+    "name": "TypeScript",
+    "source": "Bolla TypeScript di vetro al neon-2.png",
+    "group": "Formazione e progetti"
+  },
+  {
+    "id": "windows",
+    "name": "Windows",
+    "source": "Bolla pixel art con logo Windows-4.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "linux",
+    "name": "Linux",
+    "source": "Tux in una bolla cyberpunk-1.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify",
+    "source": "Bolla di vetro pixel art Shopify-3.png",
+    "group": "Sperimentazione personale"
+  },
+  {
+    "id": "claude",
+    "name": "Claude",
+    "source": "Bolla pixel-art con simbolo Claude-12.png",
+    "group": "Strumenti AI"
+  },
+  {
+    "id": "chatgpt",
+    "name": "ChatGPT",
+    "source": "Sfera pixel art con logo ChatGPT.png",
+    "group": "Strumenti AI"
+  }
 ]

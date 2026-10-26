@@ -31,8 +31,10 @@
 .skill-orbits li { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 0; }
 .skill-orb { display: block; width: min(var(--bubble-size), 100%); aspect-ratio: 1; flex: none; }
 .skill-orb img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-/* Ten compact bubbles; births grow while neighbouring positions redistribute. */
+/* Ten compact bubbles: one pops at random, the next is born in a gap and swells, shouldering its neighbours aside. */
 .skill-orbits.is-floating { position: relative; display: block; height: 340px; padding: 0; overflow: clip; }
+.skill-orbits.is-floating { user-select: none; -webkit-user-select: none; }
+.skill-orbits.is-floating.is-hovering { cursor: pointer; }
 .skill-orbits.is-floating li { position: absolute; top: 0; left: 0; width: var(--bubble-size); opacity: 0; pointer-events: none; }
 .skill-orbits.is-floating li[data-alive] { will-change: transform, opacity; }
 .skill-orbits.is-floating .skill-orb img { transform: scale(var(--birth-scale, 1)); }
@@ -41,6 +43,15 @@
 .skill-orbits.is-floating li:nth-child(3n) .skill-orb { animation-duration: 7.6s; animation-delay: -4.1s; }
 .skill-orbits.is-paused .skill-orb { animation-play-state: paused; }
 .skill-orbits.is-floating li:not([data-alive]) .skill-orb { animation-play-state: paused; }
+/* The burst: two thin rings leave the bubble as it pops. */
+.skill-orbits.is-floating li[data-popping]::before,
+.skill-orbits.is-floating li[data-popping]::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 1;
+  border: 2px solid var(--cyan); border-radius: 50%; pointer-events: none;
+  animation: skill-burst .34s ease-out forwards;
+}
+.skill-orbits.is-floating li[data-popping]::after { border-color: var(--pink); animation-delay: .06s; opacity: 0; animation-fill-mode: both; }
+@keyframes skill-burst { 0% { transform: scale(.55); opacity: .85; } 100% { transform: scale(1.25); opacity: 0; } }
 @keyframes skill-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
 .education-course { border-left: 1px solid var(--line-strong); padding-left: 20px; }
 .education-provider { margin: 0 0 8px; color: var(--cyan); font-family: var(--font-display); font-size: 14px; }
@@ -71,3 +82,8 @@
   .education-course { max-width: 48ch; }
   #about-title, .journey #about-title { font-size: clamp(48px, 13vw, 85px); letter-spacing: -2px; }
 }
+
+/* Context is explicit in Reading and remains available to assistive technology. */
+.skill-orbits .skill-group { grid-column: 1 / -1; align-items: flex-start; }
+.skill-group h4 { margin: 8px 0 0; font-size: 13px; color: var(--cyan); }
+.journey .skill-orbits .skill-group { display: none; }

@@ -1,19 +1,20 @@
-// Ten compact soap bubbles. Atomic replacements keep the visible population constant.
+// Ten compact soap bubbles. Pops are random and each one is followed, in sequence, by a
+// birth in an interior gap; the cluster keeps packing itself while bubbles vanish and grow.
 // Returns the update to call whenever the motion preference changes.
 import { root } from '../dom.js';
 import { isJourney, state } from '../state.js';
 
 export function initSkills() {
   const field = document.querySelector('.skill-orbits');
-  const items = [...field.children];
-  const COUNT = 10, REFLOW = 1.25;
+  const items = [...field.querySelectorAll('.skill-item')];
+  const COUNT = 10, BIRTH = 1.5, POP = .34, PULL = 1.4, HOVER = .22;
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const ease = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
-  let bubbles = [], cursor = 0, clock = 0, event = null, reflowAt = -REFLOW;
+  let bubbles = [], cursor = 0, clock = 0, queue = [], lastAt = 0, doubled = false;
   const lastShown = new Map();
   let size = 0, width = 0, height = 0, spacing = 0;
   let frame = 0, last = 0, visible = false, enabled = false;
-  let pointer = null, wave = null, lastGap = null;
+  let pointer = null, lastGap = null;
 
   function measure() {
     if (!field.clientWidth) return false;
@@ -24,55 +25,60 @@ export function initSkills() {
     return true;
   }
   function bound(b) {
-    b.hx = clamp(b.hx, size / 2 + 12, width - size / 2 - 12);
-    b.hy = clamp(b.hy, size / 2 + 12, height - size / 2 - 12);
+    b.x = clamp(b.x, size / 2 + 12, width - size / 2 - 12);
+    b.y = clamp(b.y, size / 2 + 12, height - size / 2 - 12);
   }
-  function position(b) {
-    const t = ease((clock - reflowAt) / REFLOW);
-    return [b.fx + (b.hx - b.fx) * t, b.fy + (b.hy - b.fy) * t];
+  const position = b => [b.x, b.y];
+  // Share of its full footprint a bubble claims: newborns and hovered ones swell and shoulder their
+  // neighbours aside, popped ones free the space.
+  function footprint(b) {
+    if (b.dying !== null) return 1 - ease((clock - b.dying) / POP);
+    return (.15 + .85 * ease((clock - b.born) / BIRTH)) * (1 + HOVER * b.hover);
   }
-  function add(x, y, initial = false, excluded = []) {
+  function add(x, y, initial = false) {
     const names = new Set(bubbles.map(b => b.node.textContent.trim()));
-    const node = items.filter(candidate => !excluded.includes(candidate)
-      && !bubbles.some(b => b.node === candidate) && !names.has(candidate.textContent.trim()))
+    const node = items.filter(candidate => !bubbles.some(b => b.node === candidate)
+      && !names.has(candidate.textContent.trim()))
       .sort((a, b) => (lastShown.get(a) ?? -1) - (lastShown.get(b) ?? -1))[0];
     lastShown.set(node, cursor++);
     node.dataset.alive = '';
-    bubbles.push({ node, hx: x, hy: y, fx: x, fy: y, ox: 0, oy: 0,
-      born: initial ? clock - 2 - Math.random() * 18 : clock });
+    bubbles.push({ node, x, y, hover: 0, dying: null,
+      born: initial ? clock - BIRTH - Math.random() * 18 : clock });
   }
 
-  function compact() {
-    // Relax target positions only at a birth or resize. No free-running billiard physics.
-    for (let pass = 0; pass < 90; pass++) {
+  function relax(dt) {
+    // Continuous packing: a weak pull to the centre closes holes, overlaps push neighbours apart.
+    for (let pass = 0; pass < 3; pass++) {
       for (const b of bubbles) {
-        b.hx += (width / 2 - b.hx) * .003;
-        b.hy += (height / 2 - b.hy) * .003;
+        b.x += (width / 2 - b.x) * PULL * dt / 3;
+        b.y += (height / 2 - b.y) * PULL * dt / 3;
       }
       for (let i = 0; i < bubbles.length; i++) for (let j = i + 1; j < bubbles.length; j++) {
         const a = bubbles[i], b = bubbles[j];
-        let dx = b.hx - a.hx, dy = b.hy - a.hy;
+        let dx = b.x - a.x, dy = b.y - a.y;
         if (Math.hypot(dx, dy) < .01) { dx = .1; dy = .07; }
-        const distance = Math.hypot(dx, dy);
-        if (distance >= spacing) continue;
-        const move = (spacing - distance) / (2 * distance);
-        a.hx -= dx * move; a.hy -= dy * move;
-        b.hx += dx * move; b.hy += dy * move;
+        const distance = Math.hypot(dx, dy), reach = spacing * (footprint(a) + footprint(b)) / 2;
+        if (distance >= reach) continue;
+        const move = (reach - distance) / (2 * distance);
+        a.x -= dx * move; a.y -= dy * move;
+        b.x += dx * move; b.y += dy * move;
       }
       bubbles.forEach(bound);
     }
   }
+  function settle() { for (let i = 0; i < 120; i++) relax(1 / 60); }
 
   function gap() {
     // Interior triangular gaps vary with each arrangement; no fixed centre emitter.
+    const live = bubbles.filter(b => b.dying === null);
     const candidates = [];
-    for (let i = 0; i < bubbles.length; i++) for (let j = i + 1; j < bubbles.length; j++) {
-      for (let k = j + 1; k < bubbles.length; k++) {
-        const triple = [bubbles[i], bubbles[j], bubbles[k]];
-        if (triple.some(a => triple.some(b => Math.hypot(a.hx - b.hx, a.hy - b.hy) > spacing * 1.8))) continue;
-        const x = triple.reduce((sum, b) => sum + b.hx, 0) / 3;
-        const y = triple.reduce((sum, b) => sum + b.hy, 0) / 3;
-        const clearance = Math.min(...bubbles.map(b => Math.hypot(x - b.hx, y - b.hy)));
+    for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+      for (let k = j + 1; k < live.length; k++) {
+        const triple = [live[i], live[j], live[k]];
+        if (triple.some(a => triple.some(b => Math.hypot(a.x - b.x, a.y - b.y) > spacing * 1.8))) continue;
+        const x = triple.reduce((sum, b) => sum + b.x, 0) / 3;
+        const y = triple.reduce((sum, b) => sum + b.y, 0) / 3;
+        const clearance = Math.min(...live.map(b => Math.hypot(x - b.x, y - b.y)));
         if (clearance < spacing * .55 || (lastGap && Math.hypot(x - lastGap.x, y - lastGap.y) < spacing * .35)) continue;
         const centrality = Math.hypot(x - width / 2, y - height / 2);
         candidates.push({ x, y, score: clearance - centrality * .12 + Math.random() * spacing * .22 });
@@ -85,82 +91,79 @@ export function initSkills() {
     return chosen;
   }
 
-  function schedule() {
-    const count = Math.random() < .42 ? 2 : 1;
-    const outer = [...bubbles].sort((a, b) =>
-      Math.hypot(b.hx - width / 2, b.hy - height / 2) - Math.hypot(a.hx - width / 2, a.hy - height / 2)).slice(0, 6);
-    // Usually retire at the perimeter; an old central cell must not lock out its alternate asset forever.
-    const candidates = [...new Set([...outer, ...bubbles.filter(b => clock - b.born > 32)])];
-    const ranked = candidates.map(b => ({ b, priority: (clock - b.born > 32 ? 100 : 0)
-      + (clock - b.born) / 20 + Math.random() * 1.4 }))
-      .sort((a, b) => b.priority - a.priority);
-    event = { at: clock + 2.2 + Math.random() * 2.8, outgoing: ranked.slice(0, count).map(p => p.b) };
-  }
-  function replace() {
-    const outgoing = event.outgoing;
-    for (const b of bubbles) [b.fx, b.fy] = position(b);
-    for (const b of outgoing) { b.node.style.opacity = 0; b.node.removeAttribute('data-alive'); }
-    bubbles = bubbles.filter(b => !outgoing.includes(b));
-    for (let i = 0; i < outgoing.length; i++) {
-      const { x, y } = gap();
-      add(x, y, false, outgoing.map(b => b.node));
+  function schedule(from) {
+    // A calm carousel: a pop every 5-7 s (7 s after a double one). Each birth follows its own pop,
+    // and the second pop of a double event waits for the first birth.
+    const double = Math.random() < .35;
+    let at = from + (doubled ? 7 : 5 + Math.random() * 2);
+    queue = queue.filter(action => action.manual);
+    for (let i = double ? 2 : 1; i > 0; i--) {
+      queue.push({ at, type: 'pop' });
+      at += POP + .8 + Math.random() * .5;
+      queue.push({ at, type: 'birth' });
+      at += 1 + Math.random() * .6;
     }
-    // Death, birth and redistribution start in this same frame: ten visible images throughout.
-    compact(); reflowAt = clock;
-    schedule();
+    doubled = double;
+    queue.sort((p, q) => p.at - q.at);
+  }
+  function perform(action) {
+    if (action.type === 'pop' && !action.manual) lastAt = action.at;
+    if (action.type === 'birth') { const { x, y } = gap(); add(x, y); return; }
+    // Any mature bubble may pop; fresh ones are left to finish growing.
+    const mature = bubbles.filter(b => b.dying === null && clock - b.born > BIRTH + 1.5);
+    pop(mature[Math.floor(Math.random() * mature.length)]);
+  }
+  function pop(victim) {
+    if (!victim || victim.dying !== null) return;
+    victim.dying = clock;
+    victim.node.dataset.popping = '';
+  }
+  function retire() {
+    const gone = bubbles.filter(b => b.dying !== null && clock - b.dying >= POP);
+    if (!gone.length) return;
+    for (const b of gone) {
+      b.node.style.opacity = 0;
+      b.node.removeAttribute('data-alive'); b.node.removeAttribute('data-popping');
+    }
+    bubbles = bubbles.filter(b => !gone.includes(b));
   }
 
-  function pointerTargets() {
-    const targets = new Map();
-    if (!pointer) { wave = null; return targets; }
-    const nearest = bubbles.map(b => {
-      const [x, y] = position(b);
-      const dx = x + b.ox - pointer.x, dy = y + b.oy - pointer.y;
-      return { b, dx, dy, distance: Math.hypot(dx, dy) };
-    }).sort((a, b) => a.distance - b.distance)[0];
-    if (!nearest || nearest.distance > size * .65) { wave = null; return targets; }
-    if (wave?.source !== nearest.b) wave = { source: nearest.b, start: clock };
-    const ux = nearest.distance < 1 ? 1 : nearest.dx / nearest.distance;
-    const uy = nearest.distance < 1 ? -.2 : nearest.dy / nearest.distance;
-    const strength = 16 * (1 - nearest.distance / (size * .8));
-    let current = nearest.b;
-    const visited = new Set();
-    for (let hop = 0; hop < 4 && current; hop++) {
-      visited.add(current);
-      const delayed = ease((clock - wave.start - hop * .11) / .2);
-      targets.set(current, [ux * strength * .62 ** hop * delayed, uy * strength * .62 ** hop * delayed]);
-      const [x, y] = position(current);
-      current = bubbles.filter(b => !visited.has(b)).map(b => {
-        const [bx, by] = position(b), dx = bx - x, dy = by - y;
-        const distance = Math.hypot(dx, dy);
-        return { b, distance, forward: (dx * ux + dy * uy) / (distance || 1) };
-      }).filter(n => n.forward > .25 && n.distance < spacing * 1.4)
-        .sort((a, b) => b.forward - a.forward)[0]?.b;
-    }
-    return targets;
+  function bubbleAt(x, y) {
+    // Nearest live bubble under the pointer; a hovered one has already grown, so it keeps its hold.
+    return bubbles.filter(b => b.dying === null)
+      .map(b => ({ b, distance: Math.hypot(b.x - x, b.y - y) }))
+      .filter(({ b, distance }) => distance <= size / 2 * footprint(b) * (1 + .22 * b.hover))
+      .sort((p, q) => p.distance - q.distance)[0]?.b;
   }
   function paint(dt = 0) {
-    const targets = pointerTargets();
+    const hovered = pointer && bubbleAt(pointer.x, pointer.y);
+    field.classList.toggle('is-hovering', !!hovered);
     for (const b of bubbles) {
-      const [tx, ty] = targets.get(b) || [0, 0], blend = 1 - Math.exp(-11 * dt);
-      b.ox += (tx - b.ox) * blend; b.oy += (ty - b.oy) * blend;
+      b.hover += ((b === hovered ? 1 : 0) - b.hover) * (1 - Math.exp(-9 * dt));
       const [x, y] = position(b);
-      const growing = .18 + .82 * ease((clock - b.born) / REFLOW);
-      const popping = event?.outgoing.includes(b) ? Math.max(0, 1 - (event.at - clock) / .16) : 0;
-      b.node.style.opacity = 1;
-      b.node.style.setProperty('--birth-scale', (growing * (1 + .07 * popping)).toFixed(4));
-      b.node.style.transform = `translate3d(${clamp(x - size / 2 + b.ox, 4, width - size - 4).toFixed(2)}px, ${clamp(y - size / 2 + b.oy, 6, height - size - 6).toFixed(2)}px, 0)`;
+      let scale = .18 + .82 * ease((clock - b.born) / BIRTH), opacity = 1;
+      if (b.dying !== null) {
+        // A quick swell, then the bubble bursts and fades.
+        const t = clamp((clock - b.dying) / POP, 0, 1), burst = ease((t - .35) / .65);
+        scale = 1 + .14 * ease(t / .35) - .14 * burst - .3 * burst;
+        opacity = 1 - burst;
+      }
+      b.node.style.opacity = opacity.toFixed(3);
+      b.node.style.setProperty('--birth-scale', (scale * (1 + HOVER * b.hover)).toFixed(4));
+      b.node.style.transform = `translate3d(${clamp(x - size / 2, 4, width - size - 4).toFixed(2)}px, ${clamp(y - size / 2, 6, height - size - 6).toFixed(2)}px, 0)`;
     }
   }
   function tick(now) {
     frame = 0;
     const dt = last ? Math.min((now - last) / 1000, .05) : 0;
     last = now; clock += dt;
-    if (clock >= event.at) replace();
+    while (queue.length && queue[0].at <= clock) perform(queue.shift());
+    if (!queue.some(action => !action.manual)) schedule(lastAt);
+    retire(); relax(dt);
     paint(dt);
     frame = requestAnimationFrame(tick);
   }
-  function clearPointer() { pointer = null; wave = null; }
+  function clearPointer() { pointer = null; }
   function run() {
     cancelAnimationFrame(frame); frame = 0; last = 0;
     const paused = !enabled || !visible || !bubbles.length || document.hidden;
@@ -169,14 +172,13 @@ export function initSkills() {
     else frame = requestAnimationFrame(tick);
   }
   function seed() {
-    clock = 0; reflowAt = -REFLOW; lastGap = null;
+    clock = 0; lastAt = -2; doubled = false; queue = []; lastGap = null;
     const rows = [[-1, 0, 1], [-1.5, -.5, .5, 1.5], [-1, 0, 1]];
     rows.flatMap((row, r) => row.map(col => [col, r])).slice(0, COUNT)
       .forEach(([col, r]) => add(width / 2 + col * spacing,
         height / 2 + (r - 1) * spacing * .866, true));
-    compact();
-    bubbles.forEach(b => { b.fx = b.hx; b.fy = b.hy; });
-    schedule(); paint();
+    settle();
+    schedule(0); paint();
   }
   function motion() {
     // The floating bubbles belong to Journey; Reading shows the static labelled grid.
@@ -185,7 +187,9 @@ export function initSkills() {
     enabled = next;
     field.classList.toggle('is-floating', enabled);
     field.style.removeProperty('--bubble-size');
-    items.forEach(node => { node.removeAttribute('style'); node.removeAttribute('data-alive'); });
+    items.forEach(node => {
+      node.removeAttribute('style'); node.removeAttribute('data-alive'); node.removeAttribute('data-popping');
+    });
     bubbles = []; clearPointer();
     if (enabled && measure()) seed();
     run();
@@ -194,6 +198,16 @@ export function initSkills() {
     if (!enabled || e.pointerType === 'touch') return;
     const r = field.getBoundingClientRect();
     pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+  });
+  // Easter egg: a double click bursts the bubble, and its replacement is born right after.
+  field.addEventListener('dblclick', e => {
+    if (!enabled) return;
+    const r = field.getBoundingClientRect();
+    const target = bubbleAt(e.clientX - r.left, e.clientY - r.top);
+    if (!target || clock - target.born < BIRTH) return;
+    pop(target);
+    queue.push({ at: clock + POP + .35, type: 'birth', manual: true });
+    queue.sort((p, q) => p.at - q.at);
   });
   field.addEventListener('pointerleave', clearPointer);
   field.addEventListener('pointercancel', clearPointer);
@@ -207,9 +221,8 @@ export function initSkills() {
     clearPointer();
     if (!bubbles.length) seed();
     else {
-      bubbles.forEach(b => { b.hx *= width / oldWidth; b.hy *= height / oldHeight; });
-      compact(); bubbles.forEach(b => { b.fx = b.hx; b.fy = b.hy; });
-      reflowAt = clock - REFLOW;
+      bubbles.forEach(b => { b.x *= width / oldWidth; b.y *= height / oldHeight; });
+      settle();
     }
     paint(); run();
   }).observe(field);

@@ -20,7 +20,7 @@ sono sorgenti applicative e non sono state modificate.
 | `dist/contact.js` | Osservatori, visibilità e pausa; comportamento conservato e verificato. |
 | `dist/style.css` | Cascade, responsive, keyframe e selettori dinamici. Rimossi residui non più usati; unificate regole di movimento e testo accessibile. |
 | `dist/projects.css` | Eliminati override delle vecchie cornici; presentazione attuale mantenuta come regola di base. |
-| `dist/favicon.svg`, `dist/og.jpg` | Favicon e immagine social conservati; integrità delle immagini verificata. L’URL assoluto social richiede ancora il dominio. |
+| `dist/favicon.png`, `dist/favicon.ico`, `dist/og.jpg` | Favicon e immagine social conservati; integrità delle immagini verificata. L’URL assoluto social richiede ancora il dominio. |
 | Tutti gli originali in `assets/` | 63 PNG verificati e confrontati byte per byte con la revisione iniziale. Sei riferimenti non attivi conservati separatamente. |
 | Tutte le immagini in `dist/assets/` | 77 WebP attivi inventariati, referenziati dal sito e rigenerabili con pixel identici. Rimossi sette derivati inutilizzati. |
 | `design/projects.json` | Contenuti, collegamenti e corrispondenza con HTML verificati; dati conservati. |
@@ -140,3 +140,13 @@ nuovo `tools/check-styles.cjs`, che confronta con la versione precedente gli
 stili calcolati di ogni elemento in 57 stati (controprova: un colore
 modificato viene rilevato in 208 elementi); confronto di 12 screenshot.
 I moduli ES richiedono un server HTTP anche in locale.
+
+## Casaurea: incarico e prototipo
+
+La voce Casaurea in Projects descrive il ruolo di consulente digitale e referente
+per gestione e revisione web (casaurea.it non è stato realizzato dall’autore).
+Il prototipo applicativo `casaurea-agent` (app ospite e backoffice con ruoli
+distinti, onboarding, ordini e richieste di assistenza, webhook Lodgify, email e
+pagamenti simulati; Next.js, TypeScript, Tailwind CSS, Express, Prisma, SQLite)
+non è il sito ufficiale né un sistema in produzione. Resta solo documentato qui
+e non ha una card pubblica.

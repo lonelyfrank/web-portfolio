@@ -51,9 +51,15 @@ Per modificare progetti o competenze, cambiare `design/projects.json` o
 python3 tools/render-content.py
 ```
 
-In Contact sono attivi GitHub e LinkedIn. Email e CV sono nascosti, come
-commenti in `index.html`, finché non saranno disponibili. Il metadato
-`og:image` aspetta l'URL assoluto definitivo.
+La Home esplicita sviluppo web, esperienza AEM/WordPress e opportunità cercate,
+con un contatto LinkedIn diretto. In Contact sono attivi GitHub e LinkedIn.
+Email e CV sono nascosti, come commenti in `index.html`, finché non saranno
+disponibili. Le competenze sono raggruppate per contesto in Lettura; in
+Viaggio restano le bolle, con contesto accessibile ai lettori di schermo. Windows ha una sola voce.
+I casi studio supportano campi opzionali per contributo, difficoltà, verifiche
+e uso dell’AI: compilare solo informazioni confermate, senza attribuire
+all’autore l’esecuzione di test sulla sola base della loro presenza nel repository.
+Il metadato `og:image` aspetta l'URL assoluto definitivo.
 
 ## Asset
 

@@ -1,6 +1,6 @@
 """Esporta le sfere fornite in assets/skills/; non modifica gli originali.
 
-Elenco e originali in design/skills.json, incluse due varianti Windows. Pillow è
+Elenco e originali in design/skills.json, una voce per tecnologia. Pillow è
 già usato dagli altri esportatori. WebP lossless conserva il canale alpha.
 """
 import json
